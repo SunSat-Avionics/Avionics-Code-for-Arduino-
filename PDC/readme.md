@@ -162,19 +162,23 @@ located by the system.
 
 ### 4.1. External Interface Requirements
 #### Hardware Interfaces  
+<b>Note:</b> Diagrams do not show connections to power or ground lines for simplicity
+
 The Arduino Nano is equipped with SPI communications interfaces. This is to 
 be used to interface with the SD card module, the MEMS
 accelerometer/gyroscope package, and the barometric altimeter. A diagram
 of this series of connections is provided below.
 
 <p align="center">
-	<img src="images/SPI_Connections.png" alt="SPI bus connection diagram" width="600"/>
+	<img src="images/SPI_Connections.png" alt="SPI bus connection diagram" width="70%"/>
 </p>
 
 The Arduino Nano board also has an I2C interface which can be used by the 
 real-time clock unit. The connection is shown in the below diagram.
 
-FIGURE
+<p align="center">
+	<img src="images/I2C_Connections.png" alt="I2C bus connection diagram" width="70%"/>
+</p>
 
 The linear photodiode array circuits simply need a clock signal and a 
 serial input - both of which can be provided by the Arduino Nano's GPIO pins.
