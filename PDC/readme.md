@@ -167,7 +167,7 @@ be used to interface with the SD card module, the MEMS
 accelerometer/gyroscope package, and the barometric altimeter. A diagram
 of this series of connections is provided below.
 
-<img src="images/SPI_Connections.png" alt="drawing" width="600"/>
+<img src="images/SPI_Connections.png" alt="drawing" width="600" align="center"/>
 
 The Arduino Nano board also has an I2C interface which can be used by the 
 real-time clock unit. The connection is shown in the below diagram.
