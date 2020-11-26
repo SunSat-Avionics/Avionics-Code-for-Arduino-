@@ -6,6 +6,7 @@
 components, such as g range for accelerometer etc.)
 - Consider moving out of mark down for easier renaming of numbers when
 order changes (and other functionalities)
+- More images
 
 ---
 ## 1. Introduction

@@ -22,7 +22,7 @@ void setup() {
   
   // initialise Kalman Filter (e.g. velocity = 0, altitude = 0, or whatever else)
   
-  // confirm setup has succeeded? e.g. ask SPI for accel values and verify zero (or is there a 'who am I register on devices'?
+  // confirm setup has succeeded? e.g. ask SPI for accel values and verify zero (check 'who am i' reg or similar)
     // then alert main OBC that PDC is setup and ready to go
 }
 
