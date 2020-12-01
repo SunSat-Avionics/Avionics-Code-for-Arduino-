@@ -181,13 +181,14 @@ real-time clock unit. The connection is shown in the below diagram.
 	<img src="images/I2C_Connections.png" alt="I2C bus connection diagram" width="70%"/>
 </p>
 
-The linear photodiode array circuits simply need a clock signal and a 
-serial input - both of which can be provided by the Arduino Nano's GPIO pins.
-The four array circuits can be cascaded which allows for a more efficient
-interface, significantly reducing the number of pins required for communications.
-A diagram of the connections is provided below.
+The linear photodiode array circuits are identical and don't have slave select pins. They simply need
+a serial input to go high which causes them to make a new measurement, and a clock signal for synchronisation.
+These can be provided by GPIO pins on the PDC, and the four arrays can be cascaded to provide their output
+to a single pin on the PDC, as shown below (figure from TSL1401-CCS datasheet)
 
-FIGURE
+<p align="center">
+	<img src="images/multi-die_LPA.png" alt="Connecting the linear photodiode arrays in cascade" width="70%"/>
+</p>
 
 An interrupt will be sent from the PDC to the main OBC to inform it that 
 apogee has been detected, and to send the OBC into an appropriate interrupt
@@ -197,7 +198,9 @@ of the PDC GPIO pins to an interrupt pin on the main OBC.
 These three connection types can then be summarised in the overall connection
 diagram as below.
 
-FIGURE
+<p align="center">
+	<img src="images/fullConnectionDiagram.jpg" alt="The full connectivity to the PDC" width="70%"/>
+</p>
 
 
 ### 4.2. Functional Requirements
