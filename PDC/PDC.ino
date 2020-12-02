@@ -7,10 +7,16 @@
    -----------
    For the Sheffield University Nova SATellite (SUNSAT) platform, this code is to be onboard the 'parachute deployment computer' (PDC).
    The PDC is an Arduino Nano serving the dual purpose of parachute deployment activities (e.g. apogee detection), and attitude determination.
+
+   TODO
+   -----------
+   Add serial prints to mark the progress of setup incase we're monitoring it
 */
 
 // the accel/gyro, barometer & micro-SD unit are on SPI, so include library for SPI commands
 #include <SPI.h>
+// we want the SD card library too
+#include <SD.h>
 
 /* ---------- SPI CONFIG ---------- */
 // create an SPISettngs object to define the characteristics of the bus
@@ -30,14 +36,26 @@ const int microSD_SS = D6;
 /* ---------- I2C CONFIG ----------*/
 
 void setup() {
+  Serial.begin();
+  
   // set each slave select pin as an output
   pinMode(altimeter_SS, OUTPUT);
   pinMode(IMU_SS, OUTPUT);
   pinMode(microSD_SS, OUTPUT);
   
   // SPI startup
-  SPI.begin();
+  if(SPI.begin(microSD_SS))
+  {
+    Serial.print("micro-SD card initialised")
+  }
+  else
+  {
+    Serial.print("micro-SD initialisation failed!")
+  }
 
+  // communicate with altimeter: set CS pin high and read the 'CHIP_ID' register. expect 0x50
+  // communicate with IMU: set CS pin high and read the 'WHO_AM_I' register. expect 01101100
+  // communicate with micro SD
   
   // I2C setup (RTC unit)
   
