@@ -12,6 +12,7 @@
 // the accel/gyro, barometer & micro-SD unit are on SPI, so include library for SPI commands
 #include <SPI.h>
 
+/* ---------- SPI CONFIG ---------- */
 // create an SPISettngs object to define the characteristics of the bus
   // the three parameters are: 1. clock input frequency, 2. MSB/LSB first, and 3. SPI mode
   // for more information, see: https://www.arduino.cc/en/reference/SPI 
@@ -25,6 +26,8 @@ SPISettings SPIParams(10000000, MSBFIRST, SPI_MODE0);
 const int altimeter_SS = D4;
 const int IMU_SS = D5;
 const int microSD_SS = D6;
+
+/* ---------- I2C CONFIG ----------*/
 
 void setup() {
   // set each slave select pin as an output
