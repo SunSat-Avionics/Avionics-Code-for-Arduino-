@@ -36,7 +36,11 @@ const int microSD_SS = D6;
 /* ---------- I2C CONFIG ----------*/
 
 void setup() {
-  Serial.begin();
+  // open serial comms at 9600 baud
+  Serial.begin(9600);
+  while(!Serial){
+    ; // wait for port to connect
+  }
   
   // set each slave select pin as an output
   pinMode(altimeter_SS, OUTPUT);
@@ -44,18 +48,20 @@ void setup() {
   pinMode(microSD_SS, OUTPUT);
   
   // SPI startup
-  if(SPI.begin(microSD_SS))
-  {
-    Serial.print("micro-SD card initialised")
-  }
-  else
-  {
-    Serial.print("micro-SD initialisation failed!")
-  }
+  SPI.begin();
 
   // communicate with altimeter: set CS pin high and read the 'CHIP_ID' register. expect 0x50
   // communicate with IMU: set CS pin high and read the 'WHO_AM_I' register. expect 01101100
   // communicate with micro SD - write the csv headers to a new file (timestamp.csv after I2C & RTC are set??)
+    // if we have a shield with 'CD' (chip detect) pin, make use of this to check pin is in place.
+  
+  // attempt to init micro SD card
+  if(SD.begin(microSD_SS)) {
+    Serial.print("micro-SD card initialised");
+  }
+  else {
+    Serial.print("micro-SD initialisation failed!");
+  }
   
   // I2C setup (RTC unit)
   
