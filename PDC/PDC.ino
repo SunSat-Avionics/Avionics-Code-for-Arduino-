@@ -9,9 +9,14 @@
    The PDC is an Arduino Nano serving the dual purpose of parachute deployment activities (e.g. apogee detection), and attitude determination.
 */
 
+// the accel/gyro, barometer & micro-SD unit are on SPI, so include library for SPI commands
+#include <SPI.h>
 
 void setup() {
-  // SPI setup (accel/gryo, altimeter, SD card)
+  // start the SPI comms
+  SPI.begin();
+
+
   
   // I2C setup (RTC unit)
   
