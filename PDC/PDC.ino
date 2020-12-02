@@ -21,10 +21,19 @@
 // 3. altimeter & accel/gyro, & micro-sd are compatible with mode 00 (clock idle low, output: falling edge, capture: rising edge); 
 SPISettings SPIParams(10000000, MSBFIRST, SPI_MODE0); 
 
-void setup() {
-  // start the SPI comms
-  SPI.begin();
+// define the PDC DIGIN pins that are connected to each devices 'slave select' (SS) pin
+const int altimeter_SS = D4;
+const int IMU_SS = D5;
+const int microSD_SS = D6;
 
+void setup() {
+  // set each slave select pin as an output
+  pinMode(altimeter_SS, OUTPUT);
+  pinMode(IMU_SS, OUTPUT);
+  pinMode(microSD_SS, OUTPUT);
+  
+  // SPI startup
+  SPI.begin();
 
   
   // I2C setup (RTC unit)
