@@ -55,7 +55,7 @@ void setup() {
 
   // communicate with altimeter: set CS pin high and read the 'CHIP_ID' register. expect 0x50
   // communicate with IMU: set CS pin high and read the 'WHO_AM_I' register. expect 01101100
-  // communicate with micro SD
+  // communicate with micro SD - write the csv headers to a new file (timestamp.csv after I2C & RTC are set??)
   
   // I2C setup (RTC unit)
   
