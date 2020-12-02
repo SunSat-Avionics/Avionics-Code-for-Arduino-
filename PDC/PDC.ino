@@ -29,9 +29,9 @@
 SPISettings SPIParams(10000000, MSBFIRST, SPI_MODE0); 
 
 // define the PDC DIGIN pins that are connected to each devices 'slave select' (SS) pin
-const int altimeter_SS = D4;
-const int IMU_SS = D5;
-const int microSD_SS = D6;
+const int altimeter_SS = 4;
+const int IMU_SS = 5;
+const int microSD_SS = 6;
 
 /* ---------- I2C CONFIG ----------*/
 
