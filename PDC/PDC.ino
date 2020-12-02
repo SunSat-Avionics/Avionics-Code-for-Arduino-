@@ -52,9 +52,7 @@ void setup() {
 
   /* ---------- SPI Verification ---------- */
   // communicate with altimeter: set CS pin high and read the 'CHIP_ID' register. expect 0x50
-  // communicate with IMU: set CS pin high and read the 'WHO_AM_I' register. expect 01101100
-  // communicate with micro SD - write the csv headers to a new file (timestamp.csv after I2C & RTC are set??)
-    // if we have a shield with 'CD' (chip detect) pin, make use of this to check pin is in place.
+  // communicate with IMU: set CS pin high and read the 'WHO_AM_I' register. expect 0110110
   
   // attempt to init micro SD card
   if(SD.begin(microSD_SS)) {
@@ -63,6 +61,8 @@ void setup() {
   else {
     Serial.print("micro-SD initialisation failed!");
   }
+  // communicate with micro SD - write the csv headers to a new file (timestamp.csv after I2C & RTC are set??)
+    // if we have a shield with 'CD' (chip detect) pin, make use of this to check pin is in place.
 
   /* ---------- ---------- */
   // light sensor pin configuration (digital output to SI pin, analogue input(s) from AO pins, clock signal to CLK pins) 
