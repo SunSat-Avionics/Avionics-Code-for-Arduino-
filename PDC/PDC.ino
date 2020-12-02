@@ -12,6 +12,15 @@
 // the accel/gyro, barometer & micro-SD unit are on SPI, so include library for SPI commands
 #include <SPI.h>
 
+// create an SPISettngs object to define the characteristics of the bus
+  // the three parameters are: 1. clock input frequency, 2. MSB/LSB first, and 3. SPI mode
+  // for more information, see: https://www.arduino.cc/en/reference/SPI 
+// 1. altimeter & gyro/accel have max clock input freq. of 10MHz, micro-sd has 25MHz
+  // to avoid reconfigs, we'll stick at 10MHz for now - see if this is fast enough
+// 2. altimeter & accel/gyro, & micro-sd are MSB first 
+// 3. altimeter & accel/gyro, & micro-sd are compatible with mode 00 (clock idle low, output: falling edge, capture: rising edge); 
+SPISettings SPIParams(10000000, MSBFIRST, SPI_MODE0); 
+
 void setup() {
   // start the SPI comms
   SPI.begin();
@@ -29,6 +38,7 @@ void setup() {
   
   // confirm setup has succeeded? e.g. ask SPI for accel values and verify zero (check 'who am i' reg or similar)
     // then alert main OBC that PDC is setup and ready to go
+    // for SD card, check the 'carddetect' functionality to see if card is in socket
 }
 
 void loop() {
