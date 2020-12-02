@@ -276,17 +276,49 @@ altimeter via SPI (as per FR5), the unit should be configured appropriately\
 <b>TITLE:</b> Write Column Headings to Micro-SD Card\
 <b>DESC:</b> Having verified that the micro-SD card is connected and can be
 reached via SPI, the columns of the .csv file that data will be stored in
-should be writted to the card in preparation for data input.\
+should be writted to the card in preparation for data input. Should also include
+a 'note' (or similar) heading for notes (e.g. startup, apogee, etc.).\
 <b>RAT:</b> To provide column headers for the .csv data-log for readability
 purposes\
 <b>DEP:</b> FR1, FR5
 
+#### Functional Requirement 1.9
+<b>ID:</b> FR9\
+<b>TITLE:</b> Write 'Startup' Message to Micro-SD Card\
+<b>DESC:</b> Now that the micro-SD is configured, a 'startup' message should
+be written in the 'notes' column.\
+<b>RAT:</b> To provide some temporal reference when reviewing the data after
+the flight.\
+<b>DEP:</b> FR8
+
+#### Functional Requirement 1.10
+<b>ID:</b> FR10\
+<b>TITLE:</b> Trigger Output From Linear Photodiode Array Network\
+<b>DESC:</b> The LPA network is connected to GPIO pins for their serial and clock
+inputs. To verify that this is all working, the PDC pin connected to the LPA
+SI bus should be set high for half a clock cycle (high on rising edge, low on
+falling edge). This triggers a new measurement from the network, which is read
+on the PDC pin connected to the LPA AO bus.\
+<b>RAT:</b> To verify that the LPA network is operational\
+<b>DEP:</b> FR3
+
+#### Functional Requirement 1.
+<b>ID:</b> FR\
+<b>TITLE:</b> Indicate Setup Complete\
+<b>DESC:</b> Once the setup routine has completed, the vehicle should indicate that
+it is ready for flight activities. This can be done by setting the PDC pin connected to
+the main OBC interrupt high. The main OBC can then process this and signal to the ground
+station that the PDC subsystem is go.\
+<b>RAT:</b> To provide visual indication that the PDC subsystem is ready for flight\
+<b>DEP:</b> All Class 1 Requirements
+
 ### 4.2.2. Class 2 - Parachute Deployment
 #### 4.2.2.1. Functional Requirement 2.1 
 <b>ID:</b> FRx\
-<b>TITLE:</b> \
-<b>DESC:</b> \
-<b>RAT:</b> \
+<b>TITLE:</b> Wait for Start of Flight\
+<b>DESC:</b> Once setup is complete, the vehicle should wait in a loop until the flight
+has started.\
+<b>RAT:</b> To fre\
 <b>DEP:</b> \
 
 #### 4.2.2.n. Functional Requirement 2.n
