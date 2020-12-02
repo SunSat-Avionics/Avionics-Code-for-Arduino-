@@ -7,10 +7,6 @@
    -----------
    For the Sheffield University Nova SATellite (SUNSAT) platform, this code is to be onboard the 'parachute deployment computer' (PDC).
    The PDC is an Arduino Nano serving the dual purpose of parachute deployment activities (e.g. apogee detection), and attitude determination.
-
-   TODO
-   -----------
-   Add serial prints to mark the progress of setup incase we're monitoring it
 */
 
 // the accel/gyro, barometer & micro-SD unit are on SPI, so include library for SPI commands
@@ -36,12 +32,14 @@ const int microSD_SS = 6;
 /* ---------- I2C CONFIG ----------*/
 
 void setup() {
+  /* ---------- Serial Setup ---------- */
   // open serial comms at 9600 baud
   Serial.begin(9600);
   while(!Serial){
     ; // wait for port to connect
   }
-  
+
+  /* ---------- SPI Setup ---------- */
   // set each slave select pin as an output
   pinMode(altimeter_SS, OUTPUT);
   pinMode(IMU_SS, OUTPUT);
@@ -50,6 +48,9 @@ void setup() {
   // SPI startup
   SPI.begin();
 
+  /* ---------- I2C Setup ---------- */
+
+  /* ---------- SPI Verification ---------- */
   // communicate with altimeter: set CS pin high and read the 'CHIP_ID' register. expect 0x50
   // communicate with IMU: set CS pin high and read the 'WHO_AM_I' register. expect 01101100
   // communicate with micro SD - write the csv headers to a new file (timestamp.csv after I2C & RTC are set??)
@@ -62,9 +63,8 @@ void setup() {
   else {
     Serial.print("micro-SD initialisation failed!");
   }
-  
-  // I2C setup (RTC unit)
-  
+
+  /* ---------- ---------- */
   // light sensor pin configuration (digital output to SI pin, analogue input(s) from AO pins, clock signal to CLK pins) 
 
   // setup interrupt pin? TBD - can we simply configure one of the GPIO to go high and connect this to OBC interrupt, and then execute
