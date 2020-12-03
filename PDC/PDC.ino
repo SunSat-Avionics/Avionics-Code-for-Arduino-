@@ -104,7 +104,6 @@ void setup() {
   else {
     Serial.println("micro-SD initialisation failed!");
   }
-
   // attempt to open a .csv file which we want to log data to
     // TODO: once RTC is up & running, name the file with timestamp as per ISO 8601 format (kind of..)(yyyy-mm-ddThh-mm-ss.csv)
   dataLogFile = SD.open("temp.csv");
