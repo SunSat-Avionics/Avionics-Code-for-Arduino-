@@ -36,7 +36,7 @@ const int microSD_SS = 6;
 void setup() {
 
   // variable to keep hold of the return value of the accelerometer 'WHO_AM_I' identification register
-  unigned int WHO_AM_I;
+  unsigned int WHO_AM_I;
   
   /* ---------- Serial Setup ---------- */
   // open serial comms at 9600 baud
@@ -66,22 +66,24 @@ void setup() {
 
   /* ---------- SPI Verification ---------- */
   // communicate with altimeter: set CS pin high and read the 'CHIP_ID' register. expect 0x50
-  // communicate with IMU: set CS pin high and read the 'WHO_AM_I' register. expect 0110110
+  
+  // communicate with IMU: read the 'WHO_AM_I' register. expect 0110110
   WHO_AM_I = readIMU(0x0f, 1);
 
+  // we have read the 'WHO_AM_I' and now should check that the value read is as we expect
   if (WHO_AM_I == 0110110) {
-    Serial.println("IMU successfully connected!")
+    Serial.println("IMU successfully connected!");
   }
   else {
-    Serial.println("IMU could not be reached!")
+    Serial.println("IMU could not be reached!");
   }
   
   // attempt to init micro SD card
   if(SD.begin(microSD_SS)) {
-    Serial.print("micro-SD card initialised");
+    Serial.println("micro-SD card initialised");
   }
   else {
-    Serial.print("micro-SD initialisation failed!");
+    Serial.println("micro-SD initialisation failed!");
   }
   // communicate with micro SD - write the csv headers to a new file (timestamp.csv after I2C & RTC are set??)
     // if we have a shield with 'CD' (chip detect) pin, make use of this to check pin is in place.
@@ -119,7 +121,7 @@ void loop() {
 
 // to read a register in the IMU, we pass the address of the register (as provided in the datasheet), and the size (in bytes) of the 
   // register data field
-unsigned int readIMU(byte registerSelect int numBytes){
+unsigned int readIMU(byte registerSelect, int numBytes) {
 
   // variable for our register value return
   unsigned int result = 0; 
@@ -138,13 +140,12 @@ unsigned int readIMU(byte registerSelect int numBytes){
   SPI.transfer(registerSelect);
 
   // now if we send nothing, we are listening for the result - the device will send the value in the register we requested
-  do {
-    // for the first byte, just read the value into 'result'
-    result = SPI.transfer(0x00);
-    // decrement the number of bytes that we have left to read
-    numBytes--;
-  } 
-  while(sizeInBytes != 0) {
+  // for the first byte, just read the value into 'result'
+  result = SPI.transfer(0x00);
+  // decrement the number of bytes that we have left to read
+  numBytes--;
+  
+  while(numBytes != 0) {
     // if we have more than one byte to read, shift the result so far up by a byte, and fill the empty space with our new byte
     result = (result << 8) | SPI.transfer(0x00);
     // decrement the number of bytes until we get to zero, when this while() will exit
