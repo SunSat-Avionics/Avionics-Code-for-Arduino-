@@ -15,18 +15,20 @@
 #include <SD.h>
 
 /* ---------- SPI CONFIG ---------- */
-// create an SPISettngs object to define the characteristics of the bus
-  // the three parameters are: 1. clock input frequency, 2. MSB/LSB first, and 3. SPI mode
-  // for more information, see: https://www.arduino.cc/en/reference/SPI 
-// 1. altimeter & gyro/accel have max clock input freq. of 10MHz, micro-sd has 25MHz
-  // to avoid reconfigs, we'll stick at 10MHz for now - see if this is fast enough
-// 2. altimeter & accel/gyro, & micro-sd are MSB first 
-// 3. altimeter & accel/gyro, & micro-sd are compatible with mode 00 (clock idle low, output: falling edge, capture: rising edge); 
+/* 
+  create an SPISettngs object to define the characteristics of the bus
+  the three parameters are: 1. clock input frequency, 2. MSB/LSB first, and 3. SPI mode
+     for more information, see: https://www.arduino.cc/en/reference/SPI 
+  1. altimeter & gyro/accel have max clock input freq. of 10MHz, micro-sd has 25MHz
+     to avoid reconfigs, we'll stick at 10MHz for now - see if this is fast enough for SD
+  2. all devices are MSB first 
+  3. all devices are compatible with mode 00 (clock idle low, output: falling edge, capture: rising edge);
+*/
 SPISettings SPIParams(10000000, MSBFIRST, SPI_MODE0); 
 
 // the arduino nano has an 'SS' pin which helps us choose if we want to be master or slave. pin 10 as output = PDC as master
 const int PDC_SS = 10;
-// define the PDC DIGIN pins that are connected to each devices 'slave select' (SS) pin.
+// define the DIGIN pins on the PDC that are connected to the 'slave select' (SS) pin of each device.
 const int altimeter_SS = 4;
 const int IMU_SS = 5;
 const int microSD_SS = 6;
