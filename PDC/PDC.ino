@@ -33,10 +33,13 @@ const int microSD_SS = 6;
 
 /* ---------- I2C CONFIG ----------*/
 
+
+/* various device configurations to setup communications and verify that things are working and ready to go */
 void setup() {
 
-  // variable to keep hold of the return value of the accelerometer 'WHO_AM_I' identification register
+  // store the return value of the accelerometer 'WHO_AM_I' identification register here
   unsigned int IMU_WHO_AM_I;
+  // store the return value of the altimeter 'CHIP_ID' identification register here
   unsigned int altimeter_CHIP_ID;
   
   /* ---------- Serial Setup ---------- */
@@ -66,13 +69,22 @@ void setup() {
   /* ---------- I2C Setup ---------- */
 
   /* ---------- SPI Verification ---------- */
-  // communicate with altimeter: set CS pin high and read the 'CHIP_ID' register. expect 0x50
-  altimeter_CHIP_ID = readAltimeter();
+  
+  // communicate with altimeter: read the 'CHIP_ID' register. expect 0x50
+  altimeter_CHIP_ID = readSPI(altimeter_SS, 0x00, 1);
+  // we have read the 'CHIP_ID' register and now should check that the value read is as we expect
+    // when a little more developed, this should be replaced with something more meaningful!
+  if (altimeter_CHIP_ID == 0x50) {
+    Serial.println("Altimeter successfully connected!");
+  }
+  else {
+    Serial.println("Altimeter could not be reached!");
+  }
   
   // communicate with IMU: read the 'WHO_AM_I' register. expect 0110110
-  IMU_WHO_AM_I = readIMU(0x0f, 1);
-
-  // we have read the 'WHO_AM_I' and now should check that the value read is as we expect
+  IMU_WHO_AM_I = readSPI(IMU_SS, 0x0f, 1);
+  // we have read the 'WHO_AM_I' register and now should check that the value read is as we expect
+    // when a little more developed, this should be replaced with something more meaningful!
   if (IMU_WHO_AM_I == 0110110) {
     Serial.println("IMU successfully connected!");
   }
@@ -124,7 +136,7 @@ void loop() {
 
 /* read a value from a register of a device on SPI. as arguments, pass the device select pin, the address of the register, and the number of bytes that this
    register contains. it will return the value that is stored in the register that we are reading */
-unsigned int readSPI(int deviceSelect byte registerSelect, int numBytes) {
+unsigned int readSPI(int deviceSelect, byte registerSelect, int numBytes) {
 
   // variable for our register value return
   unsigned int result = 0; 
