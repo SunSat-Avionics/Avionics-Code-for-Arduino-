@@ -36,7 +36,8 @@ const int microSD_SS = 6;
 void setup() {
 
   // variable to keep hold of the return value of the accelerometer 'WHO_AM_I' identification register
-  unsigned int WHO_AM_I;
+  unsigned int IMU_WHO_AM_I;
+  unsigned int altimeter_CHIP_ID;
   
   /* ---------- Serial Setup ---------- */
   // open serial comms at 9600 baud
@@ -66,12 +67,13 @@ void setup() {
 
   /* ---------- SPI Verification ---------- */
   // communicate with altimeter: set CS pin high and read the 'CHIP_ID' register. expect 0x50
+  altimeter_CHIP_ID = readAltimeter();
   
   // communicate with IMU: read the 'WHO_AM_I' register. expect 0110110
-  WHO_AM_I = readIMU(0x0f, 1);
+  IMU_WHO_AM_I = readIMU(0x0f, 1);
 
   // we have read the 'WHO_AM_I' and now should check that the value read is as we expect
-  if (WHO_AM_I == 0110110) {
+  if (IMU_WHO_AM_I == 0110110) {
     Serial.println("IMU successfully connected!");
   }
   else {
@@ -119,22 +121,31 @@ void loop() {
     // try coarse sun sensing to determine relative pose of sun
 }
 
-// to read a register in the IMU, we pass the address of the register (as provided in the datasheet), and the size (in bytes) of the 
-  // register data field
-unsigned int readIMU(byte registerSelect, int numBytes) {
+
+/* read a value from a register of a device on SPI. as arguments, pass the device select pin, the address of the register, and the number of bytes that this
+   register contains. it will return the value that is stored in the register that we are reading */
+unsigned int readSPI(int deviceSelect byte registerSelect, int numBytes) {
 
   // variable for our register value return
   unsigned int result = 0; 
-  
-  // LSB is the R/W bit, and the register then occupies the rest, so we shift the register up into place
-    // then '1' in the LSB is read
-  registerSelect = (registerSelect << 1) | 1;
 
+  // the 'read' or 'write' bit is in different positions for different devices but then the register address then occupies the rest of the field, 
+    // so we can shift the register up into place when the R/W occupies LSB 
+    // read = 1, write = 0
+  if (deviceSelect == IMU_SS) {
+    // r/w in LSB spot
+    registerSelect = (registerSelect << 1) | 1;
+  }
+  else if (deviceSelect == altimeter_SS) {
+    // r/w in MSB spot
+    registerSelect = registerSelect | (1 << 8); 
+  }
+  
   // begin a transaction over SPI using our params. this command also stops interrupts from preventing SPI comms
   SPI.beginTransaction(SPIParams);
   
   // to communicate with the IMU, we take its slave select pin on the PDC low
-  digitalWrite(IMU_SS, LOW);
+  digitalWrite(deviceSelect, LOW);
 
   // if we want to read a particular address, we must send the address of the register to the device
   SPI.transfer(registerSelect);
@@ -153,7 +164,7 @@ unsigned int readIMU(byte registerSelect, int numBytes) {
   }
 
   // stop communications with IMU by setting the corresponding slave select on the PDC to high
-  digitalWrite(IMU_SS, HIGH);
+  digitalWrite(deviceSelect, HIGH);
   
   // we're done now! restart interrupt mechanisms
   SPI.endTransaction();
