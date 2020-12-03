@@ -154,6 +154,9 @@ unsigned int readSPI(int deviceSelect, byte registerSelect, int numBytes) {
     // r/w in MSB spot
     registerSelect = registerSelect | (1 << 8); 
   }
+  else {
+    Serial.println("ERROR: device does not exist on SPI");
+  }
   
   // begin a transaction over SPI using our params. this command also stops interrupts from preventing SPI comms
   SPI.beginTransaction(SPIParams);
