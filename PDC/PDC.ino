@@ -24,7 +24,7 @@
 // 3. altimeter & accel/gyro, & micro-sd are compatible with mode 00 (clock idle low, output: falling edge, capture: rising edge); 
 SPISettings SPIParams(10000000, MSBFIRST, SPI_MODE0); 
 
-// define the PDC DIGIN pins that are connected to each devices 'slave select' (SS) pin
+// define the PDC DIGIN pins that are connected to each devices 'slave select' (SS) pin.
 const int altimeter_SS = 4;
 const int IMU_SS = 5;
 const int microSD_SS = 6;
@@ -40,12 +40,13 @@ void setup() {
   }
 
   /* ---------- SPI Setup ---------- */
-  // set each slave select pin as an output
+  // set each slave select pin as an output. 
+    // to communicate with a device, take the pin low with digitalWrite(device_SS, LOW);
   pinMode(altimeter_SS, OUTPUT);
   pinMode(IMU_SS, OUTPUT);
   pinMode(microSD_SS, OUTPUT);
   
-  // SPI startup
+  // Initialise all lines and CPU to use SPI
   SPI.begin();
 
   /* ---------- I2C Setup ---------- */
@@ -53,6 +54,7 @@ void setup() {
   /* ---------- SPI Verification ---------- */
   // communicate with altimeter: set CS pin high and read the 'CHIP_ID' register. expect 0x50
   // communicate with IMU: set CS pin high and read the 'WHO_AM_I' register. expect 0110110
+  readIMU(0x0f, 1);
   
   // attempt to init micro SD card
   if(SD.begin(microSD_SS)) {
@@ -93,4 +95,42 @@ void loop() {
   // attitude determination tasks
     // quaternion conversion from gyro Euler output then update kalman filter with gyro readings
     // try coarse sun sensing to determine relative pose of sun
+}
+
+// to read a register in the IMU, we pass the address of the register (as provided in the datasheet), and the size (in bytes) of the 
+  // register data field
+unsigned int readIMU(byte registerSelect int numBytes){
+
+  unsigned int result = 0; // variable for our register value return
+  
+  // LSB is the R/W bit, and the register then occupies the rest, so we shift the register up into place
+    // then '1' in the LSB is read
+  registerSelect = (registerSelect << 1) | 1;
+
+  // begin a transaction over SPI using our params. this command also stops interrupts from preventing SPI comms
+  SPI.beginTransaction(SPIParams);
+  
+  // to communicate with the IMU, we take its slave select pin on the PDC low
+  digitalWrite(IMU_SS, LOW);
+
+  // if we want to read a particular address, we must send the address of the register to the device
+  SPI.transfer(registerSelect);
+
+  // now if we send nothing, we are listening for the result - the device will send the value in the register we requested
+  do {
+    // for the first byte, just read the value into 'result'
+    result = SPI.transfer(0x00);
+    // decrement the number of bytes that we have left to read
+    numBytes--;
+  } 
+  while(sizeInBytes != 0) {
+    // if we have more than one byte to read, shift the result so far up by a byte, and fill the empty space with our new byte
+    result = (result << 8) | SPI.transfer(0x00);
+    // decrement the number of bytes until we get to zero, when this while() will exit
+    numBytes--;
+  }
+
+  SPI.endTransaction();
+
+  return(result);
 }
