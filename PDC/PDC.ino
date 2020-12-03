@@ -24,6 +24,8 @@
 // 3. altimeter & accel/gyro, & micro-sd are compatible with mode 00 (clock idle low, output: falling edge, capture: rising edge); 
 SPISettings SPIParams(10000000, MSBFIRST, SPI_MODE0); 
 
+// the arduino nano has an 'SS' pin which helps us choose if we want to be master or slave. pin 10 as output = PDC as master
+const int PDC_SS = 10;
 // define the PDC DIGIN pins that are connected to each devices 'slave select' (SS) pin.
 const int altimeter_SS = 4;
 const int IMU_SS = 5;
@@ -32,6 +34,10 @@ const int microSD_SS = 6;
 /* ---------- I2C CONFIG ----------*/
 
 void setup() {
+
+  // variable to keep hold of the return value of the accelerometer 'WHO_AM_I' identification register
+  unigned int WHO_AM_I;
+  
   /* ---------- Serial Setup ---------- */
   // open serial comms at 9600 baud
   Serial.begin(9600);
@@ -40,11 +46,18 @@ void setup() {
   }
 
   /* ---------- SPI Setup ---------- */
+  // we want to be the master of this bus! so set the 'SS' pin on the PDC as an output
+  pinMode(PDC_SS, OUTPUT);
+  
   // set each slave select pin as an output. 
-    // to communicate with a device, take the pin low with digitalWrite(device_SS, LOW);
+    // initialise each pin to be high (i.e. communication disabled)
+    // to communicate with a specific device, take its SS pin low with digitalWrite(device_SS, LOW);
   pinMode(altimeter_SS, OUTPUT);
+  digitalWrite(altimeter_SS, HIGH);
   pinMode(IMU_SS, OUTPUT);
+  digitalWrite(IMU_SS, HIGH);
   pinMode(microSD_SS, OUTPUT);
+  digitalWrite(microSD_SS, HIGH);
   
   // Initialise all lines and CPU to use SPI
   SPI.begin();
@@ -54,7 +67,14 @@ void setup() {
   /* ---------- SPI Verification ---------- */
   // communicate with altimeter: set CS pin high and read the 'CHIP_ID' register. expect 0x50
   // communicate with IMU: set CS pin high and read the 'WHO_AM_I' register. expect 0110110
-  readIMU(0x0f, 1);
+  WHO_AM_I = readIMU(0x0f, 1);
+
+  if (WHO_AM_I == 0110110) {
+    Serial.println("IMU successfully connected!")
+  }
+  else {
+    Serial.println("IMU could not be reached!")
+  }
   
   // attempt to init micro SD card
   if(SD.begin(microSD_SS)) {
@@ -101,7 +121,8 @@ void loop() {
   // register data field
 unsigned int readIMU(byte registerSelect int numBytes){
 
-  unsigned int result = 0; // variable for our register value return
+  // variable for our register value return
+  unsigned int result = 0; 
   
   // LSB is the R/W bit, and the register then occupies the rest, so we shift the register up into place
     // then '1' in the LSB is read
@@ -130,7 +151,12 @@ unsigned int readIMU(byte registerSelect int numBytes){
     numBytes--;
   }
 
+  // stop communications with IMU by setting the corresponding slave select on the PDC to high
+  digitalWrite(IMU_SS, HIGH);
+  
+  // we're done now! restart interrupt mechanisms
   SPI.endTransaction();
 
+  // send our address value back to the caller
   return(result);
 }
