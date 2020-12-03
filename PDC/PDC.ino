@@ -43,6 +43,8 @@ void setup() {
   unsigned int IMU_WHO_AM_I;
   // store the return value of the altimeter 'CHIP_ID' identification register here
   unsigned int altimeter_CHIP_ID;
+  // a variable for the micro SD card data log file
+  File dataLogFile;
   
   /* ---------- Serial Setup ---------- */
   // open serial comms at 9600 baud
@@ -95,15 +97,32 @@ void setup() {
   }
   
   // attempt to init micro SD card
+    // if we have a shield with 'CD' (chip detect) pin, make use of this to check pin is in place.
   if(SD.begin(microSD_SS)) {
     Serial.println("micro-SD card initialised");
   }
   else {
     Serial.println("micro-SD initialisation failed!");
   }
-  // communicate with micro SD - write the csv headers to a new file (timestamp.csv after I2C & RTC are set??)
-    // if we have a shield with 'CD' (chip detect) pin, make use of this to check pin is in place.
 
+  // attempt to open a .csv file which we want to log data to
+    // TODO: once RTC is up & running, name the file with timestamp as per ISO 8601 format (kind of..)(yyyy-mm-ddThh-mm-ss.csv)
+  dataLogFile = SD.open("temp.csv");
+
+  if(!dataLogFile) {
+    Serial.println("Data log file could not be opened!");
+  }
+
+  // communicate with micro SD - write the csv headers to our file
+    // should define (either here or elsewhere) the units of each of these headers... perhaps in readme
+    // TODO: populate this more fully - what are the raw measurements from BMP, GYRO, light sensors, etc?
+  dataLogFile.print("Date, \
+                     Time, \
+                     acc_x, \
+                     acc_y, \
+                     acc_z");
+  
+  
   /* ---------- ---------- */
   // light sensor pin configuration (digital output to SI pin, analogue input(s) from AO pins, clock signal to CLK pins) 
 
