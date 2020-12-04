@@ -1,7 +1,7 @@
 /* SUNSAT Parachute Deployment and Attitude Determination Software
   
    Created 22 Nov 20
-   Contributors: Rory Haggart
+   Contributors: Rory Haggart, Waleed Hamad
    
    Description
    -----------
@@ -119,7 +119,8 @@ void setup() {
                      Time, \
                      acc_x, \
                      acc_y, \
-                     acc_z");
+                     acc_z, \
+                     Note");
   
   
   /* ---------- ---------- */
