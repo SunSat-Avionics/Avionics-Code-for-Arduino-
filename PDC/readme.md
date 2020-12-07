@@ -329,51 +329,51 @@ against sound barrier effects\
 <b>DEP:</b> All Class 1 Requirements
 
 #### Functional Requirement 1.
-<b>ID:</b> FR\
+<b>ID:</b> FR13\
 <b>TITLE:</b> Indicate Setup Complete\
 <b>DESC:</b> <b>TBD</b>: need to know comms method b/w PDC and OBC\
 <b>RAT:</b> To provide indication that the PDC subsystem is ready for flight\
 <b>DEP:</b> All Class 1 Requirements
 
-### 4.2.2. Class 2 - Parachute Deployment
+### 4.2.2. Class 2 - Parachute Deployment (all dependent on all class 1 requirements) 
 #### 4.2.2.1. Functional Requirement 2.1 
-<b>ID:</b> FRx\
+<b>ID:</b> FR14\
 <b>TITLE:</b> Wait for Start of Flight\
 <b>DESC:</b> Once setup is complete, the vehicle should wait in a loop until the flight
 has started.\
 <b>RAT:</b> To give time for all setups that might be running on other computers prior 
 to flight, and to take measurements on the ground during this time to wait for launch
 indicators\
-<b>DEP:</b> \
+<b>DEP:</b> None
 
-#### 4.2.2.n. Functional Requirement 2.n
-<b>ID:</b> FRn\
+#### 4.2.2.n. Functional Requirement 2.2
+<b>ID:</b> FR15\
 <b>TITLE:</b> Detect Start of Flight\
 <b>DESC:</b> Once the measured 'z' acceleration increases, take this as start of flight.
 Write a note to the SD card to indicate time of lift-off.\
 <b>RAT:</b> To begin in-flight processes and to signify time of lift off for post-flight
 analyses\
-<b>DEP:</b> \
+<b>DEP:</b> FR14
 
-#### 4.2.2.n. Functional Requirement 2.n
-<b>ID:</b> FRn\
+#### 4.2.2.n. Functional Requirement 2.3
+<b>ID:</b> FR16\
 <b>TITLE:</b> Read IMU Outputs\
 <b>DESC:</b> In flight, read all relevant raw IMU outputs to the SD card. Also read the
 RTC to accompany the SD line. Also keep these values for processing via Kalman Filter etc.\
 <b>RAT:</b> To measure vehicle acceleration and angular rates during flight\
-<b>DEP:</b> \
+<b>DEP:</b> None
 
-#### 4.2.2.n. Functional Requirement 2.n
-<b>ID:</b> FRn\
+#### 4.2.2.n. Functional Requirement 2.4
+<b>ID:</b> FR17\
 <b>TITLE:</b> Read Altimeter Outputs\
 <b>DESC:</b> In flight, read the altimeter outputs (pressure, temp), and decide which are
 useful for SD log. Read the RTC to accompany the measurements, and keep hold of the raw 
 values in variables.\
 <b>RAT:</b> To monitor pressure and temperature during flight\
-<b>DEP:</b> \
+<b>DEP:</b> None
 
-#### 4.2.2.n. Functional Requirement 2.n
-<b>ID:</b> FRn\
+#### 4.2.2.n. Functional Requirement 2.5
+<b>ID:</b> FR18\
 <b>TITLE:</b> Read Light Sensor Outputs\
 <b>DESC:</b> In flight, read the light sensor outputs. This will involve setting the PDC
 pin connected to the 'SI' inputs of the arrays to high for half a clock cycle. This action
@@ -381,10 +381,10 @@ triggers an output to the PDC pin connected to 'AO' on the arrays. This value ca
 be subsampled, or even ignored until the velocity begins to decrease. This would allow for
 focus to be fully on the higher-rate sensors during flight\
 <b>RAT:</b> To measure ambient light in the immediate surroundings.\
-<b>DEP:</b> \
+<b>DEP:</b> None
 
-#### 4.2.2.n. Functional Requirement 2.n
-<b>ID:</b> FRn\
+#### 4.2.2.n. Functional Requirement 2.6
+<b>ID:</b> FR19\
 <b>TITLE:</b> Process IMU Outputs\
 <b>DESC:</b> Using the raw outputs, process the values as necessary. This should involve 
 the 'in-flight' model as part of a Kalman Filter that accounts for noise in the readings.
@@ -392,18 +392,18 @@ It should also provide an opportunity to estimate velocity from acceleration thr
 integration. Again, write these values to the SD - dependent on computation time, the 
 time of output here may be significantly away from the raw measurements - bear this in mind. \
 <b>RAT:</b> To translate the raw outputs into meaningful information\
-<b>DEP:</b> \
+<b>DEP:</b> FR16
 
-#### 4.2.2.n. Functional Requirement 2.n
-<b>ID:</b> FRn\
+#### 4.2.2.n. Functional Requirement 2.7
+<b>ID:</b> FR20\
 <b>TITLE:</b> Process Altimeter Outputs\
 <b>DESC:</b> Use the raw pressure and temperature outputs to calculate the altitude of the
 vehicle. Maybe this sensor can also be used in the Kalman Filter for improved accuracy?\
 <b>RAT:</b> To translate the raw outputs into meaningful information\
-<b>DEP:</b> \
+<b>DEP:</b> FR17
 
-#### 4.2.2.n. Functional Requirement 2.n
-<b>ID:</b> FRn\
+#### 4.2.2.n. Functional Requirement 2.8
+<b>ID:</b> FR21\
 <b>TITLE:</b> Protect Against Sound Barrier\
 <b>DESC:</b> When the vehicle approaches and exceeds the speed of sound, there will be an
 artificial change in pressure and temperature. The altimeter might detect this as apogee
@@ -411,7 +411,20 @@ if not properly configured. Using the velocity estimate & ground temperature, th
 speed of sound can be predicted, and the altimeter can choose to not detect apogee within
 the period of predicted transitional mach.\
 <b>RAT:</b> To prevent a false detection of apogee due to the sound barrier\
-<b>DEP:</b> \
+<b>DEP:</b> FR17
+
+#### 4.2.2.n. Functional Requirement 2.9
+<b>ID:</b> FR22\
+<b>TITLE:</b> Report Apogee Estimates\
+<b>DESC:</b> The IMU derived velocity will cross zero at some point during flight. This
+indicates the point of apogee. Similarly, the altimeter will detect this point when the
+calculated altitude stops increasing. The light sensors will detect a change in light levels
+when Nova is exposed to the atmosphere (ideally around the point of apogee). When each 
+of these three methods detects apogee, the timestamp and a '<sensor> detects apogee!' note
+should be written to the SD card. It may also be useful to report this to the main OBC and
+potentially relay to ground\
+<b>RAT:</b> To provide indication that apogee is detected\
+<b>DEP:</b> FR18, FR19, FR20
 
 ### 4.2.3. Class 3 - Attitude Determination
 #### Functional Requirement 3.1 
