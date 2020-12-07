@@ -328,7 +328,7 @@ against sound barrier effects\
 <b>RAT:</b> To record conditions pre-flight\
 <b>DEP:</b> All Class 1 Requirements
 
-#### Functional Requirement 1.
+#### Functional Requirement 1.13
 <b>ID:</b> FR13\
 <b>TITLE:</b> Indicate Setup Complete\
 <b>DESC:</b> <b>TBD</b>: need to know comms method b/w PDC and OBC\
@@ -336,7 +336,7 @@ against sound barrier effects\
 <b>DEP:</b> All Class 1 Requirements
 
 ### 4.2.2. Class 2 - Parachute Deployment (all dependent on all class 1 requirements) 
-#### 4.2.2.1. Functional Requirement 2.1 
+#### Functional Requirement 2.1 
 <b>ID:</b> FR14\
 <b>TITLE:</b> Wait for Start of Flight\
 <b>DESC:</b> Once setup is complete, the vehicle should wait in a loop until the flight
@@ -346,7 +346,7 @@ to flight, and to take measurements on the ground during this time to wait for l
 indicators\
 <b>DEP:</b> None
 
-#### 4.2.2.n. Functional Requirement 2.2
+#### Functional Requirement 2.2
 <b>ID:</b> FR15\
 <b>TITLE:</b> Detect Start of Flight\
 <b>DESC:</b> Once the measured 'z' acceleration increases, take this as start of flight.
@@ -355,7 +355,7 @@ Write a note to the SD card to indicate time of lift-off.\
 analyses\
 <b>DEP:</b> FR14
 
-#### 4.2.2.n. Functional Requirement 2.3
+#### Functional Requirement 2.3
 <b>ID:</b> FR16\
 <b>TITLE:</b> Read IMU Outputs\
 <b>DESC:</b> In flight, read all relevant raw IMU outputs to the SD card. Also read the
@@ -363,7 +363,7 @@ RTC to accompany the SD line. Also keep these values for processing via Kalman F
 <b>RAT:</b> To measure vehicle acceleration and angular rates during flight\
 <b>DEP:</b> None
 
-#### 4.2.2.n. Functional Requirement 2.4
+#### Functional Requirement 2.4
 <b>ID:</b> FR17\
 <b>TITLE:</b> Read Altimeter Outputs\
 <b>DESC:</b> In flight, read the altimeter outputs (pressure, temp), and decide which are
@@ -372,7 +372,7 @@ values in variables.\
 <b>RAT:</b> To monitor pressure and temperature during flight\
 <b>DEP:</b> None
 
-#### 4.2.2.n. Functional Requirement 2.5
+#### Functional Requirement 2.5
 <b>ID:</b> FR18\
 <b>TITLE:</b> Read Light Sensor Outputs\
 <b>DESC:</b> In flight, read the light sensor outputs. This will involve setting the PDC
@@ -383,7 +383,7 @@ focus to be fully on the higher-rate sensors during flight\
 <b>RAT:</b> To measure ambient light in the immediate surroundings.\
 <b>DEP:</b> None
 
-#### 4.2.2.n. Functional Requirement 2.6
+#### Functional Requirement 2.6
 <b>ID:</b> FR19\
 <b>TITLE:</b> Process IMU Outputs\
 <b>DESC:</b> Using the raw outputs, process the values as necessary. This should involve 
@@ -394,7 +394,7 @@ time of output here may be significantly away from the raw measurements - bear t
 <b>RAT:</b> To translate the raw outputs into meaningful information\
 <b>DEP:</b> FR16
 
-#### 4.2.2.n. Functional Requirement 2.7
+#### Functional Requirement 2.7
 <b>ID:</b> FR20\
 <b>TITLE:</b> Process Altimeter Outputs\
 <b>DESC:</b> Use the raw pressure and temperature outputs to calculate the altitude of the
@@ -402,7 +402,7 @@ vehicle. Maybe this sensor can also be used in the Kalman Filter for improved ac
 <b>RAT:</b> To translate the raw outputs into meaningful information\
 <b>DEP:</b> FR17
 
-#### 4.2.2.n. Functional Requirement 2.8
+#### Functional Requirement 2.8
 <b>ID:</b> FR21\
 <b>TITLE:</b> Protect Against Sound Barrier\
 <b>DESC:</b> When the vehicle approaches and exceeds the speed of sound, there will be an
@@ -413,7 +413,7 @@ the period of predicted transitional mach.\
 <b>RAT:</b> To prevent a false detection of apogee due to the sound barrier\
 <b>DEP:</b> FR17
 
-#### 4.2.2.n. Functional Requirement 2.9
+#### Functional Requirement 2.9
 <b>ID:</b> FR22\
 <b>TITLE:</b> Report Apogee Estimates\
 <b>DESC:</b> The IMU derived velocity will cross zero at some point during flight. This
