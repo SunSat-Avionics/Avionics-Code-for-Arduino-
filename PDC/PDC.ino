@@ -11,22 +11,24 @@
 
 // the accel/gyro, barometer & micro-SD unit are on SPI, so include library for SPI commands
 #include <SPI.h>
-// we want the SD card library too
+// we want the SD card library too (https://www.arduino.cc/en/reference/SD)
 #include <SD.h>
 
 /* ---------- SPI CONFIG ---------- */
 /* 
-  create an SPISettngs object to define the characteristics of the bus
-  the three parameters are: 1. clock input frequency, 2. MSB/LSB first, and 3. SPI mode
-     for more information, see: https://www.arduino.cc/en/reference/SPI 
-  1. altimeter & gyro/accel have max clock input freq. of 10MHz, micro-sd has 25MHz
-     to avoid reconfigs, we'll stick at 10MHz for now - see if this is fast enough for SD
-  2. all devices are MSB first 
-  3. all devices are compatible with mode 00 (clock idle low, output: falling edge, capture: rising edge);
-*/
+ * create an SPISettngs object to define the characteristics of the bus
+ * the three parameters are: 1. clock input frequency, 2. MSB/LSB first, and 3. SPI mode
+ *    for more information, see: https://www.arduino.cc/en/reference/SPI 
+ * 1. altimeter & gyro/accel have max clock input freq. of 10MHz, micro-sd has 25MHz
+ *    to avoid reconfigs, we'll stick at 10MHz for now - see if this is fast enough for SD
+ * 2. all devices are MSB first 
+ * 3. all devices are compatible with mode 00 (clock idle low, output: falling edge, capture: rising edge);
+ */
+ 
+// this is then our object with settings for our transactions
 SPISettings SPIParams(10000000, MSBFIRST, SPI_MODE0); 
 
-// the arduino nano has an 'SS' pin which helps us choose if we want to be master or slave. pin 10 as output = PDC as master
+// the arduino nano has an 'SS' pin (10) which helps us choose if we want to be master or slave. pin 10 as output = PDC as master
 const int PDC_SS = 10;
 // define the DIGIN pins on the PDC that are connected to the 'slave select' (SS) pin of each device.
 const int altimeter_SS = 4;
@@ -34,20 +36,22 @@ const int IMU_SS = 5;
 const int microSD_SS = 6;
 
 /* ---------- I2C CONFIG ----------*/
-
+// TODO
 
 /* various device configurations to setup communications and verify that things are working and ready to go */
 void setup() {
 
-  // store the return value of the accelerometer 'WHO_AM_I' identification register here
+  // to store the return value of the accelerometer 'WHO_AM_I' identification register
   unsigned int IMU_WHO_AM_I;
-  // store the return value of the altimeter 'CHIP_ID' identification register here
+  // to store the return value of the altimeter 'CHIP_ID' identification register
   unsigned int altimeter_CHIP_ID;
-  // a variable for the micro SD card data log file
+  // new instance of the 'File' class (part of the SD library) that we will use to control the .csv file on the microSD card
   File dataLogFile;
   
   /* ---------- Serial Setup ---------- */
-  // open serial comms at 9600 baud
+  // open serial comms at 9600 baud to allow us to monitor the process
+    // serial may become irrelevant - once the code is on the PDC we might not be connecting via serial
+    // but it's useful for ground testing
   Serial.begin(9600);
   while(!Serial){
     ; // wait for port to connect
@@ -71,13 +75,15 @@ void setup() {
   SPI.begin();
 
   /* ---------- I2C Setup ---------- */
+  // TODO
 
   /* ---------- SPI Verification ---------- */
   
   // communicate with altimeter: read the 'CHIP_ID' register. expect 0x50
   altimeter_CHIP_ID = readSPI(altimeter_SS, 0x00, 1);
   // we have read the 'CHIP_ID' register and now should check that the value read is as we expect
-    // when a little more developed, this should be replaced with something more meaningful!
+    // TODO: when a little more developed, this should be replaced with something more meaningful! e.g. comms to ground
+    // to indicate 'yes we're good on the altimeter'
   if (altimeter_CHIP_ID == 0x50) {
     Serial.println("Altimeter successfully connected!");
   }
@@ -88,7 +94,7 @@ void setup() {
   // communicate with IMU: read the 'WHO_AM_I' register. expect 0110110
   IMU_WHO_AM_I = readSPI(IMU_SS, 0x0f, 1);
   // we have read the 'WHO_AM_I' register and now should check that the value read is as we expect
-    // when a little more developed, this should be replaced with something more meaningful!
+    // TODO: when a little more developed, this should be replaced with something more meaningful!
   if (IMU_WHO_AM_I == 0110110) {
     Serial.println("IMU successfully connected!");
   }
@@ -97,17 +103,19 @@ void setup() {
   }
   
   // attempt to init micro SD card
-    // if we have a shield with 'CD' (chip detect) pin, make use of this to check pin is in place.
+    // TODO: if we have a shield with 'CD' (chip detect) pin, make use of this to check pin is in place.
   if(SD.begin(microSD_SS)) {
     Serial.println("micro-SD card initialised");
   }
   else {
     Serial.println("micro-SD initialisation failed!");
   }
+  
   // attempt to open a .csv file which we want to log data to
     // TODO: once RTC is up & running, name the file with timestamp as per ISO 8601 format (kind of..)(yyyy-mm-ddThh-mm-ss.csv)
-  dataLogFile = SD.open("temp.csv");
+  dataLogFile = SD.open("temp.csv", FILE_WRITE);
 
+  // if the file can't open, the return is false
   if(!dataLogFile) {
     Serial.println("Data log file could not be opened!");
   }
@@ -127,13 +135,12 @@ void setup() {
   // light sensor pin configuration (digital output to SI pin, analogue input(s) from AO pins, clock signal to CLK pins) 
 
   // setup interrupt pin? TBD - can we simply configure one of the GPIO to go high and connect this to OBC interrupt, and then execute
-    // the interrupt routine on OBC?
+    // the interrupt routine on OBC? or will we communicate with main OBC via I2C?
   
-  // initialise Kalman Filter (e.g. velocity = 0, altitude = 0, or whatever else)
-  
-  // confirm setup has succeeded? e.g. ask SPI for accel values and verify zero (check 'who am i' reg or similar)
-    // then alert main OBC that PDC is setup and ready to go
-    // for SD card, check the 'carddetect' functionality to see if card is in socket
+  // take measurements in the ground state (e.g. temp and pressure). write them to SD with a note of 'ground conditions' or similar. 
+    // also worth storing them in variables to use to calculate local mach etc.
+
+  // indicate that setup is complete - write to SD 'setup complete' and maybe talk to main OBC to tell ground that we're ready to go
 }
 
 void loop() {
