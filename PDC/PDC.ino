@@ -214,3 +214,9 @@ unsigned int readSPI(int deviceSelect, byte registerSelect, int numBytes) {
   /* send our address value back to the caller */
   return(result);
 }
+
+/* this function is used to filter the sensor data during ascent to help us predict apogee */
+// TODO: rory make a document to summarise why we need this and what it is doing
+parachuteKalmanFilter()
+{
+}
