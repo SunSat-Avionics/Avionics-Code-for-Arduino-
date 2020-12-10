@@ -187,7 +187,7 @@ unsigned int readSPI(int deviceSelect, byte registerSelect, int numBytes) {
   /* begin a transaction over SPI using our params. this command also stops interrupts from preventing SPI comms */
   SPI.beginTransaction(SPIParams);
   
-  /* to communicate with the IMU, we take its slave select pin on the PDC low */
+  /* to communicate with the device, we take its slave select pin on the PDC low */
   digitalWrite(deviceSelect, LOW);
 
   /* if we want to read a particular address, we must send the address of the register to the device */
@@ -205,7 +205,7 @@ unsigned int readSPI(int deviceSelect, byte registerSelect, int numBytes) {
     numBytes--;
   }
 
-  /* stop communications with IMU by setting the corresponding slave select on the PDC to high */
+  /* stop communications with device by setting the corresponding slave select on the PDC to high */
   digitalWrite(deviceSelect, HIGH);
   
   /* we're done now! restart interrupt mechanisms */
