@@ -195,6 +195,9 @@ apogee has been detected, and to send the OBC into an appropriate interrupt
 handling routine for this event. This can simply be done by connecting one
 of the PDC GPIO pins to an interrupt pin on the main OBC.
 
+<b>NOTE: connection to the OBC is still TBD - it is likely that additionally to an interrupt,
+there will be some serial channel between the two for status updates etc.</b>
+
 These three connection types can then be summarised in the overall connection
 diagram as below.
 
@@ -237,10 +240,13 @@ pins that it will use to communicate with external devices\
 
 #### Functional Requirement 1.4
 <b>ID:</b> FR4\
-<b>TITLE:</b> kalman filter setup?\
-<b>DESC:</b> initialise kalman filter with current values?\
-<b>RAT:</b> to provide initial conditions and model preps\
-<b>DEP:</b> 
+<b>TITLE:</b> Verify the Real-time Clock\
+<b>DESC:</b> The date of launch is known, and so this can be pre-programmed in
+to the code. Then a value can be taken from the RTC over I2C and check that the dates
+match. Ideally the time would be checked too, but without connection to a PC this could 
+be hard...\
+<b>RAT:</b> To verify that the RTC is able to give us a good reading\
+<b>DEP:</b> FR2
 
 #### Functional Requirement 1.5
 <b>ID:</b> FR5\
@@ -276,25 +282,149 @@ altimeter via SPI (as per FR5), the unit should be configured appropriately\
 <b>TITLE:</b> Write Column Headings to Micro-SD Card\
 <b>DESC:</b> Having verified that the micro-SD card is connected and can be
 reached via SPI, the columns of the .csv file that data will be stored in
-should be writted to the card in preparation for data input.\
+should be writted to the card in preparation for data input. Should also include
+a 'note' (or similar) heading for notes (e.g. startup, apogee, etc.).\
 <b>RAT:</b> To provide column headers for the .csv data-log for readability
 purposes\
 <b>DEP:</b> FR1, FR5
 
-### 4.2.2. Class 2 - Parachute Deployment
-#### 4.2.2.1. Functional Requirement 2.1 
-<b>ID:</b> FRx\
-<b>TITLE:</b> \
-<b>DESC:</b> \
-<b>RAT:</b> \
-<b>DEP:</b> \
+#### Functional Requirement 1.9
+<b>ID:</b> FR9\
+<b>TITLE:</b> Write 'Startup' Message to Micro-SD Card\
+<b>DESC:</b> Now that the micro-SD is configured, a 'startup' message should
+be written in the 'notes' column.\
+<b>RAT:</b> To provide some temporal reference when reviewing the data after
+the flight.\
+<b>DEP:</b> FR8
 
-#### 4.2.2.n. Functional Requirement 2.n
-<b>ID:</b> FRn\
-<b>TITLE:</b> \
-<b>DESC:</b> \
-<b>RAT:</b> \
-<b>DEP:</b> \
+#### Functional Requirement 1.10
+<b>ID:</b> FR10\
+<b>TITLE:</b> Trigger Output From Linear Photodiode Array Network\
+<b>DESC:</b> The LPA network is connected to GPIO pins for their serial and clock
+inputs. To verify that this is all working, the PDC pin connected to the LPA
+SI bus should be set high for half a clock cycle (high on rising edge, low on
+falling edge). This triggers a new measurement from the network, which is read
+on the PDC pin connected to the LPA AO bus.\
+<b>RAT:</b> To verify that the LPA network is operational\
+<b>DEP:</b> FR3
+
+#### Functional Requirement 1.11
+<b>ID:</b> FR11\
+<b>TITLE:</b> Appropriate Sensor Configurations\
+<b>DESC:</b> Once the sensor communications have been established and verified,
+there will be some necessary configurations. For example, the accelerometer measurement
+range, the altimeter power mode, etc.\
+<b>RAT:</b> To prepare the sensors for operation\
+<b>DEP:</b> FR6, FR7
+
+#### Functional Requirement 1.12
+<b>ID:</b> FR12\
+<b>TITLE:</b> Take Ground Measurements\
+<b>DESC:</b> With setup complete, it would be useful to know the conditions on the ground.
+The temperature as measured by the altimeter, the ambient pressure, the light levels in the
+fairing, etc. These values should be written to the SD card with a note 'ground conditions' or
+similar, and they should be stored locally to help with future requirements, like protecting
+against sound barrier effects\
+<b>RAT:</b> To record conditions pre-flight\
+<b>DEP:</b> All Class 1 Requirements
+
+#### Functional Requirement 1.13
+<b>ID:</b> FR13\
+<b>TITLE:</b> Indicate Setup Complete\
+<b>DESC:</b> <b>TBD</b>: need to know comms method b/w PDC and OBC\
+<b>RAT:</b> To provide indication that the PDC subsystem is ready for flight\
+<b>DEP:</b> All Class 1 Requirements
+
+### 4.2.2. Class 2 - Parachute Deployment (all dependent on all class 1 requirements) 
+#### Functional Requirement 2.1 
+<b>ID:</b> FR14\
+<b>TITLE:</b> Wait for Start of Flight\
+<b>DESC:</b> Once setup is complete, the vehicle should wait in a loop until the flight
+has started.\
+<b>RAT:</b> To give time for all setups that might be running on other computers prior 
+to flight, and to take measurements on the ground during this time to wait for launch
+indicators\
+<b>DEP:</b> None
+
+#### Functional Requirement 2.2
+<b>ID:</b> FR15\
+<b>TITLE:</b> Detect Start of Flight\
+<b>DESC:</b> Once the measured 'z' acceleration increases, take this as start of flight.
+Write a note to the SD card to indicate time of lift-off.\
+<b>RAT:</b> To begin in-flight processes and to signify time of lift off for post-flight
+analyses\
+<b>DEP:</b> FR14
+
+#### Functional Requirement 2.3
+<b>ID:</b> FR16\
+<b>TITLE:</b> Read IMU Outputs\
+<b>DESC:</b> In flight, read all relevant raw IMU outputs to the SD card. Also read the
+RTC to accompany the SD line. Also keep these values for processing via Kalman Filter etc.\
+<b>RAT:</b> To measure vehicle acceleration and angular rates during flight\
+<b>DEP:</b> None
+
+#### Functional Requirement 2.4
+<b>ID:</b> FR17\
+<b>TITLE:</b> Read Altimeter Outputs\
+<b>DESC:</b> In flight, read the altimeter outputs (pressure, temp), and decide which are
+useful for SD log. Read the RTC to accompany the measurements, and keep hold of the raw 
+values in variables.\
+<b>RAT:</b> To monitor pressure and temperature during flight\
+<b>DEP:</b> None
+
+#### Functional Requirement 2.5
+<b>ID:</b> FR18\
+<b>TITLE:</b> Read Light Sensor Outputs\
+<b>DESC:</b> In flight, read the light sensor outputs. This will involve setting the PDC
+pin connected to the 'SI' inputs of the arrays to high for half a clock cycle. This action
+triggers an output to the PDC pin connected to 'AO' on the arrays. This value can feasibly
+be subsampled, or even ignored until the velocity begins to decrease. This would allow for
+focus to be fully on the higher-rate sensors during flight\
+<b>RAT:</b> To measure ambient light in the immediate surroundings.\
+<b>DEP:</b> None
+
+#### Functional Requirement 2.6
+<b>ID:</b> FR19\
+<b>TITLE:</b> Process IMU Outputs\
+<b>DESC:</b> Using the raw outputs, process the values as necessary. This should involve 
+the 'in-flight' model as part of a Kalman Filter that accounts for noise in the readings.
+It should also provide an opportunity to estimate velocity from acceleration through 
+integration. Again, write these values to the SD - dependent on computation time, the 
+time of output here may be significantly away from the raw measurements - bear this in mind. \
+<b>RAT:</b> To translate the raw outputs into meaningful information\
+<b>DEP:</b> FR16
+
+#### Functional Requirement 2.7
+<b>ID:</b> FR20\
+<b>TITLE:</b> Process Altimeter Outputs\
+<b>DESC:</b> Use the raw pressure and temperature outputs to calculate the altitude of the
+vehicle. Maybe this sensor can also be used in the Kalman Filter for improved accuracy?\
+<b>RAT:</b> To translate the raw outputs into meaningful information\
+<b>DEP:</b> FR17
+
+#### Functional Requirement 2.8
+<b>ID:</b> FR21\
+<b>TITLE:</b> Protect Against Sound Barrier\
+<b>DESC:</b> When the vehicle approaches and exceeds the speed of sound, there will be an
+artificial change in pressure and temperature. The altimeter might detect this as apogee
+if not properly configured. Using the velocity estimate & ground temperature, the local 
+speed of sound can be predicted, and the altimeter can choose to not detect apogee within
+the period of predicted transitional mach.\
+<b>RAT:</b> To prevent a false detection of apogee due to the sound barrier\
+<b>DEP:</b> FR17
+
+#### Functional Requirement 2.9
+<b>ID:</b> FR22\
+<b>TITLE:</b> Report Apogee Estimates\
+<b>DESC:</b> The IMU derived velocity will cross zero at some point during flight. This
+indicates the point of apogee. Similarly, the altimeter will detect this point when the
+calculated altitude stops increasing. The light sensors will detect a change in light levels
+when Nova is exposed to the atmosphere (ideally around the point of apogee). When each 
+of these three methods detects apogee, the timestamp and a '<sensor> detects apogee!' note
+should be written to the SD card. It may also be useful to report this to the main OBC and
+potentially relay to ground\
+<b>RAT:</b> To provide indication that apogee is detected\
+<b>DEP:</b> FR18, FR19, FR20
 
 ### 4.2.3. Class 3 - Attitude Determination
 #### Functional Requirement 3.1 
