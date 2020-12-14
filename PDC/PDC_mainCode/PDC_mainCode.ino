@@ -13,6 +13,8 @@
 #include <SPI.h>
 /* we want the SD card library too (https://www.arduino.cc/en/reference/SD) */
 #include <SD.h>
+/* include the functions for the kalman filter */
+#include "PDC_kalman.h"
 
 /* ---------- SPI CONFIG ---------- */
 /* 
@@ -35,8 +37,15 @@ const int altimeter_SS = 4;
 const int IMU_SS = 5;
 const int microSD_SS = 6;
 
-/* ---------- I2C CONFIG ----------*/
+/* ---------- I2C CONFIG ---------- */
 // TODO
+
+/* ---------- KALMAN FILTER CONFIG ---------- */
+/* state transition matrix which maps previous state to current state.
+   leave this as an empty variable for now as it's value changes per timestep */
+float F[3][3];
+/* measurement matrix which maps the measurements to the state variables */ 
+int H[2][3] = {{1, 0, 0},{0, 0, 1}};
 
 /* various device configurations to setup communications and verify that things are working and ready to go */
 void setup() {
@@ -140,6 +149,9 @@ void setup() {
     // also worth storing them in variables to use to calculate local mach etc.
 
   // indicate that setup is complete - write to SD 'setup complete' and maybe talk to main OBC to tell ground that we're ready to go
+
+  /* setup kalman filter for apogee detection (function in kalmanFilter.ino) */
+  initKalman(*H);
 }
 
 void loop() {
@@ -213,10 +225,4 @@ unsigned int readSPI(int deviceSelect, byte registerSelect, int numBytes) {
 
   /* send our address value back to the caller */
   return(result);
-}
-
-/* this function is used to filter the sensor data during ascent to help us predict apogee */
-// TODO: rory make a document to summarise why we need this and what it is doing
-parachuteKalmanFilter()
-{
 }
