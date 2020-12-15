@@ -19,8 +19,9 @@
 #include "PDC_kalman.h"
 /* for Matrix operations
    if this line throws an error, you probably don't have the Matrix Library locally.
-   see: https://github.com/TheForeignMan/ArduinoMatrixLibrary */
-#include <MatrixLibrary.h>
+   see: https://github.com/tomstewart89/BasicLinearAlgebra or search 'basic linear algebra' in the IDE library manager */
+#include <BasicLinearAlgebra.h>
+using namespace BLA;
 
 // TODO consider the below library for faster read/write/mode if timings become an issue. requires us to know the pin at compile time, so won't help in the SPI
   // might help in I2C where RTC is the only (currently) device...
@@ -60,23 +61,24 @@ const int numStates = 3;
 const int numMeasurements = 2;
 /* state transition matrix which maps previous state to current state.
    leave this as an empty variable for now as it's value changes per timestep */
-Matrix F_matrix(numStates, numStates);
+Matrix<numStates, numStates> F_matrix;
 /* measurement matrix which maps the measurements to the state variables */
-Matrix H_matrix(numMeasurements, numStates);
+Matrix<numMeasurements, numStates> H_matrix;
 /* kalman gain matrix. dimensional analysis of the update equation gives us a 3x2 matrix so can declare here */
-Matrix K_matrix(numStates, numMeasurements);
+Matrix<numStates, numMeasurements> K_matrix;
 /* measurement noise covariance matrix */
-Matrix R_matrix(numStates, numStates);
+Matrix<numMeasurements, numMeasurements> R_matrix;
 /* process noise covariance matrix */
-Matrix Q_matrix(numStates, numStates);
+Matrix<numStates, numStates> Q_matrix;
 /* error covariance matrix */
-Matrix P_matrix(numStates, numStates);
+Matrix<numStates, numStates> P_matrix;
 
 
 /* -------------------- SETUP -------------------- */
 
 /* various device configurations to setup communications and verify that things are working and ready to go */
 void setup() {
+  
   /* to store the return value of the accelerometer 'WHO_AM_I' identification register */
   unsigned int IMU_WHO_AM_I;
   /* to store the return value of the altimeter 'CHIP_ID' identification register */
@@ -177,9 +179,13 @@ void setup() {
   // indicate that setup is complete - write to SD 'setup complete' and maybe talk to main OBC to tell ground that we're ready to go
 
   /* ---------- KALMAN SETUP ---------- */
-  /* set measurment matrix to map measurements to states */
-  H_matrix.SetValueAt(0, 0, 1);
-  H_matrix.SetValueAt(2, 2, 1);
+  /* fill all matrices with 0 to start */
+  F_matrix.Fill(0.0);
+  H_matrix.Fill(0.0);
+  K_matrix.Fill(0.0);
+  R_matrix.Fill(0.0);
+  Q_matrix.Fill(0.0);
+  P_matrix.Fill(0.0);
   /* setup kalman filter for apogee detection (function in kalmanFilter.ino) */
   initKalman();
 }
