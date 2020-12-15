@@ -34,30 +34,31 @@ void initKalman()
   /* initialise Kalman Gain matrix, K */
   for (int i = 0; i < 5; i++) {
     /* Matrix.Multiply function is part of the matrix math library and requires the matrices and their sizes */
-    /* The recursive gain calculation is K = PH^T[HPH^T + R]^-1*/
-
+    
+    /* ---------- K = PH^T[HPH^T + R]^-1 ---------- */
     /* store the product of P*H^T */
     float temp1[rowsP][colsHT];
     /* multiply P with H^T */
     Matrix.Multiply((mtx_type *)P, (mtx_type *)transposeH, rowsP, colsP, colsHT, (mtx_type *)temp1);
-
     /* store the product of H with temp1 (PH^T) */
     float temp2[rowsH][colsHT];
     /* multiply H with PH^T */
     Matrix.Multiply((mtx_type *)H, (mtx_type *)temp1, rowsH, colsH, colsHT, (mtx_type *)temp2);
-
     /* store the sum of temp2 (HPH^T) with R */
     float temp3[rowsH][colsHT];
     /* add R to HPH^T */
     Matrix.Add((mtx_type *)temp2, (mtx_type *)R, rowsH, colsHT, (mtx_type *)temp3);
-
     /* invert (HPH^T + R) */
     Matrix.Invert((mtx_type *)temp3, rowsH);
-
     /* multiply PH^T by (HPT^T + R)^1 and store in K */
     Matrix.Multiply((mtx_type *)temp1, (mtx_type *)temp3, rowsP, colsHT, colsHT, (mtx_type *)K);
 
     // TODO: manual calculation of K for arbitrary setup to verify the above has worked
+
+    /* ---------- P = (I - KP)P ---------- */
+    // TODO 
+    /* ---------- P = FPF^T + Q ---------- */
+    // TODO
     
   }
 
