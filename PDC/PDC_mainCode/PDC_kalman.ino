@@ -1,7 +1,7 @@
 /* setup the kalman filter matrices and gain. this works on steady-state assumption so gain isn't calculated at every time step */
 // TODO: verify that these calcs are actually working, and verify that the matrices carry between functions since they were delcared globally
-void initKalman()
-{
+void initKalman(){
+  
   Serial.println("H:");
   H_matrix.PrintMatrix();
   

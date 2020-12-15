@@ -1,5 +1,6 @@
 /* read a value from a register of a device on SPI. as arguments, pass the device select pin, the address of the register, and the number of bytes that this
    register contains. it will return the value that is stored in the register that we are reading */
+// TODO: lookup 'shiftout()' - seen it mentioned as alternative(?) to SPI.Transfer?
 unsigned int readSPI(int deviceSelect, byte registerSelect, int numBytes) {
 
   /* variable for our register value return */

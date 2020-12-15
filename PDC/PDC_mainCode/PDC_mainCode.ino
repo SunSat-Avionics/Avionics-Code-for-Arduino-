@@ -17,8 +17,8 @@
 #include <SD.h>
 /* include the functions for the kalman filter */
 #include "PDC_kalman.h"
-/* for Matrix operations  
-   if this line throws an error, you probably don't have the Matrix Library locally. 
+/* for Matrix operations
+   if this line throws an error, you probably don't have the Matrix Library locally.
    see: https://github.com/TheForeignMan/ArduinoMatrixLibrary */
 #include <MatrixLibrary.h>
 
@@ -47,7 +47,7 @@ const int microSD_SS = 6;
 // TODO
 
 /* ---------- KALMAN FILTER CONFIG ---------- */
-/* define number of states and measurements as this allows for more dynamic matrix sizing 
+/* define number of states and measurements as this allows for more dynamic matrix sizing
    NOTE: if changing states and measurements, make sure to change any relevant matrices in setup() */
 const int numStates = 3;
 const int numMeasurements = 2;
@@ -64,6 +64,9 @@ Matrix R_matrix(numStates, numStates);
 Matrix Q_matrix(numStates, numStates);
 /* error covariance matrix */
 Matrix P_matrix(numStates, numStates);
+
+
+/* -------------------- SETUP -------------------- */
 
 /* various device configurations to setup communications and verify that things are working and ready to go */
 void setup() {
@@ -168,12 +171,14 @@ void setup() {
   // indicate that setup is complete - write to SD 'setup complete' and maybe talk to main OBC to tell ground that we're ready to go
 
   /* ---------- KALMAN SETUP ---------- */
-  /* set measurment matrix non-zero values */
+  /* set measurment matrix to map measurements to states */
   H_matrix.SetValueAt(0, 0, 1);
   H_matrix.SetValueAt(2, 2, 1);
   /* setup kalman filter for apogee detection (function in kalmanFilter.ino) */
   initKalman();
 }
+
+/* -------------------- LOOP -------------------- */
 
 void loop() {
   // parachute deployment tasks
