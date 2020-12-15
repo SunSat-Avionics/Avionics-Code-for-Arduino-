@@ -114,7 +114,6 @@ void setup() {
   // TODO
 
   /* ---------- SPI Verification ---------- */
-
   /* communicate with altimeter: read the 'CHIP_ID' register. expect 0x50 */
   altimeter_CHIP_ID = readSPI(altimeter_SS, 0x00, 1);
   /* we have read the 'CHIP_ID' register and now should check that the value read is as we expect */
