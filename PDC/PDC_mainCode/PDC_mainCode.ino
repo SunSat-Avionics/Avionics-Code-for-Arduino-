@@ -1,8 +1,8 @@
 /* SUNSAT Parachute Deployment and Attitude Determination Software
-  
+
    Created 22 Nov 20
    Contributors: Rory Haggart, Waleed Hamad
-   
+
    Description
    -----------
    For the Sheffield University Nova SATellite (SUNSAT) platform, this code is to be onboard the 'parachute deployment computer' (PDC).
@@ -17,20 +17,25 @@
 #include <SD.h>
 /* include the functions for the kalman filter */
 #include "PDC_kalman.h"
+/* for Matrix operations  
+   if this line throws an error, you probably don't have the MatrixMath library locally. 
+   see: https://playground.arduino.cc/Code/MatrixMath/
+   OR go to "Sketch > Include Library > Manage Libraries" and then search MatrixMath */
+#include <MatrixMath.h>
 
 /* ---------- SPI CONFIG ---------- */
-/* 
- * create an SPISettngs object to define the characteristics of the bus
- * the three parameters are: 1. clock input frequency, 2. MSB/LSB first, and 3. SPI mode
- *    for more information, see: https://www.arduino.cc/en/reference/SPI 
- * 1. altimeter & gyro/accel have max clock input freq. of 10MHz, micro-sd has 25MHz
- *    to avoid reconfigs, we'll stick at 10MHz for now - see if this is fast enough for SD
- * 2. all devices are MSB first 
- * 3. all devices are compatible with mode 00 (clock idle low, output: falling edge, capture: rising edge);
- */
- 
+/*
+   create an SPISettngs object to define the characteristics of the bus
+   the three parameters are: 1. clock input frequency, 2. MSB/LSB first, and 3. SPI mode
+      for more information, see: https://www.arduino.cc/en/reference/SPI
+   1. altimeter & gyro/accel have max clock input freq. of 10MHz, micro-sd has 25MHz
+      to avoid reconfigs, we'll stick at 10MHz for now - see if this is fast enough for SD
+   2. all devices are MSB first
+   3. all devices are compatible with mode 00 (clock idle low, output: falling edge, capture: rising edge);
+*/
+
 /* this is then our object with settings for our transactions */
-SPISettings SPIParams(10000000, MSBFIRST, SPI_MODE0); 
+SPISettings SPIParams(10000000, MSBFIRST, SPI_MODE0);
 
 /* the arduino nano has an 'SS' pin (10) which helps us choose if we want to be master or slave. pin 10 as output = PDC as master */
 const int PDC_SS = 10;
@@ -46,8 +51,14 @@ const int microSD_SS = 6;
 /* state transition matrix which maps previous state to current state.
    leave this as an empty variable for now as it's value changes per timestep */
 float F[3][3];
-/* measurement matrix which maps the measurements to the state variables */ 
-int H[2][3] = {{1, 0, 0},{0, 0, 1}};
+/* measurement matrix which maps the measurements to the state variables */
+float H[2][3] = {{1, 0, 0}, {0, 0, 1}};
+/* kalman gain matrix. dimensional analysis of the update equation gives us a 3x2 matrix so can declare here */
+float K[3][2];
+/* measurement noise covariance matrix */
+float R[3][3];
+/* error covariance matrix */
+float P[3][3];
 
 /* various device configurations to setup communications and verify that things are working and ready to go */
 void setup() {
@@ -58,21 +69,21 @@ void setup() {
   unsigned int altimeter_CHIP_ID;
   /* new instance of the 'File' class (part of the SD library) that we will use to control the .csv file on the microSD card */
   File dataLogFile;
-  
+
   /* ---------- Serial Setup ---------- */
   /* open serial comms at 9600 baud to allow us to monitor the process
        serial may become irrelevant - once the code is on the PDC we might not be connecting via serial
        but it's useful for ground testing */
   Serial.begin(9600);
-  while(!Serial){
+  while (!Serial) {
     ; /* wait for port to connect */
   }
 
   /* ---------- SPI Setup ---------- */
   /* we want to be the master of this bus! so set the 'SS' pin on the PDC as an output */
   pinMode(PDC_SS, OUTPUT);
-  
-  /* set each slave select pin as an output. 
+
+  /* set each slave select pin as an output.
        initialise each pin to be high (i.e. communication disabled)
        to communicate with a specific device, take its SS pin low with digitalWrite(device_SS, LOW); */
   pinMode(altimeter_SS, OUTPUT);
@@ -81,7 +92,7 @@ void setup() {
   digitalWrite(IMU_SS, HIGH);
   pinMode(microSD_SS, OUTPUT);
   digitalWrite(microSD_SS, HIGH);
-  
+
   /* initialise all lines and CPU to use SPI */
   SPI.begin();
 
@@ -89,7 +100,7 @@ void setup() {
   // TODO
 
   /* ---------- SPI Verification ---------- */
-  
+
   /* communicate with altimeter: read the 'CHIP_ID' register. expect 0x50 */
   altimeter_CHIP_ID = readSPI(altimeter_SS, 0x00, 1);
   /* we have read the 'CHIP_ID' register and now should check that the value read is as we expect */
@@ -100,7 +111,7 @@ void setup() {
   else {
     Serial.println("Altimeter could not be reached!");
   }
-  
+
   /* communicate with IMU: read the 'WHO_AM_I' register. expect 0110110 */
   IMU_WHO_AM_I = readSPI(IMU_SS, 0x0f, 1);
   /* we have read the 'WHO_AM_I' register and now should check that the value read is as we expect */
@@ -111,22 +122,22 @@ void setup() {
   else {
     Serial.println("IMU could not be reached!");
   }
-  
+
   /* attempt to init micro SD card */
   // TODO: if we have a shield with 'CD' (chip detect) pin, make use of this to check pin is in place.
-  if(SD.begin(microSD_SS)) {
+  if (SD.begin(microSD_SS)) {
     Serial.println("micro-SD card initialised");
   }
   else {
     Serial.println("micro-SD initialisation failed!");
   }
-  
+
   /* attempt to open a .csv file which we want to log data to */
   // TODO: once RTC is up & running, name the file with timestamp as per ISO 8601 format (kind of..)(yyyy-mm-ddThh-mm-ss.csv)
   dataLogFile = SD.open("temp.csv", FILE_WRITE);
 
   /* if the file can't open, the return is false */
-  if(!dataLogFile) {
+  if (!dataLogFile) {
     Serial.println("Data log file could not be opened!");
   }
 
@@ -139,37 +150,37 @@ void setup() {
                      acc_y, \
                      acc_z, \
                      Note");
-  
-  
+
+
   /* ---------- ---------- */
-  // light sensor pin configuration (digital output to SI pin, analogue input(s) from AO pins, clock signal to CLK pins) 
+  // light sensor pin configuration (digital output to SI pin, analogue input(s) from AO pins, clock signal to CLK pins)
 
   // setup interrupt pin? TBD - can we simply configure one of the GPIO to go high and connect this to OBC interrupt, and then execute
-    // the interrupt routine on OBC? or will we communicate with main OBC via I2C?
-  
-  // take measurements in the ground state (e.g. temp and pressure). write them to SD with a note of 'ground conditions' or similar. 
-    // also worth storing them in variables to use to calculate local mach etc.
+  // the interrupt routine on OBC? or will we communicate with main OBC via I2C?
+
+  // take measurements in the ground state (e.g. temp and pressure). write them to SD with a note of 'ground conditions' or similar.
+  // also worth storing them in variables to use to calculate local mach etc.
 
   // indicate that setup is complete - write to SD 'setup complete' and maybe talk to main OBC to tell ground that we're ready to go
 
   /* setup kalman filter for apogee detection (function in kalmanFilter.ino) */
-  initKalman(*H);
+  initKalman();
 }
 
 void loop() {
   // parachute deployment tasks
-    // light sensor check (poll the sensor every x seconds to check ambient light levels. If new value much greater than old on all 4 sensors,
-    // register apogee)
-    
-    // altimeter check (check stream of readings and determine when the pressure begins to increase again). potentially feed this into the 
-    // Kalman Filter to mitigate noise and back up the accel readings)
-     
-    // accelerometer check (update Kalman Filter of integral of acceleration to detect when the velocity is zero)
+  // light sensor check (poll the sensor every x seconds to check ambient light levels. If new value much greater than old on all 4 sensors,
+  // register apogee)
 
-    // write data to SD card (line format with timestamped measurements)
+  // altimeter check (check stream of readings and determine when the pressure begins to increase again). potentially feed this into the
+  // Kalman Filter to mitigate noise and back up the accel readings)
+
+  // accelerometer check (update Kalman Filter of integral of acceleration to detect when the velocity is zero)
+
+  // write data to SD card (line format with timestamped measurements)
 
 
   // attitude determination tasks
-    // quaternion conversion from gyro Euler output then update kalman filter with gyro readings
-    // try coarse sun sensing to determine relative pose of sun
+  // quaternion conversion from gyro Euler output then update kalman filter with gyro readings
+  // try coarse sun sensing to determine relative pose of sun
 }
