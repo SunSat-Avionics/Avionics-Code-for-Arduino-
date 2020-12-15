@@ -1,30 +1,26 @@
 /* setup the kalman filter matrices and gain. this works on steady-state assumption so gain isn't calculated at every time step */
-// TODO: add a separate function for the rows/cols fetching? remove matrixmath altogether?
+// TODO: verify that these calcs are actually working, and verify that the matrices carry between functions since they were delcared globally
 void initKalman()
 {
-  /* make a transpose of the measurement matrix for calculations*/
+  Serial.println("H:");
+  H_matrix.PrintMatrix();
+  
+  /* make a transpose of the measurement and transition matrices for calculations*/
   Matrix H_matrixTranspose = H_matrix.Transpose();
+  Matrix F_matrixTranspose = F_matrix.Transpose();
 
-  /* find size of P for matrix ops later */
-  /*int rowsP = sizeof(P) / sizeof(P[0]);
-  int colsP = sizeof(P[0]) / sizeof(P[0][0]);*/
+  Serial.println("H_transpose:");
+  H_matrixTranspose.PrintMatrix();
 
   // either measure noise and create R matrix from this, or ask sensors which mode they are in and use
   // an enum to get the noise stats as per datasheet
   
   /* initialise Kalman Gain matrix, K */
+  // TODO: determine how many iterations needed for convergence
   for (int i = 0; i < 5; i++) {
     /* Matrix.Multiply function is part of the matrix math library and requires the matrices and their sizes */
     
-    /* ---------- K = PH^T[HPH^T + R]^-1 ---------- */
-    /* store the product of P*H^T */
-    /* float product_PHT[rowsP][colsHT]; */
-    /* multiply P with H^T */
-    /*Matrix.Multiply((mtx_type *)P,
-                    (mtx_type *)transposeH,
-                      rowsP, colsP, colsHT,
-                    (mtx_type *)product_PHT);*/
-                    
+    /* ---------- K = PH^T[HPH^T + R]^-1 ---------- */         
     /* multiply P with H^T */
     Matrix product_PHT = P_matrix.Math(Matrix::MULTIPLY, &H_matrixTranspose);
                     
@@ -43,7 +39,6 @@ void initKalman()
     // TODO: manual calculation of K for arbitrary setup to verify the above has worked
 
     /* ---------- P = (I - KP)P ---------- */
-    // TODO
     /* multiply K by P */
     Matrix product_KP = K_matrix.Math(Matrix::MULTIPLY, &P_matrix);
 
@@ -56,7 +51,14 @@ void initKalman()
       
     /* ---------- P = FPF^T + Q ---------- */
     // TODO
-    
+    /* multiply P by F^T */
+    Matrix product_PFT = P_matrix.Math(Matrix::MULTIPLY, &F_matrixTranspose);
+
+    /* multiply F by P*F^T */
+    Matrix product_FPFT = F_matrix.Math(Matrix::MULTIPLY, &product_PFT);
+
+    /* add Q to F*P*F^T and store in P */
+    P_matrix = product_FPFT.Math(Matrix::ADD, &Q_matrix);    
   }
 
   

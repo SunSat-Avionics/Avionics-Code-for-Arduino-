@@ -18,10 +18,9 @@
 /* include the functions for the kalman filter */
 #include "PDC_kalman.h"
 /* for Matrix operations  
-   if this line throws an error, you probably don't have the MatrixMath library locally. 
+   if this line throws an error, you probably don't have the Matrix Library locally. 
    see: https://github.com/TheForeignMan/ArduinoMatrixLibrary */
 #include <MatrixLibrary.h>
-
 
 /* ---------- SPI CONFIG ---------- */
 /*
@@ -48,17 +47,23 @@ const int microSD_SS = 6;
 // TODO
 
 /* ---------- KALMAN FILTER CONFIG ---------- */
+/* define number of states and measurements as this allows for more dynamic matrix sizing 
+   NOTE: if changing states and measurements, make sure to change any relevant matrices in setup() */
+const int numStates = 3;
+const int numMeasurements = 2;
 /* state transition matrix which maps previous state to current state.
    leave this as an empty variable for now as it's value changes per timestep */
-Matrix F_matrix(3, 3);
+Matrix F_matrix(numStates, numStates);
 /* measurement matrix which maps the measurements to the state variables */
-Matrix H_matrix(2, 3);
+Matrix H_matrix(numMeasurements, numStates);
 /* kalman gain matrix. dimensional analysis of the update equation gives us a 3x2 matrix so can declare here */
-Matrix K_matrix(3, 2);
+Matrix K_matrix(numStates, numMeasurements);
 /* measurement noise covariance matrix */
-Matrix R_matrix(3, 3);
+Matrix R_matrix(numStates, numStates);
+/* process noise covariance matrix */
+Matrix Q_matrix(numStates, numStates);
 /* error covariance matrix */
-Matrix P_matrix(3, 3);
+Matrix P_matrix(numStates, numStates);
 
 /* various device configurations to setup communications and verify that things are working and ready to go */
 void setup() {
