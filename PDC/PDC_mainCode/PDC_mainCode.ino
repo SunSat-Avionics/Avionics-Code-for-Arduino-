@@ -22,6 +22,13 @@
    see: https://github.com/TheForeignMan/ArduinoMatrixLibrary */
 #include <MatrixLibrary.h>
 
+// TODO consider the below library for faster read/write/mode if timings become an issue. requires us to know the pin at compile time, so won't help in the SPI
+  // might help in I2C where RTC is the only (currently) device...
+/* for faster read/write on pins #include <digitalWriteFast.h>
+   if this line throws an error, you probably don't have the library locally.
+   see: https://github.com/NicksonYap/digitalWriteFast */
+
+
 /* ---------- SPI CONFIG ---------- */
 /*
    create an SPISettngs object to define the characteristics of the bus
@@ -92,7 +99,7 @@ void setup() {
 
   /* set each slave select pin as an output.
        initialise each pin to be high (i.e. communication disabled)
-       to communicate with a specific device, take its SS pin low with digitalWrite(device_SS, LOW); */
+       to communicate with a specific device, take its SS pin low with digitalWrite(device_SS, LOW);  */
   pinMode(altimeter_SS, OUTPUT);
   digitalWrite(altimeter_SS, HIGH);
   pinMode(IMU_SS, OUTPUT);
