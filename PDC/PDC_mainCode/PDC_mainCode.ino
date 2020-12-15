@@ -19,9 +19,9 @@
 #include "PDC_kalman.h"
 /* for Matrix operations  
    if this line throws an error, you probably don't have the MatrixMath library locally. 
-   see: https://playground.arduino.cc/Code/MatrixMath/
-   OR go to "Sketch > Include Library > Manage Libraries" and then search MatrixMath */
-#include <MatrixMath.h>
+   see: https://github.com/TheForeignMan/ArduinoMatrixLibrary */
+#include <MatrixLibrary.h>
+
 
 /* ---------- SPI CONFIG ---------- */
 /*
@@ -50,19 +50,18 @@ const int microSD_SS = 6;
 /* ---------- KALMAN FILTER CONFIG ---------- */
 /* state transition matrix which maps previous state to current state.
    leave this as an empty variable for now as it's value changes per timestep */
-float F[3][3];
+Matrix F_matrix(3, 3);
 /* measurement matrix which maps the measurements to the state variables */
-float H[2][3] = {{1, 0, 0}, {0, 0, 1}};
+Matrix H_matrix(2, 3);
 /* kalman gain matrix. dimensional analysis of the update equation gives us a 3x2 matrix so can declare here */
-float K[3][2];
+Matrix K_matrix(3, 2);
 /* measurement noise covariance matrix */
-float R[3][3];
+Matrix R_matrix(3, 3);
 /* error covariance matrix */
-float P[3][3];
+Matrix P_matrix(3, 3);
 
 /* various device configurations to setup communications and verify that things are working and ready to go */
 void setup() {
-
   /* to store the return value of the accelerometer 'WHO_AM_I' identification register */
   unsigned int IMU_WHO_AM_I;
   /* to store the return value of the altimeter 'CHIP_ID' identification register */
@@ -163,6 +162,10 @@ void setup() {
 
   // indicate that setup is complete - write to SD 'setup complete' and maybe talk to main OBC to tell ground that we're ready to go
 
+  /* ---------- KALMAN SETUP ---------- */
+  /* set measurment matrix non-zero values */
+  H_matrix.SetValueAt(0, 0, 1);
+  H_matrix.SetValueAt(2, 2, 1);
   /* setup kalman filter for apogee detection (function in kalmanFilter.ino) */
   initKalman();
 }
