@@ -17,11 +17,16 @@
 #include <SD.h>
 /* include the functions for the kalman filter */
 #include "PDC_kalman.h"
+/* functions for IMU read/write */
+#include "PDC_IMU.h"
 /* for Matrix operations
    if this line throws an error, you probably don't have the Matrix Library locally.
    see: https://github.com/tomstewart89/BasicLinearAlgebra or search 'basic linear algebra' in the IDE library manager */
 #include <BasicLinearAlgebra.h>
 using namespace BLA;
+
+/* define the magnitude of the gravity vector in m/s^2 */
+#define GRAVITY_MAGNITUDE (9.81)
 
 // TODO consider the below library for faster read/write/mode if timings become an issue. requires us to know the pin at compile time, so won't help in the SPI
 // might help in I2C where RTC is the only (currently) device...
@@ -86,13 +91,15 @@ void setup() {
   /* ---------- Serial Setup ---------- */
   /* open serial comms at 9600 baud to allow us to monitor the process
        serial may become irrelevant - once the code is on the PDC we might not be connecting via serial
-       but it's useful for ground testing */
+       but it's useful for ground testing.
+     NOTE: keep serial comms sparse and short! they take up significant memory if too verbose or unique!! */
   Serial.begin(9600);
   while (!Serial) {
     ; /* wait for port to connect */
   }
-
+  Serial.println("\n------\nSETUP\n------\n");
   /* ---------- SPI Setup ---------- */
+  Serial.println("SPI Setup");
   /* we want to be the master of this bus! so set the 'SS' pin on the PDC as an output */
   pinMode(PDC_SS, OUTPUT);
 
@@ -113,45 +120,51 @@ void setup() {
   // TODO
 
   /* ---------- SPI Verification ---------- */
+  Serial.println("Altimeter?");
   /* communicate with altimeter: read the 'CHIP_ID' register. expect 0x50 */
   altimeter_CHIP_ID = readSPI(altimeter_SS, 0x00, 1);
   /* we have read the 'CHIP_ID' register and now should check that the value read is as we expect */
   // TODO: when a little more developed, this should be replaced with something more meaningful! e.g. comms to ground to indicate 'yes we're good on the altimeter'
   if (altimeter_CHIP_ID == 0x50) {
-    Serial.println("Altimeter successfully connected!");
+    Serial.println("  Success!");
   }
   else {
-    Serial.println("Altimeter could not be reached!");
+    Serial.println("  Failure!");
   }
 
+  Serial.println("IMU?");
   /* communicate with IMU: read the 'WHO_AM_I' register. expect 0110110 */
   IMU_WHO_AM_I = readSPI(IMU_SS, 0x0f, 1);
   /* we have read the 'WHO_AM_I' register and now should check that the value read is as we expect */
   // TODO: when a little more developed, this should be replaced with something more meaningful!
   if (IMU_WHO_AM_I == 0110110) {
-    Serial.println("IMU successfully connected!");
+    Serial.println("  Success!");
   }
   else {
-    Serial.println("IMU could not be reached!");
+    Serial.println("  Failure!");
   }
 
+  // TODO: IMU self test
+
+  Serial.println("micro-SD?");
   /* attempt to init micro SD card */
   // TODO: if we have a shield with 'CD' (chip detect) pin, make use of this to check pin is in place.
   if (SD.begin(microSD_SS)) {
-    Serial.println("micro-SD card initialised");
+    Serial.println("  Success!");
   }
   else {
-    Serial.println("micro-SD initialisation failed!");
+    Serial.println("  Failure!");
   }
 
+  Serial.println("log file?");
   /* attempt to open a .csv file which we want to log data to */
   // TODO: once RTC is up & running, name the file with timestamp as per ISO 8601 format (kind of..)(yyyy-mm-ddThh-mm-ss.csv)
   dataLogFile = SD.open("temp.csv", FILE_WRITE);
 
   /* if the file can't open, the return is false */
   if (!dataLogFile) {
-    Serial.println("Data log file could not be opened!");
-  }
+    Serial.println("  Failure!");
+  } 
 
   /* communicate with micro SD - write the csv headers to our file
        should define (either here or elsewhere) the units of each of these headers... perhaps in readme */
@@ -173,9 +186,9 @@ void setup() {
   // take measurements in the ground state (e.g. temp and pressure). write them to SD with a note of 'ground conditions' or similar.
   // also worth storing them in variables to use to calculate local mach etc.
 
-  // indicate that setup is complete - write to SD 'setup complete' and maybe talk to main OBC to tell ground that we're ready to go
 
-  /* ---------- KALMAN SETUP ---------- */
+
+  /* ---------- KALMAN FILTER SETUP ---------- */
   /* fill all matrices with 0 to start */
   F_matrix.Fill(0.0);
   H_matrix.Fill(0.0);
@@ -183,6 +196,9 @@ void setup() {
   P_matrix.Fill(0.0);
   /* setup kalman filter for apogee detection (function in kalmanFilter.ino) */
   initKalman();
+
+  // indicate that setup is complete - write to SD 'setup complete' and maybe talk to main OBC to tell ground that we're ready to go
+  Serial.println("\n--------\nCOMPLETE\n--------");
 }
 
 /* -------------------- LOOP -------------------- */

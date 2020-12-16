@@ -1,10 +1,12 @@
 /* read a value from a register of a device on SPI. as arguments, pass the device select pin, the address of the register, and the number of bytes that this
    register contains. it will return the value that is stored in the register that we are reading */
 // TODO: lookup 'shiftout()' - seen it mentioned as alternative(?) to SPI.Transfer?
+// TODO: revisit the result for multiple bytes - if we read LSB then MSB data registers, they'll be flipped here!
 unsigned int readSPI(int deviceSelect, byte registerSelect, int numBytes) {
 
   /* variable for our register value return */
   unsigned int result = 0;
+  unsigned int counter = numBytes;
 
   /* the 'read' or 'write' bit is in different positions for different devices but then the register address occupies the rest of the field,
        so we can shift the register up into place when the R/W occupies LSB
@@ -33,13 +35,14 @@ unsigned int readSPI(int deviceSelect, byte registerSelect, int numBytes) {
   /* now if we send nothing, we are listening for the result - the device will send the value in the register we requested for the first byte, just read the value into 'result' */
   result = SPI.transfer(0x00);
   /* decrement the number of bytes that we have left to read */
-  numBytes--;
+  counter--;
 
-  while (numBytes != 0) {
-    /* if we have more than one byte to read, shift the result so far up by a byte, and fill the empty space with our new byte */
-    result = (result << 8) | SPI.transfer(0x00);
+  while (counter != 0) {
+    /* if we have more than one byte to read, shift the next result up to fill the MSB byte, and hold the result so far at the bottom
+       this is because the registers are usually read in sequence of LSB -> MSB */
+    result = (SPI.transfer(0x00) << 8*(numBytes - counter)) | result;
     /* decrement the number of bytes until we get to zero, when this while() will exit */
-    numBytes--;
+    counter--;
   }
 
   /* stop communications with device by setting the corresponding slave select on the PDC to high */
