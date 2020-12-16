@@ -13,8 +13,8 @@ void PDC_IMU::PDC_IMU(const int CS){
 
 bool PDC_IMU::isAlive(){
 	// TODO: implement the "whoami" checker
-	// return 0 if success, 1 otherwise
-	bool successCode = 1;
+	// return 1 if success, 0 otherwise
+	bool successCode = 0;
 	return(successCode);
 }
 
@@ -44,10 +44,6 @@ float PDC_IMU::readAccelerationZ(){
 void PDC_IMU::setMeasurementRange(int range){
 	measurementRange = range;
 	// TODO: actually write to controller (requires an SPI write function!)
-}
-
-int PDC_IMU::getMeasurementRange(){
-	return(measurementRange);
 }
 
 void PDC_IMU::measureAccelerometerNoiseZ(int numReadings){
