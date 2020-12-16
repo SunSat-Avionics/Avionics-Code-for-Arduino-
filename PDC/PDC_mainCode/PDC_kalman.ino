@@ -17,22 +17,41 @@ void initKalman() {
   // an enum to get the noise stats as per datasheet
 
   /* ---------- initialise Kalman Gain matrix, K ---------- */
+  /* declare matrices for operation storage - possible to re-use some of these if necessary! only so many for clarity */
+  Matrix<numStates, numMeasurements> product_PHT;
+  Matrix<numMeasurements, numMeasurements> product_HPHT;
+  Matrix<numMeasurements, numMeasurements> sum_HPHT_R;
+  Matrix<numMeasurements, numMeasurements> inverse_sum_HPHT_R;
+  Matrix<numStates, numStates> product_KH;
+  Matrix<numStates, numStates> identity;
+  for (int i = 0; i < numStates; i++) {
+      /* define identity matrix */
+      identity(i, i) = 1.0;
+  }
+  Matrix<numStates, numStates> sub_KH_I;
+  Matrix<numStates, numStates> product_PFT;
+  Matrix<numStates, numStates> product_FPFT;
+
+  /* initial guess for P */
+  P_matrix = identity;
+
+  /* iterative calculations for K and P */
   // TODO: determine how many iterations needed for convergence
   for (int i = 0; i < 5; i++) {
     /* Matrix.Multiply function is part of the matrix math library and requires the matrices and their sizes */
 
     /* ---------- K = PH^T[HPH^T + R]^-1 ---------- */
     /* multiply P with H^T */
-    Matrix<numStates, numMeasurements> product_PHT = P_matrix * H_matrixTranspose;
+    product_PHT = P_matrix * H_matrixTranspose;
 
     /* multiply H with PH^T */
-    Matrix<numMeasurements, numMeasurements> product_HPHT = H_matrix * product_PHT;
+    product_HPHT = H_matrix * product_PHT;
 
     /* add R to H*P*H^T */
-    Matrix<numMeasurements, numMeasurements> sum_HPHT_R = R_matrix + product_HPHT;
+    sum_HPHT_R = R_matrix + product_HPHT;
 
     /* invert (H*P*H^T + R) */
-    Matrix<numMeasurements, numMeasurements> inverse_sum_HPHT_R = sum_HPHT_R.Inverse();
+    inverse_sum_HPHT_R = sum_HPHT_R.Inverse();
 
     /* multiply P*H^T by (H*P*H^T + R)^1 and store in K */
     K_matrix = product_PHT * inverse_sum_HPHT_R;
@@ -41,25 +60,21 @@ void initKalman() {
 
     /* ---------- P = (I - KH)P ---------- */
     /* multiply K by P */
-    Matrix<numStates, numStates> product_KH = K_matrix * H_matrix;
+    product_KH = K_matrix * H_matrix;
 
     /* subtract K*H from I */
-    Matrix<numStates, numStates> identity;
-    for (int i = 0; i < numStates; i++) {
-      identity(i, i) = 1.0;
-    }
 
-    Matrix<numStates, numStates> sub_KH_I = identity - product_KH;
+    sub_KH_I = identity - product_KH;
 
     /* multiply I-KH by P and store in P */
     P_matrix = sub_KH_I * P_matrix;
 
     /* ---------- P = FPF^T + Q ---------- */
     /* multiply P by F^T */
-    Matrix<numStates, numStates> product_PFT = P_matrix * F_matrixTranspose;
+    product_PFT = P_matrix * F_matrixTranspose;
 
     /* multiply F by P*F^T */
-    Matrix<numStates, numStates> product_FPFT = F_matrix * product_PFT;
+    product_FPFT = F_matrix * product_PFT;
 
     /* add Q to F*P*F^T and store in P */
     P_matrix = product_FPFT + Q_matrix;
