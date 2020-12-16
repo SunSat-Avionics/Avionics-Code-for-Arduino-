@@ -5,6 +5,8 @@
   // measure noise (loop for fixed time and calculate RMS noise)
   // measure offset
 
+#include "PDC_SPI.h"
+
 PDC_IMU::PDC_IMU(const int CS){
 	self.slaveSelect = CS;
 }
