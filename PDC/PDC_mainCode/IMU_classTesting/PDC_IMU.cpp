@@ -33,7 +33,7 @@ float PDC_IMU::readAccelerationZ(){
 	/* read z-axis acceleration.
 	   note in CTRL3_C, there is a default enabled bit which auto-increments the register address when reading multiple bytes so we dont need to read the H and L
 	   registers separately ! */
-	rawAccelZ = readSPI(IMU_SS, 0x2C, 2);
+	rawAccelZ = readSPI(slaveSelect, 0x2C, 2);
 
 	/* convert our output into an actual acceleration value in ms/2 */
 	acceleration = (rawAccelZ * 9.80665 * accelResolution) / 1000;

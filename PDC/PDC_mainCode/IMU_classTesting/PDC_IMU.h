@@ -24,7 +24,9 @@ class PDC_IMU{
 
 /* Example usage 
 
-PDC_IMU IMU(10); where the argument is the CS pin
+const int IMU_SS = 5;
+
+PDC_IMU IMU(IMU_SS); where the argument is the CS pin
 flag = IMU.isAlive(); if flag is 0, we're all good
 IMU.setMeasurementRange(4); (+/- in g)
 measurementRange = IMU.getMeasurementRange(); get the range of measurements
