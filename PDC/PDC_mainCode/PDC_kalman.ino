@@ -8,84 +8,56 @@ void initKalman() {
   /* set measurment matrix to map measurements to states */
   H_matrix(0, 0) = 1.0;
   H_matrix(1, 2) = 1.0;
-
+  
   /* make a transpose of the measurement and transition matrices for calculations */
   Matrix<numStates, numMeasurements> H_matrixTranspose = ~H_matrix;
   Matrix<numStates, numStates> F_matrixTranspose = ~F_matrix;
 
-  // either measure noise and create R matrix from this, or ask sensors which mode they are in and use
+  // TODO: either measure noise and create R matrix from this, or ask sensors which mode they are in and use
   // an enum to get the noise stats as per datasheet
+  R_matrix(0,0) = 1;
+  R_matrix(1,1) = 1;
 
   /* ---------- initialise Kalman Gain matrix, K ---------- */
-  /* declare matrices for operation storage - possible to re-use some of these if necessary! only so many for clarity */
-  Matrix<numStates, numMeasurements> product_PHT;
-  Matrix<numMeasurements, numMeasurements> product_HPHT;
+  /* declare matrices for operation storage */
   Matrix<numMeasurements, numMeasurements> sum_HPHT_R;
-  Matrix<numMeasurements, numMeasurements> inverse_sum_HPHT_R;
-  Matrix<numStates, numStates> product_KH;
-  Matrix<numStates, numStates> identity;
+  Matrix<numStates, numStates> identity3;
   for (int i = 0; i < numStates; i++) {
       /* define identity matrix */
-      identity(i, i) = 1.0;
+      identity3(i, i) = 1.0;
   }
-  Matrix<numStates, numStates> sub_KH_I;
-  Matrix<numStates, numStates> product_PFT;
-  Matrix<numStates, numStates> product_FPFT;
-
+  
   /* initial guess for P */
-  P_matrix = identity;
-
+  P_matrix = identity3;
+  
   /* iterative calculations for K and P */
   // TODO: determine how many iterations needed for convergence
   for (int i = 0; i < 5; i++) {
-    /* Matrix.Multiply function is part of the matrix math library and requires the matrices and their sizes */
-
     /* ---------- K = PH^T[HPH^T + R]^-1 ---------- */
-    /* multiply P with H^T */
-    product_PHT = P_matrix * H_matrixTranspose;
-
-    /* multiply H with PH^T */
-    product_HPHT = H_matrix * product_PHT;
-
-    /* add R to H*P*H^T */
-    sum_HPHT_R = R_matrix + product_HPHT;
-
-    /* invert (H*P*H^T + R) */
-    inverse_sum_HPHT_R = sum_HPHT_R.Inverse();
-
+    /* store the term to be inverted */
+    sum_HPHT_R = (H_matrix * P_matrix * H_matrixTranspose) + R_matrix;
+    
     /* multiply P*H^T by (H*P*H^T + R)^1 and store in K */
-    K_matrix = product_PHT * inverse_sum_HPHT_R;
+    K_matrix = (P_matrix * H_matrixTranspose) * sum_HPHT_R.Inverse();
 
     // TODO: manual calculation of K for arbitrary setup to verify the above has worked
 
     /* ---------- P = (I - KH)P ---------- */
-    /* multiply K by P */
-    product_KH = K_matrix * H_matrix;
-
-    /* subtract K*H from I */
-
-    sub_KH_I = identity - product_KH;
-
     /* multiply I-KH by P and store in P */
-    P_matrix = sub_KH_I * P_matrix;
+    P_matrix = (identity3 - (K_matrix * H_matrix)) * P_matrix;
 
     /* ---------- P = FPF^T + Q ---------- */
-    /* multiply P by F^T */
-    product_PFT = P_matrix * F_matrixTranspose;
-
-    /* multiply F by P*F^T */
-    product_FPFT = F_matrix * product_PFT;
-
     /* add Q to F*P*F^T and store in P */
-    P_matrix = product_FPFT + Q_matrix;
+    P_matrix = (F_matrix * P_matrix * F_matrixTranspose) + Q_matrix;
+
+    Serial.println("Matrices: ");
+    Serial << "P: " << P_matrix << '\n';
+    Serial << "K: " << K_matrix << '\n';
+    Serial << "R: " << R_matrix << '\n';
+    Serial << "Q: " << Q_matrix << '\n';
   }
   
   Serial.println("Kalman Setup Complete!");
-  Serial.println("Matrices: ");
-  Serial << "P: " << P_matrix << '\n';
-  Serial << "K: " << K_matrix << '\n';
-  Serial << "R: " << R_matrix << '\n';
-  Serial << "Q: " << Q_matrix << '\n';
 }
 
 /* this function is used to filter the sensor data during ascent to help us predict apogee */

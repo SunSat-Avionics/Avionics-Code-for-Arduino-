@@ -24,7 +24,7 @@
 using namespace BLA;
 
 // TODO consider the below library for faster read/write/mode if timings become an issue. requires us to know the pin at compile time, so won't help in the SPI
-  // might help in I2C where RTC is the only (currently) device...
+// might help in I2C where RTC is the only (currently) device...
 /* for faster read/write on pins #include <digitalWriteFast.h>
    if this line throws an error, you probably don't have the library locally.
    see: https://github.com/NicksonYap/digitalWriteFast */
@@ -78,7 +78,7 @@ Matrix<numStates, numStates> P_matrix;
 
 /* various device configurations to setup communications and verify that things are working and ready to go */
 void setup() {
-  
+
   /* to store the return value of the accelerometer 'WHO_AM_I' identification register */
   unsigned int IMU_WHO_AM_I;
   /* to store the return value of the altimeter 'CHIP_ID' identification register */
