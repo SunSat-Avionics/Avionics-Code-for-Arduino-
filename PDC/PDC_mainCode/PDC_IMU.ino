@@ -3,6 +3,7 @@
   // read values (gyro xyz, accel xyz, temp?, general reg e.g. whoami?
   // write values (measurement range)
   // measure noise (loop for fixed time and calculate RMS noise)
+  // measure offset
   
 /* read the z-axis acceleration and convert to an acceleration in m/s2 */
 float readAccelerationZ(){
