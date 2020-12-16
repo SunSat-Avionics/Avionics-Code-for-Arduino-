@@ -7,7 +7,6 @@
   
 /* read the z-axis acceleration and convert to an acceleration in m/s2 */
 float readAccelerationZ(){
-
   // TODO: make this dynamic as per class mentioned at top. currently 4 is just a placeholder as it is default value
   int accelRange = 4;
   
