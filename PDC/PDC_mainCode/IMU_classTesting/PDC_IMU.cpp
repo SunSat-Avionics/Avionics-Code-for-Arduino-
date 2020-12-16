@@ -14,6 +14,8 @@ PDC_IMU::PDC_IMU(const int CS){
 bool PDC_IMU::isAlive(){
 	// TODO: implement the "whoami" checker
 	// return 0 if success, 1 otherwise
+	bool successCode = 1;
+	return(successCode);
 }
 
 /* read the z-axis acceleration and convert to an acceleration in m/s2 */
@@ -45,8 +47,12 @@ void PDC_IMU::setMeasurementRange(int range){
 }
 
 void PDC_IMU::measureAccelerometerNoiseZ(int numReadings){
+	float noiseRMS = 0;
+	
 	for(int i = 0; i < 5; i++){
 		// TODO: read z axis noise
 		readAccelerationZ;
 	}
+	
+	return(noiseRMS)
 }
