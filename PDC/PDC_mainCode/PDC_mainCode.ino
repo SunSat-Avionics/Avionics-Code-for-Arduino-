@@ -66,12 +66,9 @@ Matrix<numStates, numStates> F_matrix;
 Matrix<numMeasurements, numStates> H_matrix;
 /* kalman gain matrix. dimensional analysis of the update equation gives us a 3x2 matrix so can declare here */
 Matrix<numStates, numMeasurements> K_matrix;
-/* measurement noise covariance matrix */
-Matrix<numMeasurements, numMeasurements> R_matrix;
-/* process noise covariance matrix */
-Matrix<numStates, numStates> Q_matrix;
 /* error covariance matrix */
 Matrix<numStates, numStates> P_matrix;
+/* Q and R matrices are only needed in setup, so they aren't needed globally */
 
 
 /* -------------------- SETUP -------------------- */
@@ -183,8 +180,6 @@ void setup() {
   F_matrix.Fill(0.0);
   H_matrix.Fill(0.0);
   K_matrix.Fill(0.0);
-  R_matrix.Fill(0.0);
-  Q_matrix.Fill(0.0);
   P_matrix.Fill(0.0);
   /* setup kalman filter for apogee detection (function in kalmanFilter.ino) */
   initKalman();

@@ -8,27 +8,38 @@ void initKalman() {
   /* set measurment matrix to map measurements to states */
   H_matrix(0, 0) = 1.0;
   H_matrix(1, 2) = 1.0;
+
+  /* create an identity matrix the size of the number of states */
+  Matrix<numStates, numStates> stateIdentity;
+  for (int i = 0; i < numStates; i++) {
+      /* define identity matrix */
+      stateIdentity(i, i) = 1.0;
+  }
+
+  /* and another that is size of the number of measurements */
+  Matrix<numMeasurements, numMeasurements> measurementIdentity;
+  for (int i = 0; i < numMeasurements; i++) {
+      /* define identity matrix */
+      measurementIdentity(i, i) = 1.0;
+  }
   
   /* make a transpose of the measurement and transition matrices for calculations */
   Matrix<numStates, numMeasurements> H_matrixTranspose = ~H_matrix;
   Matrix<numStates, numStates> F_matrixTranspose = ~F_matrix;
 
   // TODO: either measure noise and create R matrix from this, or ask sensors which mode they are in and use
-  // an enum to get the noise stats as per datasheet
-  R_matrix(0,0) = 1;
-  R_matrix(1,1) = 1;
+  // an enum to get the noise stats as per datasheet. current values are temporary!
+  /* measurement noise covariance matrix */
+  Matrix<numMeasurements, numMeasurements> R_matrix = measurementIdentity;
+  /* process noise covariance matrix */
+  Matrix<numStates, numStates> Q_matrix = stateIdentity;
 
   /* ---------- initialise Kalman Gain matrix, K ---------- */
-  /* declare matrices for operation storage */
+  /* declare matrices for interim storage */
   Matrix<numMeasurements, numMeasurements> sum_HPHT_R;
-  Matrix<numStates, numStates> identity3;
-  for (int i = 0; i < numStates; i++) {
-      /* define identity matrix */
-      identity3(i, i) = 1.0;
-  }
-  
+
   /* initial guess for P */
-  P_matrix = identity3;
+  P_matrix = stateIdentity;
   
   /* iterative calculations for K and P */
   // TODO: determine how many iterations needed for convergence
@@ -44,7 +55,7 @@ void initKalman() {
 
     /* ---------- P = (I - KH)P ---------- */
     /* multiply I-KH by P and store in P */
-    P_matrix = (identity3 - (K_matrix * H_matrix)) * P_matrix;
+    P_matrix = (stateIdentity - (K_matrix * H_matrix)) * P_matrix;
 
     /* ---------- P = FPF^T + Q ---------- */
     /* add Q to F*P*F^T and store in P */
