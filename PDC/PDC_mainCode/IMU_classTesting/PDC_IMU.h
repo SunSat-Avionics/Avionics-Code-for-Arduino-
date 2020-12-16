@@ -5,10 +5,17 @@ class PDC_IMU{
 	const int slaveSelect;
     int measurementRange;
 	
-    PDC_IMU();
+	/* constructor */
+    PDC_IMU(const int CS){
+		slaveSelect = CS;
+	}; 
+	/* check if connected and responsive */
 	bool isAlive();
+	/* read the acceleration in z-direction (m/s2) */
     float readAccelerationZ();
+	/* set the measurement range (+/- range g) */
 	void setMeasurementRange(int range);
+	/* measure the RMS noise in the z-direction of the accelerometer for a given number of readings */
 	float measureAccelerometerNoiseZ(int numReadings);
 }
 

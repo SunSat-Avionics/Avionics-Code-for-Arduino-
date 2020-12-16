@@ -36,7 +36,7 @@ float PDC_IMU::readAccelerationZ(){
   rawAccelZ = readSPI(IMU_SS, 0x2C, 2);
 
   /* convert our output into an actual acceleration value in ms/2 */
-  acceleration = (rawAccelZ * GRAVITY_MAGNITUDE * accelResolution) / 1000;
+  acceleration = (rawAccelZ * 9.80665 * accelResolution) / 1000;
 
   return (acceleration);
 }
@@ -49,9 +49,9 @@ void PDC_IMU::setMeasurementRange(int range){
 void PDC_IMU::measureAccelerometerNoiseZ(int numReadings){
 	float noiseRMS = 0;
 	
-	for(int i = 0; i < 5; i++){
+	for(int i = 0; i < numReadings; i++){
 		// TODO: read z axis noise
-		readAccelerationZ;
+		readAccelerationZ();
 	}
 	
 	return(noiseRMS)
