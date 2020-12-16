@@ -1,4 +1,9 @@
 // TODO: might be worth creating an IMU class with methods to read the different registers, and so we can keep track of configurations (e.g. measurement range)
+// Methods:
+  // read values (gyro xyz, accel xyz, temp?, general reg e.g. whoami?
+  // write values (measurement range)
+  // measure noise (loop for fixed time and calculate RMS noise)
+  
 /* read the z-axis acceleration and convert to an acceleration in m/s2 */
 float readAccelerationZ(){
 

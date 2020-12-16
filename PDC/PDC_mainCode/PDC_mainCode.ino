@@ -28,6 +28,7 @@ using namespace BLA;
 /* define the magnitude of the gravity vector in m/s^2 */
 #define GRAVITY_MAGNITUDE (9.81)
 
+
 // TODO consider the below library for faster read/write/mode if timings become an issue. requires us to know the pin at compile time, so won't help in the SPI
 // might help in I2C where RTC is the only (currently) device...
 /* for faster read/write on pins #include <digitalWriteFast.h>
@@ -45,10 +46,8 @@ using namespace BLA;
    2. all devices are MSB first
    3. all devices are compatible with mode 00 (clock idle low, output: falling edge, capture: rising edge);
 */
-
 /* this is then our object with settings for our transactions */
 SPISettings SPIParams(10000000, MSBFIRST, SPI_MODE0);
-
 /* the arduino nano has an 'SS' pin (10) which helps us choose if we want to be master or slave. pin 10 as output = PDC as master */
 const int PDC_SS = 10;
 /* define the DIGIN pins on the PDC that are connected to the 'slave select' (SS) pin of each device */
@@ -77,7 +76,6 @@ Matrix<numStates, numStates> P_matrix;
 
 
 /* -------------------- SETUP -------------------- */
-
 /* various device configurations to setup communications and verify that things are working and ready to go */
 void setup() {
 

@@ -11,7 +11,7 @@ void initKalman() {
 
   /* create an identity matrix the size of the number of states */
   Matrix<numStates, numStates> stateIdentity;
-  stateIdentity.Fill(0);
+  stateIdentity.Fill(0.0);
   for (int i = 0; i < numStates; i++) {
       /* define identity matrix */
       stateIdentity(i, i) = 1.0;
@@ -19,7 +19,7 @@ void initKalman() {
 
   /* and another that is size of the number of measurements */
   Matrix<numMeasurements, numMeasurements> measurementIdentity;
-  measurementIdentity.Fill(0);
+  measurementIdentity.Fill(0.0);
   for (int i = 0; i < numMeasurements; i++) {
       /* define identity matrix */
       measurementIdentity(i, i) = 1.0;
@@ -37,7 +37,6 @@ void initKalman() {
       // rather than taking it separately for pressure and temperature!
     // the looping would be slower but would save memory that would be used for storing an enum which we'd probably only use once
       // and the loop would still allow us to change R based on the setups of the sensors
-
   float accelerationZ = 0; /* m/s2 */
   for(int i = 0; i < 5; i++){
     /* read the z-axis acceleration from the accelerometer */
