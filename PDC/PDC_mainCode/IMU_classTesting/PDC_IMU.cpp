@@ -44,8 +44,9 @@ void PDC_IMU::setMeasurementRange(int range){
 	// TODO: actually write to controller (requires an SPI write function!)
 }
 
-void PDC_IMU::measureNoiseZ(int numReadings){
+void PDC_IMU::measureAccelerometerNoiseZ(int numReadings){
 	for(int i = 0; i < 5; i++){
 		// TODO: read z axis noise
+		readAccelerationZ;
 	}
 }

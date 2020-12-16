@@ -9,7 +9,7 @@ class PDC_IMU{
 	bool isAlive();
     float readAccelerationZ();
 	void setMeasurementRange(int range);
-	float measureNoiseZ(int numReadings);
+	float measureAccelerometerNoiseZ(int numReadings);
 }
 
 /* Example usage 
@@ -17,7 +17,7 @@ class PDC_IMU{
 PDC_IMU IMU(10); where the argument is the CS pin
 flag = IMU.isAlive(); if flag is 0, we're all good
 IMU.setMeasurementRange(4); (+/- in g)
-IMU.measureNoiseZ(10); measure the noise in the z direction for 10 samples
+IMU.measureAccelerometerNoiseZ(10); measure the noise in the z direction for 10 samples
 
 
 */
