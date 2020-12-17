@@ -6,6 +6,7 @@
   
 #include "PDC_LSM6DSO32.h"
 #include "PDC_SPI.h"
+#include <stdio.h>
 
 bool PDC_LSM6DSO32::isAlive(){
   /* have a code to signify result - true is success */
@@ -46,9 +47,82 @@ float PDC_LSM6DSO32::readAccelerationZ(){
   return (accelerationZ);
 }
 
-void PDC_LSM6DSO32::setAccelerometerMeasurementRange(int range){
-	accelerometerMeasurementRange = range;
-	// TODO: actually write to controller (requires an SPI write function!)
+void PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, int range){
+  int data = 0;
+  
+  /* bits[2:3] in the CTRL1_XL register are the ones with our measurement range config 
+      and so we shift values from 0-3 into this spot depending on the specified range */
+  switch (range){
+    case 4:
+      data |= (0 << 2);
+      break;
+    case 8:
+      data |= (2 << 2);
+      break;
+    case 16:
+      data |= (3 << 2);
+      break;
+    case 32:
+      data |= (1 << 2);
+      break;
+    default:
+      Serial.println("!accelRange");
+      break;
+  }
+
+  int outputFrequencySwitch = outputFrequency;
+  /* switch case wont let us use 12.5 as a switch, so round it to 12 for use here */
+  if(outputFrequency == 12.5){
+    outputFrequencySwitch = 12;
+  }
+  
+  /* bits[4:7] in the CTRL1_XL register are for ODR update frequency config
+      and so we shift values into this spot depending on the specified frequency */
+  switch (outputFrequencySwitch){
+    case 0:
+      data |= (0 << 4);
+      break;
+    case 12:
+      data |= (1 << 4);
+      break;
+    case 26:
+      data |= (2 << 4);
+      break;
+    case 52:
+      data |= (3 << 4);
+      break;
+    case 104:
+      data |= (4 << 4);
+      break;
+    case 208:
+      data |= (5 << 4);
+      break;
+    case 416:
+      data |= (6 << 4);
+      break;
+    case 833:
+      data |= (7 << 4);
+      break;
+    case 1660:
+      data |= (8 << 4);
+      break;
+    case 3330:
+      data |= (9 << 4);
+      break;
+    case 6660:
+      data |= (10 << 4);
+      break;
+    default:
+      Serial.println("!accelFrequency");
+      break;
+  }
+
+  /* write our data package to the accelerometer which now contains information about measurement range and update freq */
+  writeSPI(slaveSelect, 0x10, data);
+
+  /* now set the corrsponding attributes so we don't have to read from device if we need this value again */
+  accelerometerOutputFrequency = outputFrequency;
+  accelerometerMeasurementRange = range;
 }
 
 float PDC_LSM6DSO32::measureAccelerometerNoiseZ(int numReadings){

@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 /* we define an LSM6DSO32 class to keep everything packed away neatly. it allows us to keep hold of things that we set
     e.g. measurement range, so that we don't have to read them from the device directly, plus it gives some neat
     '.readAcceleration()' (or similar) functionality, which is nice and readable */
@@ -5,6 +7,8 @@ class PDC_LSM6DSO32{
 	private:
     /* the pin on the PDC that the IMU CS pin connects to. is set on contruction */
 		int slaveSelect;
+		/* the rate at which the accelerometer ODR updates */
+    float accelerometerOutputFrequency;
     /* the accelerometer measurement range in g (can be +/-4, 8, 16, 32) */
 		int accelerometerMeasurementRange;
 	
@@ -18,7 +22,7 @@ class PDC_LSM6DSO32{
 		/* read the acceleration in z-direction (m/s2) */
 		float readAccelerationZ();
 		/* set the measurement range (+/- range g) */
-		void setAccelerometerMeasurementRange(int range);
+		void setupAccelerometer(float outputFrequency, int range);
 		/* measure the RMS noise in the z-direction of the accelerometer for a given number of readings */
 		float measureAccelerometerNoiseZ(int numReadings);
 };

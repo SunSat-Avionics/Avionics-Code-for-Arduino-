@@ -1,4 +1,4 @@
-L/* SUNSAT Parachute Deployment and Attitude Determination Software
+/* SUNSAT Parachute Deployment and Attitude Determination Software
 
    Created 22 Nov 20
    Contributors: Rory Haggart, Waleed Hamad
@@ -179,8 +179,11 @@ void setup() {
   // also worth storing them in variables to use to calculate local mach etc.
 
   /* ---------- SENSOR SETUP ---------- */
-  /* set the measurement range (in g) of the accelerometer */
-  IMU.setAccelerometerMeasurementRange(4);
+  /* accelerometer setup: 1. output update freq in Hz   (0, 12.5, 26, 52, 104, 208, 416, 833, 1660, 3330, 6660)
+                          2. measurement range in +/- g (4, 8, 16, 32)
+  */
+  IMU.setupAccelerometer(12.5, 4);
+  
   // TODO: IMU self test
 
   /* ---------- KALMAN FILTER SETUP ---------- */
