@@ -1,4 +1,4 @@
-/* SUNSAT Parachute Deployment and Attitude Determination Software
+L/* SUNSAT Parachute Deployment and Attitude Determination Software
 
    Created 22 Nov 20
    Contributors: Rory Haggart, Waleed Hamad
@@ -95,6 +95,7 @@ void setup() {
   Serial.println("\n------\nSETUP\n------\n");
   /* ---------- SPI Setup ---------- */
   Serial.println("SPI Setup");
+  
   /* we want to be the master of this bus! so set the 'SS' pin on the PDC as an output */
   pinMode(PDC_SS, OUTPUT);
 
