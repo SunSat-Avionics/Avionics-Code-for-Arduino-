@@ -1,12 +1,12 @@
 /* read a value from a register of a device on SPI. as arguments, pass the device select pin, the address of the register, and the number of bytes that this
-   register contains. it will return the value that is stored in the register that we are reading */
+   register contains. it will return the value that is stored in the register that we are reading. return is 32 bits so can read 4 bytes total */
 // TODO: lookup 'shiftout()' - seen it mentioned as alternative(?) to SPI.Transfer?
 // TODO: revisit the result for multiple bytes
-unsigned int readSPI(int deviceSelect, byte registerSelect, int numBytes) {
+uint32_t readSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t numBytes) {
 
   /* variable for our register value return */
-  unsigned int result = 0;
-  unsigned int counter = numBytes;
+  uint32_t result = 0;
+  uint8_t counter = numBytes;
 
   /* the r/w bit is first to transfer so we can shift it up to the top of the register
        read = 1, write = 0 */
@@ -50,7 +50,7 @@ unsigned int readSPI(int deviceSelect, byte registerSelect, int numBytes) {
 }
 
 /* write some data to a register of a device on the SPI bus */
-void writeSPI(int deviceSelect, byte registerSelect, int data) {
+void writeSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t data) {
 
   /* the r/w bit is first to transfer so we can shift it up to the top of the register
        read = 1, write = 0 */

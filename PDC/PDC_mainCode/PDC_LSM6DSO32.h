@@ -6,15 +6,15 @@
 class PDC_LSM6DSO32 {
   private:
     /* the pin on the PDC that the IMU CS pin connects to. is set on contruction */
-    int slaveSelect;
+    uint8_t slaveSelect;
     /* the rate at which the accelerometer ODR updates */
     float accelerometerOutputFrequency;
     /* the accelerometer measurement range in g (can be +/-4, 8, 16, 32) */
-    int accelerometerMeasurementRange;
+    uint8_t accelerometerMeasurementRange;
 
   public:
     /* constructor - set slaveSelect to the specified SS pin */
-    PDC_LSM6DSO32(int CS) {
+    PDC_LSM6DSO32(uint8_t CS) {
       slaveSelect = CS;
     };
     /* check if connected and responsive */
@@ -22,9 +22,9 @@ class PDC_LSM6DSO32 {
     /* read the acceleration in z-direction (m/s2) */
     float readAccelerationZ();
     /* set the measurement range (+/- range g) */
-    bool setupAccelerometer(float outputFrequency, int range);
+    bool setupAccelerometer(float outputFrequency, uint8_t range);
     /* measure the RMS noise in the z-direction of the accelerometer for a given number of readings */
-    float measureAccelerometerNoiseZ(int numReadings);
+    float measureAccelerometerNoiseZ(uint8_t numReadings);
 };
 
 /* Example usage

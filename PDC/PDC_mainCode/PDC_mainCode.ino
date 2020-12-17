@@ -45,11 +45,11 @@ using namespace BLA;
 /* this is then our object with settings for our transactions */
 
 /* the arduino nano has an 'SS' pin (10) which helps us choose if we want to be master or slave. pin 10 as output = PDC as master */
-const int PDC_SS = 10;
+const uint8_t PDC_SS = 10;
 /* define the DIGIN pins on the PDC that are connected to the 'slave select' (SS) pin of each device */
-const int altimeter_SS = 4;
-const int IMU_SS = 5;
-const int microSD_SS = 6;
+const uint8_t altimeter_SS = 4;
+const uint8_t IMU_SS = 5;
+const uint8_t microSD_SS = 6;
 
 /* create a PDC_IMU object for our LSM6DSO32. class defines are in 'PDC_IMU.h' and 'PDC_IMU.cpp' */
 PDC_LSM6DSO32 IMU(IMU_SS);
@@ -60,8 +60,8 @@ PDC_LSM6DSO32 IMU(IMU_SS);
 /* ---------- KALMAN FILTER CONFIG ---------- */
 /* define number of states and measurements as this allows for more dynamic matrix sizing
    NOTE: if changing states and measurements, make sure to change any relevant matrices in setup() */
-const int numStates = 3;
-const int numMeasurements = 2;
+const uint8_t numStates = 3;
+const uint8_t numMeasurements = 2;
 /* state transition matrix which maps previous state to current state.
    leave this as an empty variable for now as it's value changes per timestep */
 Matrix<numStates, numStates> F_matrix;
@@ -82,7 +82,7 @@ bool errFlag = 0;
 void setup() {
 
   /* to store the return value of the altimeter 'CHIP_ID' identification register */
-  unsigned int altimeter_CHIP_ID;
+  uint8_t altimeter_CHIP_ID;
   /* new instance of the 'File' class (part of the SD library) that we will use to control the .csv file on the microSD card */
   File dataLogFile;
 

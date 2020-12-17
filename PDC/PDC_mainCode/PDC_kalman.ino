@@ -20,7 +20,7 @@ void initKalman() {
   /* and another that is size of the number of measurements */
   Matrix<numMeasurements, numMeasurements> measurementIdentity;
   measurementIdentity.Fill(0.0);
-  for (int i = 0; i < numMeasurements; i++) {
+  for (uint8_t i = 0; i < numMeasurements; i++) {
     /* define identity matrix */
     measurementIdentity(i, i) = 1.0;
   }
@@ -55,7 +55,7 @@ void initKalman() {
 
   /* iterative calculations for K and P */
   // TODO: determine how many iterations needed for convergence
-  for (int i = 0; i < 5; i++) {
+  for (uint8_t i = 0; i < 5; i++) {
     /* ---------- K = PH^T[HPH^T + R]^-1 ---------- */
     /* store the term to be inverted */
     sum_HPHT_R = (H_matrix * P_matrix * H_matrixTranspose) + R_matrix;

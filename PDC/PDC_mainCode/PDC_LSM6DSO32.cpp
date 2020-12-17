@@ -11,9 +11,9 @@
 bool PDC_LSM6DSO32::isAlive() {
   /* have a code to signify result - true is success */
   bool successCode = 0;
-  unsigned int WHO_AM_I = 0;
-  unsigned int WHO_AM_I_expect = 0b01101100;
-  byte regAddress = 0x0f;
+  uint8_t WHO_AM_I = 0;
+  uint8_t WHO_AM_I_expect = 0b01101100;
+  uint8_t regAddress = 0x0f;
   
   /* read the 'WHO_AM_I' register on the IMU (at 0x0f) */
   WHO_AM_I = readSPI(slaveSelect, regAddress, 1);
@@ -29,9 +29,9 @@ bool PDC_LSM6DSO32::isAlive() {
 
 /* read the z-axis acceleration and convert to an acceleration in m/s2 */
 float PDC_LSM6DSO32::readAccelerationZ() {
-  int rawAccelZ;
+  uint16_t rawAccelZ;
   float accelerationZ = 0;
-  byte regAddress = 0x2C;
+  uint8_t regAddress = 0x2C;
   
   /* the resolution of the accelerometer is its range (e.g. +/4g) divided by the number of combinations available
       the accelerometer output is 16bits, so 2^16 is our combinations.
@@ -50,8 +50,8 @@ float PDC_LSM6DSO32::readAccelerationZ() {
   return (accelerationZ);
 }
 
-bool PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, int range) {
-  int data = 0;
+bool PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, uint8_t range) {
+  uint8_t data = 0;
   bool errFlag = 0;
 
   /* bits[2:3] in the CTRL1_XL register are the ones with our measurement range config
@@ -75,7 +75,7 @@ bool PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, int range) {
       break;
   }
 
-  int outputFrequencySwitch = outputFrequency;
+  uint16_t outputFrequencySwitch = outputFrequency;
   /* switch case wont let us use 12.5 as a switch, so round it to 12 for use here */
   if (outputFrequency == 12.5) {
     outputFrequencySwitch = 12;
@@ -135,12 +135,12 @@ bool PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, int range) {
   return (errFlag);
 }
 
-float PDC_LSM6DSO32::measureAccelerometerNoiseZ(int numReadings) {
+float PDC_LSM6DSO32::measureAccelerometerNoiseZ(uint8_t numReadings) {
   float noiseRMS = 0;
   float accelerationZ = 0;
 
   /* for the specified number of readings, measure the acceleration */
-  for (int i = 0; i < numReadings; i++) {
+  for (uint8_t i = 0; i < numReadings; i++) {
     /* get the acceleration in the z-direction */
     accelerationZ = readAccelerationZ();
     // TODO: implement some sort of timing between readings (e.g. twice per second? faster? wait for new data?)
