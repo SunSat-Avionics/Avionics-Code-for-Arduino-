@@ -20,7 +20,7 @@ unsigned int readSPI(int deviceSelect, int registerSelect, int numBytes) {
     registerSelect = registerSelect | (1 << 8);
   }
   else {
-    Serial.println("ERROR: device does not exist on SPI");
+    Serial.println("!deviceSPI");
   }
 
   /* begin a transaction over SPI using our params. this command also stops interrupts from preventing SPI comms */
@@ -70,7 +70,7 @@ void writeSPI(int deviceSelect, int registerSelect, int data) {
     registerSelect = registerSelect & (0 << 8);
   }
   else {
-    Serial.println("ERROR: device does not exist on SPI");
+    Serial.println("!deviceSPI");
   }
 
   /* begin a transaction over SPI using our params. this command also stops interrupts from preventing SPI comms */
