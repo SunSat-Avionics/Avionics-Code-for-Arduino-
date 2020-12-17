@@ -1,7 +1,5 @@
 // Methods TODO:
 // read values (gyro xyz, accel xy, temp?, general reg?)
-// write values (measurement range)
-// measure noise (loop for fixed time and calculate RMS noise)
 // measure offset
 
 #include "PDC_LSM6DSO32.h"
@@ -162,6 +160,8 @@ float PDC_LSM6DSO32::measureAccelerometerNoiseZ() {
   stdDev /= numReadings;
   stdDev = pow(stdDev, 0.5);
 
+  // TODO: consider putting a cap on stdDev incase of disturbance during setup
+  
   /* return the standard deviation of the noise */
   return (stdDev);
 }
