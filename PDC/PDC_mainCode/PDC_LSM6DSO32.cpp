@@ -1,59 +1,59 @@
 // Methods TODO:
-  // read values (gyro xyz, accel xy, temp?, general reg?)
-  // write values (measurement range)
-  // measure noise (loop for fixed time and calculate RMS noise)
-  // measure offset
-  
+// read values (gyro xyz, accel xy, temp?, general reg?)
+// write values (measurement range)
+// measure noise (loop for fixed time and calculate RMS noise)
+// measure offset
+
 #include "PDC_LSM6DSO32.h"
 #include "PDC_SPI.h"
 #include <stdio.h>
 
-bool PDC_LSM6DSO32::isAlive(){
+bool PDC_LSM6DSO32::isAlive() {
   /* have a code to signify result - true is success */
   bool successCode = 0;
   unsigned int WHO_AM_I = 0;
-  
+
   /* read the 'WHO_AM_I' register on the IMU (at 0x0f) */
   WHO_AM_I = readSPI(slaveSelect, 0x0f, 1);
-  
+
   /* check that it's what we expect */
-  if (WHO_AM_I == 0110110){
-  	/* if it is, set our success code to true */
-  	successCode = 1;
+  if (WHO_AM_I == 0110110) {
+    /* if it is, set our success code to true */
+    successCode = 1;
   }
-  
-  return(successCode);
+
+  return (successCode);
 }
 
 /* read the z-axis acceleration and convert to an acceleration in m/s2 */
-float PDC_LSM6DSO32::readAccelerationZ(){
+float PDC_LSM6DSO32::readAccelerationZ() {
   /* the resolution of the accelerometer is its range (e.g. +/4g) divided by the number of combinations available
-      the accelerometer output is 16bits, so 2^16 is our combinations. 
+      the accelerometer output is 16bits, so 2^16 is our combinations.
       units are milli-g per bit, so times 1000*/
   float accelResolution = (accelerometerMeasurementRange * 2 / 65536) * 1000;
 
   int rawAccelZ;
   float accelerationZ = 0;
-  
+
   /* read z-axis acceleration.
       note in CTRL3_C, there is a default enabled bit which auto-increments the register address when reading multiple bytes so we dont need to read the H and L
       registers separately, as long as we tell readSPI() that we expect 2 bytes in the last argument */
   rawAccelZ = readSPI(slaveSelect, 0x2C, 2);
-  
+
   /* convert our output into an actual acceleration value in ms/2
       the raw value is somewhere in our measurement range, so multiply by resolution to get back to absolute value, then multiply by g to get m/s^2 */
-  accelerationZ = (rawAccelZ/1000) * accelResolution * 9.80665;
-  
+  accelerationZ = (rawAccelZ / 1000) * accelResolution * 9.80665;
+
   return (accelerationZ);
 }
 
-bool PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, int range){
+bool PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, int range) {
   int data = 0;
   bool errFlag = 0;
-  
-  /* bits[2:3] in the CTRL1_XL register are the ones with our measurement range config 
+
+  /* bits[2:3] in the CTRL1_XL register are the ones with our measurement range config
       and so we shift values from 0-3 into this spot depending on the specified range */
-  switch (range){
+  switch (range) {
     case 4:
       data |= (0 << 2);
       break;
@@ -74,13 +74,13 @@ bool PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, int range){
 
   int outputFrequencySwitch = outputFrequency;
   /* switch case wont let us use 12.5 as a switch, so round it to 12 for use here */
-  if(outputFrequency == 12.5){
+  if (outputFrequency == 12.5) {
     outputFrequencySwitch = 12;
   }
-  
+
   /* bits[4:7] in the CTRL1_XL register are for ODR update frequency config
       and so we shift values into this spot depending on the specified frequency */
-  switch (outputFrequencySwitch){
+  switch (outputFrequencySwitch) {
     case 0:
       data |= (0 << 4);
       break;
@@ -122,26 +122,26 @@ bool PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, int range){
 
   /* write our data package to the accelerometer which now contains information about measurement range and update freq
       (only write if we got valid inputs)*/
-  if (!errFlag){
+  if (!errFlag) {
     writeSPI(slaveSelect, 0x10, data);
     /* now set the corrsponding attributes so we don't have to read from device if we need this value again */
     accelerometerOutputFrequency = outputFrequency;
     accelerometerMeasurementRange = range;
   }
-  
-  return(errFlag);
+
+  return (errFlag);
 }
 
-float PDC_LSM6DSO32::measureAccelerometerNoiseZ(int numReadings){
-	float noiseRMS = 0;
-	float accelerationZ = 0;
+float PDC_LSM6DSO32::measureAccelerometerNoiseZ(int numReadings) {
+  float noiseRMS = 0;
+  float accelerationZ = 0;
 
   /* for the specified number of readings, measure the acceleration */
-	for(int i = 0; i < numReadings; i++){
-		/* get the acceleration in the z-direction */
-		accelerationZ = readAccelerationZ();
+  for (int i = 0; i < numReadings; i++) {
+    /* get the acceleration in the z-direction */
+    accelerationZ = readAccelerationZ();
     // TODO: implement some sort of timing between readings (e.g. twice per second? faster? wait for new data?)
-	}
-	
-	return(noiseRMS);
+  }
+
+  return (noiseRMS);
 }

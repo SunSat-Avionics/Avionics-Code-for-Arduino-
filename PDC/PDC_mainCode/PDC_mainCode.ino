@@ -193,8 +193,8 @@ void setup() {
                           2. measurement range in +/- g (4, 8, 16, 32)
   */
   err = IMU.setupAccelerometer(12.5, 4);
-  if(err){
-    /* the function returns TRUE if the setup failed due to invalid inputs 
+  if (err) {
+    /* the function returns TRUE if the setup failed due to invalid inputs
         don't need to print this error as it's taken care of in the class */
     errFlag = 1;
     err = 0;
@@ -212,10 +212,10 @@ void setup() {
   initKalman();
 
   // indicate that setup is complete - write to SD 'setup complete' and maybe talk to main OBC to tell ground that we're ready to go
-  if(errFlag){ 
+  if (errFlag) {
     Serial.println("\n----------\nSETUP ERR\n----------");
   }
-  else{
+  else {
     Serial.println("\n--------\nCOMPLETE\n--------");
   }
 }

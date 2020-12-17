@@ -40,7 +40,7 @@ unsigned int readSPI(int deviceSelect, int registerSelect, int numBytes) {
   while (counter != 0) {
     /* if we have more than one byte to read, shift the next result up to fill the MSB byte, and hold the result so far at the bottom
        this is because the registers are usually read in sequence of LSB -> MSB */
-    result = (SPI.transfer(0x00) << 8*(numBytes - counter)) | result;
+    result = (SPI.transfer(0x00) << 8 * (numBytes - counter)) | result;
     /* decrement the number of bytes until we get to zero, when this while() will exit */
     counter--;
   }
@@ -56,7 +56,7 @@ unsigned int readSPI(int deviceSelect, int registerSelect, int numBytes) {
 }
 
 /* write some data to a register of a device on the SPI bus */
-void writeSPI(int deviceSelect, int registerSelect, int data){
+void writeSPI(int deviceSelect, int registerSelect, int data) {
 
   /* the 'read' or 'write' bit is in different positions for different devices but then the register address occupies the rest of the field,
        so we can shift the register up into place when the R/W occupies LSB
@@ -85,7 +85,7 @@ void writeSPI(int deviceSelect, int registerSelect, int data){
   /* the device now knows which device we want to write to, so lets send our data */
   // TODO: is it possible or required to send more than one byte? if so, add support
   SPI.transfer(data);
-  
+
   /* stop communications with device by setting the corresponding slave select on the PDC to high */
   digitalWrite(deviceSelect, HIGH);
 
