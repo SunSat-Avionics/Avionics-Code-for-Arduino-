@@ -38,11 +38,7 @@ void initKalman() {
     // the looping would be slower but would save memory that would be used for storing an enum which we'd probably only use once
       // and the loop would still allow us to change R based on the setups of the sensors
   float accelerationZ = 0; /* m/s2 */
-  for(int i = 0; i < 5; i++){
-    /* read the z-axis acceleration from the accelerometer */
-    accelerationZ = readAccelerationZ();
-    // cumulatively update RMS noise measurement
-  }
+  accelerationZ = IMU.measureAccelerometerNoiseZ(10);
   
   /* measurement noise covariance matrix */
   Matrix<numMeasurements, numMeasurements> R_matrix = measurementIdentity;

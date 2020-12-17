@@ -2,7 +2,7 @@
    register contains. it will return the value that is stored in the register that we are reading */
 // TODO: lookup 'shiftout()' - seen it mentioned as alternative(?) to SPI.Transfer?
 // TODO: revisit the result for multiple bytes - if we read LSB then MSB data registers, they'll be flipped here!
-unsigned int readSPI(int deviceSelect, byte registerSelect, int numBytes) {
+unsigned int readSPI(int deviceSelect, int registerSelect, int numBytes) {
 
   /* variable for our register value return */
   unsigned int result = 0;

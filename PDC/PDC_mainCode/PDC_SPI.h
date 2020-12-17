@@ -1,1 +1,1 @@
-unsigned int readSPI(int deviceSelect, byte registerSelect, int numBytes);
+unsigned int readSPI(int deviceSelect, int registerSelect, int numBytes);

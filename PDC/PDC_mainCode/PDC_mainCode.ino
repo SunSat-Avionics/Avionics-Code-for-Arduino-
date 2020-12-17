@@ -18,16 +18,12 @@
 /* include the functions for the kalman filter */
 #include "PDC_kalman.h"
 /* functions for IMU read/write */
-#include "PDC_IMU.h"
+#include "PDC_LSM6DSO32.h"
 /* for Matrix operations
    if this line throws an error, you probably don't have the Matrix Library locally.
    see: https://github.com/tomstewart89/BasicLinearAlgebra or search 'basic linear algebra' in the IDE library manager */
 #include <BasicLinearAlgebra.h>
 using namespace BLA;
-
-/* define the magnitude of the gravity vector in m/s^2 */
-#define GRAVITY_MAGNITUDE (9.81)
-
 
 // TODO consider the below library for faster read/write/mode if timings become an issue. requires us to know the pin at compile time, so won't help in the SPI
 // might help in I2C where RTC is the only (currently) device...
@@ -55,6 +51,9 @@ const int altimeter_SS = 4;
 const int IMU_SS = 5;
 const int microSD_SS = 6;
 
+/* create a PDC_IMU object for our LSM6DSO32. class defines are in 'PDC_IMU.h' and 'PDC_IMU.cpp' */
+PDC_LSM6DSO32 IMU(IMU_SS);
+
 /* ---------- I2C CONFIG ---------- */
 // TODO
 
@@ -78,9 +77,7 @@ Matrix<numStates, numStates> P_matrix;
 /* -------------------- SETUP -------------------- */
 /* various device configurations to setup communications and verify that things are working and ready to go */
 void setup() {
-
-  /* to store the return value of the accelerometer 'WHO_AM_I' identification register */
-  unsigned int IMU_WHO_AM_I;
+  
   /* to store the return value of the altimeter 'CHIP_ID' identification register */
   unsigned int altimeter_CHIP_ID;
   /* new instance of the 'File' class (part of the SD library) that we will use to control the .csv file on the microSD card */
@@ -131,18 +128,14 @@ void setup() {
   }
 
   Serial.println("IMU?");
-  /* communicate with IMU: read the 'WHO_AM_I' register. expect 0110110 */
-  IMU_WHO_AM_I = readSPI(IMU_SS, 0x0f, 1);
-  /* we have read the 'WHO_AM_I' register and now should check that the value read is as we expect */
-  // TODO: when a little more developed, this should be replaced with something more meaningful!
-  if (IMU_WHO_AM_I == 0110110) {
+  /* our IMU class has an 'isAlive()' method, which reads the 'WHO_AM_I' register to check our connection. returns true if connected & working! */
+  // TODO: when a little more developed, these messages should be replaced with something more meaningful!
+  if(IMU.isAlive()){
     Serial.println("  Success!");
-  }
+  } 
   else {
     Serial.println("  Failure!");
   }
-
-  // TODO: IMU self test
 
   Serial.println("micro-SD?");
   /* attempt to init micro SD card */
@@ -184,7 +177,10 @@ void setup() {
   // take measurements in the ground state (e.g. temp and pressure). write them to SD with a note of 'ground conditions' or similar.
   // also worth storing them in variables to use to calculate local mach etc.
 
-
+  /* ---------- SENSOR SETUP ---------- */
+  /* set the measurement range (in g) of the accelerometer */
+  IMU.setAccelerometerMeasurementRange(4);
+  // TODO: IMU self test
 
   /* ---------- KALMAN FILTER SETUP ---------- */
   /* fill all matrices with 0 to start */
