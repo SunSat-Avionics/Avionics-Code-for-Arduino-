@@ -24,7 +24,7 @@ unsigned int readSPI(int deviceSelect, byte registerSelect, int numBytes) {
   /* now if we send nothing, we are listening for the result - the device will send the value in the register we requested for the first byte, just read the value into 'result' */
   result = SPI.transfer(0x00);
 
-  Serial.print("Register: ");
+  Serial.print("Read register: ");
   Serial.print(registerSelect, BIN);
   Serial.print(" Value: ");
   Serial.println(result, BIN);
@@ -54,7 +54,7 @@ void writeSPI(int deviceSelect, byte registerSelect, int data) {
 
   /* the r/w bit is first to transfer so we can shift it up to the top of the register
        read = 1, write = 0 */
-  registerSelect = registerSelect | (1 << 7);
+  registerSelect = registerSelect | (0 << 7);
 
   /* begin a transaction over SPI using our params. this command also stops interrupts from preventing SPI comms */
   SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
@@ -69,6 +69,11 @@ void writeSPI(int deviceSelect, byte registerSelect, int data) {
   // TODO: is it possible or required to send more than one byte? if so, add support
   SPI.transfer(data);
 
+  Serial.print("Write register: ");
+  Serial.print(registerSelect, BIN);
+  Serial.print(" Value: ");
+  Serial.println(data, BIN);
+  
   /* stop communications with device by setting the corresponding slave select on the PDC to high */
   digitalWrite(deviceSelect, HIGH);
 
