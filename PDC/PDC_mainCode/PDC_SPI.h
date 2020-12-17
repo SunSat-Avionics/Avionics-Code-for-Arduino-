@@ -1,2 +1,2 @@
-unsigned int readSPI(int deviceSelect, int registerSelect, int numBytes);
-void writeSPI(int deviceSelect, int registerSelect, int data);
+unsigned int readSPI(int deviceSelect, byte registerSelect, int numBytes);
+void writeSPI(int deviceSelect, byte registerSelect, int data);

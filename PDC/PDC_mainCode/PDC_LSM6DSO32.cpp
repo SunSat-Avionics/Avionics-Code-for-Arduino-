@@ -12,12 +12,14 @@ bool PDC_LSM6DSO32::isAlive() {
   /* have a code to signify result - true is success */
   bool successCode = 0;
   unsigned int WHO_AM_I = 0;
-
+  unsigned int WHO_AM_I_expect = 0b01101100;
+  byte regAddress = 0x0f;
+  
   /* read the 'WHO_AM_I' register on the IMU (at 0x0f) */
-  WHO_AM_I = readSPI(slaveSelect, 0x0f, 1);
+  WHO_AM_I = readSPI(slaveSelect, regAddress, 1);
 
   /* check that it's what we expect */
-  if (WHO_AM_I == 0110110) {
+  if (WHO_AM_I == WHO_AM_I_expect) {
     /* if it is, set our success code to true */
     successCode = 1;
   }
@@ -34,11 +36,12 @@ float PDC_LSM6DSO32::readAccelerationZ() {
 
   int rawAccelZ;
   float accelerationZ = 0;
-
+  byte regAddress = 0x2C;
+  
   /* read z-axis acceleration.
       note in CTRL3_C, there is a default enabled bit which auto-increments the register address when reading multiple bytes so we dont need to read the H and L
       registers separately, as long as we tell readSPI() that we expect 2 bytes in the last argument */
-  rawAccelZ = readSPI(slaveSelect, 0x2C, 2);
+  rawAccelZ = readSPI(slaveSelect, regAddress, 2);
 
   /* convert our output into an actual acceleration value in ms/2
       the raw value is somewhere in our measurement range, so multiply by resolution to get back to absolute value, then multiply by g to get m/s^2 */

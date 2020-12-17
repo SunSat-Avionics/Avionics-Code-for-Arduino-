@@ -43,7 +43,7 @@ using namespace BLA;
    3. all devices are compatible with mode 00 (clock idle low, output: falling edge, capture: rising edge);
 */
 /* this is then our object with settings for our transactions */
-SPISettings SPIParams(10000000, MSBFIRST, SPI_MODE0);
+
 /* the arduino nano has an 'SS' pin (10) which helps us choose if we want to be master or slave. pin 10 as output = PDC as master */
 const int PDC_SS = 10;
 /* define the DIGIN pins on the PDC that are connected to the 'slave select' (SS) pin of each device */
@@ -74,8 +74,6 @@ Matrix<numStates, numStates> P_matrix;
 /* Q and R matrices are only needed in setup, so they aren't needed globally */
 
 /* -------------------- SETUP -------------------- */
-/* various device configurations to setup communications and verify that things are working and ready to go */
-
 /* value to be used whenever we want to detect some error */
 bool err = 0;
 /* if we do encounter an error, set the flag to true so we can warn that setup failed */
@@ -97,10 +95,11 @@ void setup() {
   while (!Serial) {
     ; /* wait for port to connect */
   }
-  Serial.println("\n------\nSETUP\n------\n");
+  Serial.println("\n-------\n SETUP\n-------\n");
   /* ---------- SPI Setup ---------- */
   /* we want to be the master of this bus! so set the 'SS' pin on the PDC as an output */
   pinMode(PDC_SS, OUTPUT);
+  digitalWrite(PDC_SS, HIGH);
 
   /* set each slave select pin as an output.
        initialise each pin to be high (i.e. communication disabled)
@@ -192,7 +191,7 @@ void setup() {
   /* accelerometer setup: 1. output update freq in Hz   (0, 12.5, 26, 52, 104, 208, 416, 833, 1660, 3330, 6660)
                           2. measurement range in +/- g (4, 8, 16, 32)
   */
-  err = IMU.setupAccelerometer(833, 16);
+  err = IMU.setupAccelerometer(416, 32);
   if (err) {
     /* the function returns TRUE if the setup failed due to invalid inputs
         don't need to print this error as it's taken care of in the class */
@@ -213,10 +212,10 @@ void setup() {
 
   // indicate that setup is complete - write to SD 'setup complete' and maybe talk to main OBC to tell ground that we're ready to go
   if (errFlag) {
-    Serial.println("\n----------\nSETUP ERR\n----------");
+    Serial.println("\n----------\n SETUP :(\n----------");
   }
   else {
-    Serial.println("\n--------\nCOMPLETE\n--------");
+    Serial.println("\n----------\n SETUP :)\n----------");
   }
 }
 
