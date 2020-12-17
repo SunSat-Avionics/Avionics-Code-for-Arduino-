@@ -73,11 +73,14 @@ Matrix<numStates, numMeasurements> K_matrix;
 Matrix<numStates, numStates> P_matrix;
 /* Q and R matrices are only needed in setup, so they aren't needed globally */
 
-
 /* -------------------- SETUP -------------------- */
 /* various device configurations to setup communications and verify that things are working and ready to go */
+
+/* we might encounter an error during setup, if so, set this to true so we can warn! */
+bool errFlag = 0;
+
 void setup() {
-  
+
   /* to store the return value of the altimeter 'CHIP_ID' identification register */
   unsigned int altimeter_CHIP_ID;
   /* new instance of the 'File' class (part of the SD library) that we will use to control the .csv file on the microSD card */
@@ -94,8 +97,6 @@ void setup() {
   }
   Serial.println("\n------\nSETUP\n------\n");
   /* ---------- SPI Setup ---------- */
-  Serial.println("SPI Setup");
-  
   /* we want to be the master of this bus! so set the 'SS' pin on the PDC as an output */
   pinMode(PDC_SS, OUTPUT);
 
@@ -122,30 +123,33 @@ void setup() {
   /* we have read the 'CHIP_ID' register and now should check that the value read is as we expect */
   // TODO: when a little more developed, this should be replaced with something more meaningful! e.g. comms to ground to indicate 'yes we're good on the altimeter'
   if (altimeter_CHIP_ID == 0x50) {
-    Serial.println("  Success!");
+    Serial.println("  :)");
   }
   else {
-    Serial.println("  Failure!");
+    Serial.println("  :(");
+    errFlag = 1;
   }
 
   Serial.println("IMU?");
   /* our IMU class has an 'isAlive()' method, which reads the 'WHO_AM_I' register to check our connection. returns true if connected & working! */
   // TODO: when a little more developed, these messages should be replaced with something more meaningful!
-  if(IMU.isAlive()){
-    Serial.println("  Success!");
-  } 
+  if (IMU.isAlive()) {
+    Serial.println("  :)");
+  }
   else {
-    Serial.println("  Failure!");
+    Serial.println("  :(");
+    errFlag = 1;
   }
 
   Serial.println("micro-SD?");
   /* attempt to init micro SD card */
   // TODO: if we have a shield with 'CD' (chip detect) pin, make use of this to check pin is in place.
   if (SD.begin(microSD_SS)) {
-    Serial.println("  Success!");
+    Serial.println("  :)");
   }
   else {
-    Serial.println("  Failure!");
+    Serial.println("  :(");
+    errFlag = 1;
   }
 
   Serial.println("log file?");
@@ -155,8 +159,12 @@ void setup() {
 
   /* if the file can't open, the return is false */
   if (!dataLogFile) {
-    Serial.println("  Failure!");
-  } 
+    Serial.println("  :(");
+    errFlag = 1;
+  }
+  else {
+    Serial.println("  :)");
+  }
 
   /* communicate with micro SD - write the csv headers to our file
        should define (either here or elsewhere) the units of each of these headers... perhaps in readme */
@@ -182,8 +190,13 @@ void setup() {
   /* accelerometer setup: 1. output update freq in Hz   (0, 12.5, 26, 52, 104, 208, 416, 833, 1660, 3330, 6660)
                           2. measurement range in +/- g (4, 8, 16, 32)
   */
-  IMU.setupAccelerometer(12.5, 4);
-  
+  bool err = IMU.setupAccelerometer(12.5, 4);
+  if(err){
+    /* the function returns TRUE if the setup failed due to invalid inputs 
+        don't need to print this error as it's taken care of in the class */
+    errFlag = 1;
+  }
+
   // TODO: IMU self test
 
   /* ---------- KALMAN FILTER SETUP ---------- */
@@ -196,7 +209,12 @@ void setup() {
   initKalman();
 
   // indicate that setup is complete - write to SD 'setup complete' and maybe talk to main OBC to tell ground that we're ready to go
-  Serial.println("\n--------\nCOMPLETE\n--------");
+  if(errFlag){ 
+    Serial.println("\n----------\nSETUP ERR\n----------");
+  }
+  else{
+    Serial.println("\n--------\nCOMPLETE\n--------");
+  }
 }
 
 /* -------------------- LOOP -------------------- */

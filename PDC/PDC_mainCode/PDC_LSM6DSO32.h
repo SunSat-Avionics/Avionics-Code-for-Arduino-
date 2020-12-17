@@ -22,7 +22,7 @@ class PDC_LSM6DSO32{
 		/* read the acceleration in z-direction (m/s2) */
 		float readAccelerationZ();
 		/* set the measurement range (+/- range g) */
-		void setupAccelerometer(float outputFrequency, int range);
+		bool setupAccelerometer(float outputFrequency, int range);
 		/* measure the RMS noise in the z-direction of the accelerometer for a given number of readings */
 		float measureAccelerometerNoiseZ(int numReadings);
 };

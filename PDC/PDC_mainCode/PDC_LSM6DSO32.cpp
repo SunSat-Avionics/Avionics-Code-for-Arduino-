@@ -47,8 +47,9 @@ float PDC_LSM6DSO32::readAccelerationZ(){
   return (accelerationZ);
 }
 
-void PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, int range){
+bool PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, int range){
   int data = 0;
+  bool errFlag = 0;
   
   /* bits[2:3] in the CTRL1_XL register are the ones with our measurement range config 
       and so we shift values from 0-3 into this spot depending on the specified range */
@@ -67,6 +68,7 @@ void PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, int range){
       break;
     default:
       Serial.println("!accelRange");
+      errFlag = 1;
       break;
   }
 
@@ -114,15 +116,20 @@ void PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, int range){
       break;
     default:
       Serial.println("!accelFrequency");
+      errFlag = 1;
       break;
   }
 
-  /* write our data package to the accelerometer which now contains information about measurement range and update freq */
-  writeSPI(slaveSelect, 0x10, data);
-
-  /* now set the corrsponding attributes so we don't have to read from device if we need this value again */
-  accelerometerOutputFrequency = outputFrequency;
-  accelerometerMeasurementRange = range;
+  /* write our data package to the accelerometer which now contains information about measurement range and update freq
+      (only write if we got valid inputs)*/
+  if (!errFlag){
+    writeSPI(slaveSelect, 0x10, data);
+    /* now set the corrsponding attributes so we don't have to read from device if we need this value again */
+    accelerometerOutputFrequency = outputFrequency;
+    accelerometerMeasurementRange = range;
+  }
+  
+  return(errFlag);
 }
 
 float PDC_LSM6DSO32::measureAccelerometerNoiseZ(int numReadings){
@@ -133,7 +140,7 @@ float PDC_LSM6DSO32::measureAccelerometerNoiseZ(int numReadings){
 	for(int i = 0; i < numReadings; i++){
 		/* get the acceleration in the z-direction */
 		accelerationZ = readAccelerationZ();
-    // TODO: implement some sort of timing between readings (e.g. twice per second? faster?)
+    // TODO: implement some sort of timing between readings (e.g. twice per second? faster? wait for new data?)
 	}
 	
 	return(noiseRMS);
