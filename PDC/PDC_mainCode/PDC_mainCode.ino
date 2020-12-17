@@ -76,7 +76,9 @@ Matrix<numStates, numStates> P_matrix;
 /* -------------------- SETUP -------------------- */
 /* various device configurations to setup communications and verify that things are working and ready to go */
 
-/* we might encounter an error during setup, if so, set this to true so we can warn! */
+/* value to be used whenever we want to detect some error */
+bool err = 0;
+/* if we do encounter an error, set the flag to true so we can warn that setup failed */
 bool errFlag = 0;
 
 void setup() {
@@ -190,11 +192,12 @@ void setup() {
   /* accelerometer setup: 1. output update freq in Hz   (0, 12.5, 26, 52, 104, 208, 416, 833, 1660, 3330, 6660)
                           2. measurement range in +/- g (4, 8, 16, 32)
   */
-  bool err = IMU.setupAccelerometer(12.5, 4);
+  err = IMU.setupAccelerometer(12.5, 4);
   if(err){
     /* the function returns TRUE if the setup failed due to invalid inputs 
         don't need to print this error as it's taken care of in the class */
     errFlag = 1;
+    err = 0;
   }
 
   // TODO: IMU self test
