@@ -24,7 +24,7 @@ class PDC_LSM6DSO32 {
     /* set the measurement range (+/- range g) */
     bool setupAccelerometer(float outputFrequency, uint8_t range);
     /* measure the RMS noise in the z-direction of the accelerometer for a given number of readings */
-    float measureAccelerometerNoiseZ(uint8_t numReadings);
+    float measureAccelerometerNoiseZ();
 };
 
 /* Example usage

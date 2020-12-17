@@ -191,7 +191,7 @@ void setup() {
   /* accelerometer setup: 1. output update freq in Hz   (0, 12.5, 26, 52, 104, 208, 416, 833, 1660, 3330, 6660)
                           2. measurement range in +/- g (4, 8, 16, 32)
   */
-  err = IMU.setupAccelerometer(416, 4);
+  err = IMU.setupAccelerometer(3330, 32);
   if (err) {
     /* the function returns TRUE if the setup failed due to invalid inputs
         don't need to print this error as it's taken care of in the class */

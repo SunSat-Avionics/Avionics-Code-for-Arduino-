@@ -45,8 +45,9 @@ float PDC_LSM6DSO32::readAccelerationZ() {
 
   /* convert our output into an actual acceleration value in ms/2
       the raw value is somewhere in our measurement range, so multiply by resolution to get back to absolute value, then multiply by g to get m/s^2 */
-  accelerationZ = (rawAccelZ / 1000) * accelResolution * 9.80665;
-  Serial.println(accelerationZ);
+  accelerationZ = (float(rawAccelZ) / 1000) * accelResolution * 9.80665;
+  Serial.print("Acceleration: ");
+  Serial.println(accelerationZ, 10);
   return (accelerationZ);
 }
 
@@ -135,16 +136,32 @@ bool PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, uint8_t range) {
   return (errFlag);
 }
 
-float PDC_LSM6DSO32::measureAccelerometerNoiseZ(uint8_t numReadings) {
-  float noiseRMS = 0;
-  float accelerationZ = 0;
-
+float PDC_LSM6DSO32::measureAccelerometerNoiseZ() {
+  uint8_t numReadings = 10; /* how many readings to calculate standard deviation over (25 seems to be max!) */
+  float accelerationZ[numReadings];
+  float avg = 0;
+  float stdDev = 0;
+    
   /* for the specified number of readings, measure the acceleration */
   for (uint8_t i = 0; i < numReadings; i++) {
     /* get the acceleration in the z-direction */
-    accelerationZ = readAccelerationZ();
+    accelerationZ[i] = readAccelerationZ();
+    /* cumulative sum */
+    avg += accelerationZ[i];
     // TODO: implement some sort of timing between readings (e.g. twice per second? faster? wait for new data?)
   }
 
-  return (noiseRMS);
+  /* average of all measurements */
+  avg /= numReadings;
+
+  /* calculate the standard deviation of all the readings */
+  for(uint8_t i = 0; i < numReadings; i++){
+    accelerationZ[i] = pow((accelerationZ[i] - avg), 2);
+    stdDev += accelerationZ[i];
+  }
+  stdDev /= numReadings;
+  stdDev = pow(stdDev, 0.5);
+
+  /* return the standard deviation of the noise */
+  return (stdDev);
 }

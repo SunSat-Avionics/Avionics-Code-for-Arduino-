@@ -29,6 +29,11 @@ void initKalman() {
   Matrix<numStates, numMeasurements> H_matrixTranspose = ~H_matrix;
   Matrix<numStates, numStates> F_matrixTranspose = ~F_matrix;
 
+  /* measurement noise covariance matrix */
+  Matrix<numMeasurements, numMeasurements> R_matrix = measurementIdentity;
+  /* process noise covariance matrix */
+  Matrix<numStates, numStates> Q_matrix = stateIdentity;
+
   // TODO: either measure noise and create R matrix from this, or ask sensors which mode they are in and use
   // an enum to get the noise stats as per datasheet. current values are temporary!
   // e.g. for loop, read accelerometer_z over SPI for 10 seconds, we know it should be zero, so the output is just noise
@@ -37,13 +42,9 @@ void initKalman() {
   // rather than taking it separately for pressure and temperature!
   // the looping would be slower but would save memory that would be used for storing an enum which we'd probably only use once
   // and the loop would still allow us to change R based on the setups of the sensors
-  float accelerationZ = 0; /* m/s2 */
-  accelerationZ = IMU.measureAccelerometerNoiseZ(10);
-
-  /* measurement noise covariance matrix */
-  Matrix<numMeasurements, numMeasurements> R_matrix = measurementIdentity;
-  /* process noise covariance matrix */
-  Matrix<numStates, numStates> Q_matrix = stateIdentity;
+  
+  /* measure the standard deviation of the accelerometer noise, then square it to get variance for R */
+  R_matrix(0, 0) = pow(IMU.measureAccelerometerNoiseZ(), 2);
 
   Serial.println("  Iteratively setting K and P matrices");
   /* ---------- initialise Kalman Gain matrix, K ---------- */
