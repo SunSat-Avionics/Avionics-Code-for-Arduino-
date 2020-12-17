@@ -29,14 +29,14 @@ bool PDC_LSM6DSO32::isAlive() {
 
 /* read the z-axis acceleration and convert to an acceleration in m/s2 */
 float PDC_LSM6DSO32::readAccelerationZ() {
-  /* the resolution of the accelerometer is its range (e.g. +/4g) divided by the number of combinations available
-      the accelerometer output is 16bits, so 2^16 is our combinations.
-      units are milli-g per bit, so times 1000*/
-  float accelResolution = (accelerometerMeasurementRange * 2 / 65536) * 1000;
-
   int rawAccelZ;
   float accelerationZ = 0;
   byte regAddress = 0x2C;
+  
+  /* the resolution of the accelerometer is its range (e.g. +/4g) divided by the number of combinations available
+      the accelerometer output is 16bits, so 2^16 is our combinations.
+      units are milli-g per bit, so times 1000*/
+  float accelResolution = (accelerometerMeasurementRange * 2.0 * 1000.0) / 65536.0;
   
   /* read z-axis acceleration.
       note in CTRL3_C, there is a default enabled bit which auto-increments the register address when reading multiple bytes so we dont need to read the H and L
@@ -46,7 +46,7 @@ float PDC_LSM6DSO32::readAccelerationZ() {
   /* convert our output into an actual acceleration value in ms/2
       the raw value is somewhere in our measurement range, so multiply by resolution to get back to absolute value, then multiply by g to get m/s^2 */
   accelerationZ = (rawAccelZ / 1000) * accelResolution * 9.80665;
-
+  Serial.println(accelerationZ);
   return (accelerationZ);
 }
 
