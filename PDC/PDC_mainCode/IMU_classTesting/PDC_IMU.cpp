@@ -12,9 +12,18 @@ void PDC_IMU::PDC_IMU(const int CS){
 }
 
 bool PDC_IMU::isAlive(){
-	// TODO: implement the "whoami" checker
-	// return 1 if success, 0 otherwise
+	/* return a code to signify result - true is success */
 	bool successCode = 0;
+	unsigned int IMU_WHO_AM_I = 0;
+	/* read the 'WHO_AM_I' register on the IMU (at 0x0f) */
+	IMU_WHO_AM_I = readSPI(slaveSelect, 0x0f, 1);
+	
+	/* check that it's what we expect */
+	if (IMU_WHO_AM_I == 0110110){
+		/* if it is, set our success code to true */
+		successCode = 1;
+	}
+	
 	return(successCode);
 }
 
@@ -48,10 +57,11 @@ void PDC_IMU::setMeasurementRange(int range){
 
 void PDC_IMU::measureAccelerometerNoiseZ(int numReadings){
 	float noiseRMS = 0;
+	float accelerationZ = 0;
 	
 	for(int i = 0; i < numReadings; i++){
-		// TODO: read z axis noise
-		readAccelerationZ();
+		/* get the acceleration in the z-direction */
+		accelerationZ = readAccelerationZ();
 	}
 	
 	return(noiseRMS)
