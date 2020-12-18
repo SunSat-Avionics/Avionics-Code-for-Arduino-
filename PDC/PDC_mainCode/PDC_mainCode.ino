@@ -28,7 +28,7 @@
 using namespace BLA;
 
 // TODO consider the below library for faster read/write/mode if timings become an issue. requires us to know the pin at compile time, so won't help in the SPI
-// might help in I2C where RTC is the only (currently) device  https://github.com/NicksonYap/digitalWriteFast 
+// might help in I2C where RTC is the only (currently) device  https://github.com/NicksonYap/digitalWriteFast
 
 
 /* ---------- SPI CONFIG ---------- */
@@ -75,8 +75,6 @@ bool errFlag = 0;
 void setup() {
   /* to store the return value of the altimeter 'CHIP_ID' identification register */
   uint8_t altimeter_CHIP_ID;
-  /* new instance of the 'File' class (part of the SD library) that we will use to control the .csv file on the microSD card */
-  File dataLogFile;
 
   /* ---------- Serial Setup ---------- */
   /* open serial comms at 9600 baud to allow us to monitor the process
@@ -88,7 +86,7 @@ void setup() {
     ; /* wait for port to connect */
   }
   Serial.println("\n-------\n SETUP\n-------\n");
-  
+
   /* ---------- SPI Setup ---------- */
   /* we want to be the master of this bus! so set the 'SS' pin on the PDC as an output */
   pinMode(PDC_SS, OUTPUT);
@@ -148,28 +146,15 @@ void setup() {
   }
 
   Serial.println("log file?");
-  /* attempt to open a .csv file which we want to log data to */
-  // TODO: once RTC is up & running, name the file with timestamp as per ISO 8601 format (kind of..)(yyyy-mm-ddThh-mm-ss.csv)
-  dataLogFile = SD.open("temp.csv", FILE_WRITE);
-
-  /* if the file can't open, the return is false */
-  if (!dataLogFile) {
+  /* attempt to open a .csv file which we want to log data to
+     returns 0 if successful */
+  if (microSD.openFile() != 0) {
     Serial.println("  :(");
     errFlag = 1;
   }
   else {
     Serial.println("  :)");
   }
-
-  /* communicate with micro SD - write the csv headers to our file
-       should define (either here or elsewhere) the units of each of these headers... perhaps in readme */
-  // TODO: populate this more fully - what are the raw measurements from BMP, GYRO, light sensors, etc?
-  dataLogFile.print("Date, \
-                     Time, \
-                     acc_x, \
-                     acc_y, \
-                     acc_z, \
-                     Note");
 
 
   /* ---------- ---------- */
@@ -221,7 +206,7 @@ void loop() {
   float accelZ = IMU.readAccelerationZ();
   Serial.print("Acceleration: ");
   Serial.println(accelZ, 5);
-  
+
   // parachute deployment tasks
   // light sensor check (poll the sensor every x seconds to check ambient light levels. If new value much greater than old on all 4 sensors,
   // register apogee)

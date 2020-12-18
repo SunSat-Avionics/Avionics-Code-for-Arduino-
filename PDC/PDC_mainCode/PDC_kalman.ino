@@ -42,11 +42,12 @@ void initKalman() {
   // rather than taking it separately for pressure and temperature!
   // the looping would be slower but would save memory that would be used for storing an enum which we'd probably only use once
   // and the loop would still allow us to change R based on the setups of the sensors
-  
+
   /* measure the standard deviation of the accelerometer noise, then square it to get variance for R */
   R_matrix(0, 0) = pow(IMU.measureAccelerometerNoiseZ(), 2);
+  Serial.print("Variance_a: ");
+  Serial.println(R_matrix(0, 0), 8);
 
-  Serial.println("  Iteratively setting K and P matrices");
   /* ---------- initialise Kalman Gain matrix, K ---------- */
   /* declare matrices for interim storage */
   Matrix<numMeasurements, numMeasurements> sum_HPHT_R;
@@ -81,7 +82,7 @@ void initKalman() {
     Serial << " Q: " << Q_matrix << '\n';
   }
 
-  Serial.println("  Success!");
+  Serial.println("  :)");
 }
 
 /* this function is used to filter the sensor data during ascent to help us predict apogee */

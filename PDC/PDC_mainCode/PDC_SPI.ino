@@ -20,7 +20,7 @@ uint32_t readSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t numBytes)
   /* the r/w bit is first to transfer so we can shift it up to the top of the register
        read = 1, write = 0 */
   registerSelect = registerSelect | (1 << 7);
-  
+
   /* begin a transaction over SPI using our params. this command also stops interrupts from preventing SPI comms */
   SPI.beginTransaction(SPISettings(CLOCK_RATE, MSBFIRST, SPI_MODE0));
 
@@ -32,7 +32,7 @@ uint32_t readSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t numBytes)
 
   /* now if we send nothing, we are listening for the result - the device will send the value in the register we requested for the first byte, just read the value into 'result' */
   result = SPI.transfer(0x00);
-  
+
   /* decrement the number of bytes that we have left to read */
   counter--;
 
@@ -73,7 +73,7 @@ void writeSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t data) {
   /* the device now knows which device we want to write to, so lets send our data */
   // TODO: is it possible or required to send more than one byte? if so, add support
   SPI.transfer(data);
-  
+
   /* stop communications with device by setting the corresponding slave select on the PDC to high */
   digitalWrite(deviceSelect, HIGH);
 

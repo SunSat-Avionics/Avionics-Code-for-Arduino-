@@ -11,7 +11,7 @@ bool PDC_LSM6DSO32::isAlive() {
   uint8_t WHO_AM_I = 0;
   uint8_t WHO_AM_I_expect = 0b01101100;
   uint8_t regAddress = 0x0f;
-  
+
   /* read the 'WHO_AM_I' register on the IMU (at 0x0f) */
   WHO_AM_I = readSPI(slaveSelect, regAddress, 1);
 
@@ -29,12 +29,12 @@ float PDC_LSM6DSO32::readAccelerationZ() {
   uint16_t rawAccelZ;
   float accelerationZ = 0;
   uint8_t regAddress = 0x2C;
-  
+
   /* the resolution of the accelerometer is its range (e.g. +/4g) divided by the number of combinations available
       the accelerometer output is 16bits, so 2^16 is our combinations.
       units are milli-g per bit, so times 1000*/
   float accelResolution = (accelerometerMeasurementRange * 2.0 * 1000.0) / 65536.0;
-  
+
   /* read z-axis acceleration.
       note in CTRL3_C, there is a default enabled bit which auto-increments the register address when reading multiple bytes so we dont need to read the H and L
       registers separately, as long as we tell readSPI() that we expect 2 bytes in the last argument */
@@ -134,9 +134,9 @@ bool PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, uint8_t range) {
 /* WHEN AT REST measure the standard deviation of the noise in the z-axis */
 float PDC_LSM6DSO32::measureAccelerometerNoiseZ() {
   /* how many readings to calculate standard deviation over */
-  uint8_t numReadings = 50; 
-  
-  float stdDev = 0; 
+  uint8_t numReadings = 50;
+
+  float stdDev = 0;
   float mean = 0;
   float sum = 0;
   float prev_mean = 0;
@@ -145,35 +145,35 @@ float PDC_LSM6DSO32::measureAccelerometerNoiseZ() {
   /* sometime the accelerometer will spit out useless values that are quite far from the expected value. use this threshold (larger than expected variation)
      to kick them out of the calculations */
   float threshold = 0.3;
-  
+
   /* for the specified number of readings, measure the acceleration */
   for (uint8_t i = 1; i < numReadings; i++) {
     /* force rate of measurements to allow for proper processing */
     // TODO: consider replacing with a non-blocking function?
     delay(100);
-    
+
     /* get the acceleration in the z-direction */
     accZ = readAccelerationZ();
 
-    if(abs(GRAVITY_MAGNITUDE - accZ) > threshold){
+    if (abs(GRAVITY_MAGNITUDE - accZ) > threshold) {
       /* for an erroneous reading, we should take the reading again to avoid skew */
       i -= 1;
     }
-    else{
+    else {
       /* Welford's algorithm for calculating standard deviation in real time. allows us to sidestep a large array of floats
           which would very quickly eat up memory & limit the samples we can test! */
-      mean = mean + (accZ-mean)/i;
-      sum = sum + (accZ-mean)*(accZ-prev_mean);
+      mean = mean + (accZ - mean) / i;
+      sum = sum + (accZ - mean) * (accZ - prev_mean);
       prev_mean = mean;
     }
   }
 
-  // TODO: determine if we should be dividing by n or by n-1 
-  stdDev = pow(sum/float(numReadings), 0.5);
-  
+  // TODO: determine if we should be dividing by n or by n-1
+  stdDev = pow(sum / float(numReadings), 0.5);
+
   // TODO: consider putting a cap on stdDev incase of disturbance during setup
   // TODO: worth considering replacement or supplementation with a lookup table - if we want to change mode when switching to attitude determination, we can't measure the noise
-  
+
   /* return the standard deviation of the noise */
   return (stdDev);
 }
