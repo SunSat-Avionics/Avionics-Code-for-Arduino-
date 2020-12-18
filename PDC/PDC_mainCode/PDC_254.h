@@ -20,10 +20,12 @@ class PDC_254 {
     };
     /* check if connected and responsive */
     bool isAlive();
+    /* check if card is inserted */
+    bool cardInserted();
     /* write some data to the microSD card */
     void writeData();
 };
 
 /* Example usage
-
+  
 */
