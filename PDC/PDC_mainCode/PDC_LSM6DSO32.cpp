@@ -153,6 +153,7 @@ float PDC_LSM6DSO32::measureAccelerometerNoiseZ() {
   /* for the specified number of readings, measure the acceleration */
   for (uint8_t i = 1; i < numReadings; i++) {
     /* force rate of measurements to allow for proper processing */
+    // TODO: consider replacing with a non-blocking function?
     delay(100);
     
     /* get the acceleration in the z-direction */

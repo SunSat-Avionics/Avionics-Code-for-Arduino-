@@ -37,7 +37,7 @@ class PDC_LSM6DSO32 {
 	if flag is 1, we're all good
   }
   IMU.setAccelerometerMeasurementRange(4); (+/- in g)
-  IMU.measureAccelerometerNoiseZ(10); measure the noise in the z direction for 10 samples
+  IMU.measureAccelerometerNoiseZ(); measure the standard deviation (m/s^2) of the noise in the z-direction
   accZ = IMU.readAccelerationZ(); get the acceleration in m/s2 in the z-direction
 
 */
