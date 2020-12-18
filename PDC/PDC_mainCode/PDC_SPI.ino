@@ -22,7 +22,7 @@ uint32_t readSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t numBytes)
   registerSelect = registerSelect | (1 << 7);
   
   /* begin a transaction over SPI using our params. this command also stops interrupts from preventing SPI comms */
-  SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
+  SPI.beginTransaction(SPISettings(CLOCK_RATE, MSBFIRST, SPI_MODE0));
 
   /* to communicate with the device, we take its slave select pin on the PDC low */
   digitalWrite(deviceSelect, LOW);
@@ -62,7 +62,7 @@ void writeSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t data) {
   registerSelect = registerSelect | (0 << 7);
 
   /* begin a transaction over SPI using our params. this command also stops interrupts from preventing SPI comms */
-  SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
+  SPI.beginTransaction(SPISettings(CLOCK_RATE, MSBFIRST, SPI_MODE0));
 
   /* to communicate with the device, we take its slave select pin on the PDC low */
   digitalWrite(deviceSelect, LOW);
