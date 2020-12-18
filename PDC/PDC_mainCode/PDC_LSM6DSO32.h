@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include "PDC_SPI.h"
+#include <stdio.h>
 #define GRAVITY_MAGNITUDE  9.80665
 
 /* we define an LSM6DSO32 class to keep everything packed away neatly. it allows us to keep hold of things that we set

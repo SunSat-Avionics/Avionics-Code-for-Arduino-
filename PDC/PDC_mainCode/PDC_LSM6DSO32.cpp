@@ -3,8 +3,6 @@
 // measure offset
 
 #include "PDC_LSM6DSO32.h"
-#include "PDC_SPI.h"
-#include <stdio.h>
 
 /* read the 'WHO_AM_I' register to check we have a valid connection to the IMU. returns true if successful */
 bool PDC_LSM6DSO32::isAlive() {
@@ -45,8 +43,6 @@ float PDC_LSM6DSO32::readAccelerationZ() {
   /* convert our output into an actual acceleration value in ms/2
       the raw value is somewhere in our measurement range, so multiply by resolution to get back to absolute value, then multiply by g to get m/s^2 */
   accelerationZ = (float(rawAccelZ) / 1000) * accelResolution * GRAVITY_MAGNITUDE;
-  Serial.print("Acceleration: ");
-  Serial.println(accelerationZ, 10);
   return (accelerationZ);
 }
 
@@ -162,7 +158,6 @@ float PDC_LSM6DSO32::measureAccelerometerNoiseZ() {
     if(abs(GRAVITY_MAGNITUDE - accZ) > threshold){
       /* for an erroneous reading, we should take the reading again to avoid skew */
       i -= 1;
-      Serial.println("DEAD");
     }
     else{
       /* Welford's algorithm for calculating standard deviation in real time. allows us to sidestep a large array of floats
@@ -175,9 +170,6 @@ float PDC_LSM6DSO32::measureAccelerometerNoiseZ() {
 
   // TODO: determine if we should be dividing by n or by n-1 
   stdDev = pow(sum/float(numReadings), 0.5);
-
-  Serial.print("Standard Deviation: ");
-  Serial.println(stdDev,5);
   
   // TODO: consider putting a cap on stdDev incase of disturbance during setup
   // TODO: worth considering replacement or supplementation with a lookup table - if we want to change mode when switching to attitude determination, we can't measure the noise

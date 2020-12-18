@@ -11,16 +11,16 @@
 
 /* the accel/gyro, barometer & micro-SD unit are on SPI, so include library for SPI commands (https://www.arduino.cc/en/reference/SPI) */
 #include <SPI.h>
-/* the RTC is on I2C, so include the library for I2C commands (https://www.arduino.cc/en/reference/wire) */
-#include <Wire.h>
 /* then included our own SPI functions */
 #include "PDC_SPI.h"
-/* we want the SD card library too (https://www.arduino.cc/en/reference/SD) */
-#include <SD.h>
+/* the RTC is on I2C, so include the library for I2C commands (https://www.arduino.cc/en/reference/wire) */
+#include <Wire.h>
 /* include the functions for the kalman filter */
 #include "PDC_kalman.h"
-/* functions for IMU read/write */
+/* include our IMU class */
 #include "PDC_LSM6DSO32.h"
+/* include our micro-SD class */
+#include "PDC_254.h"
 /* for Matrix operations
    if this line throws an error, you probably don't have the Matrix Library locally.
    see: https://github.com/tomstewart89/BasicLinearAlgebra or search 'basic linear algebra' in the IDE library manager */
@@ -38,9 +38,13 @@ const uint8_t PDC_SS = 10;
 const uint8_t altimeter_SS = 4;
 const uint8_t IMU_SS = 5;
 const uint8_t microSD_SS = 6;
+/* the microSD card module has a chip detect pin which shorts to ground if the card isn't inserted */
+const uint8_t microSD_CD = 7;
 
 /* create an LSM6DSO32 object for our IMU. class defines are in 'PDC_LSM6DSO32.h' and 'PDC_LSM6DSO32.cpp' */
 PDC_LSM6DSO32 IMU(IMU_SS);
+/* create a 254 breakout class for the microSD card module. class defines are in 'PDC_254.h' and 'PDC_254.cpp' */
+PDC_254 microSD(microSD_SS, microSD_CD);
 
 /* ---------- I2C CONFIG ---------- */
 /* the real-time clock (RTC) module is connected via I2C. The nano's data line for I2C (SDA) is at pin 23 */
@@ -99,6 +103,8 @@ void setup() {
   digitalWrite(IMU_SS, HIGH);
   pinMode(microSD_SS, OUTPUT);
   digitalWrite(microSD_SS, HIGH);
+  /* set the card detect pin to be an input that we can measure to check for a card */
+  pinMode(microSD_CD, INPUT);
 
   /* initialise all lines and CPU to use SPI */
   SPI.begin();
@@ -133,7 +139,7 @@ void setup() {
   Serial.println("micro-SD?");
   /* attempt to init micro SD card */
   // TODO: if we have a shield with 'CD' (chip detect) pin, make use of this to check pin is in place.
-  if (SD.begin(microSD_SS)) {
+  if (microSD.isAlive()) {
     Serial.println("  :)");
   }
   else {
