@@ -45,6 +45,10 @@ bool PDC_254::openFile() {
     // TODO: populate this more fully - what are the raw measurements from BMP, GYRO, light sensors, etc?
     char headerData[] = "Date, Time, acc_x, acc_y, acc_z, Note";
     writeData(headerData);
+    
+    /* get the time since we started */
+    // TODO print a new line at currentTime - timeSinceStartup with a note of 'program start' or similar
+    uint32_t timeSinceStartup = millis();
     return (0);
   }
 }

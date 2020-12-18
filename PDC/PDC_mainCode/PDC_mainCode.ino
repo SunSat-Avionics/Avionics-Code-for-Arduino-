@@ -156,7 +156,8 @@ void setup() {
     Serial.println("  :)");
   }
 
-
+  // TODO write a note to the microSD to signify SD begin - maybe need a .writeNote() method which blanks everything but date, time and note
+  // TODO 
   /* ---------- ---------- */
   // light sensor pin configuration (digital output to SI pin, analogue input(s) from AO pins, clock signal to CLK pins)
 
@@ -197,6 +198,7 @@ void setup() {
   else {
     Serial.println("\n----------\n SETUP :)\n----------");
   }
+  // TODO write a note to the microSD to signify end of setup - maybe need a .writeNote() method which blanks everything but date, time and note
 }
 
 /* -------------------- LOOP -------------------- */
