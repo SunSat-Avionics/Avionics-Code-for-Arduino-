@@ -26,10 +26,7 @@
 using namespace BLA;
 
 // TODO consider the below library for faster read/write/mode if timings become an issue. requires us to know the pin at compile time, so won't help in the SPI
-// might help in I2C where RTC is the only (currently) device...
-/* for faster read/write on pins #include <digitalWriteFast.h>
-   if this line throws an error, you probably don't have the library locally.
-   see: https://github.com/NicksonYap/digitalWriteFast */
+// might help in I2C where RTC is the only (currently) device  https://github.com/NicksonYap/digitalWriteFast 
 
 
 /* ---------- SPI CONFIG ---------- */
@@ -46,20 +43,20 @@ using namespace BLA;
 
 /* the arduino nano has an 'SS' pin (10) which helps us choose if we want to be master or slave. pin 10 as output = PDC as master */
 const uint8_t PDC_SS = 10;
-/* define the DIGIN pins on the PDC that are connected to the 'slave select' (SS) pin of each device */
+/* define the DIG pins on the PDC that are connected to the 'slave select' (SS) pin of each device */
 const uint8_t altimeter_SS = 4;
 const uint8_t IMU_SS = 5;
 const uint8_t microSD_SS = 6;
 
-/* create a PDC_IMU object for our LSM6DSO32. class defines are in 'PDC_IMU.h' and 'PDC_IMU.cpp' */
+/* create an LSM6DSO32 object for our IMU. class defines are in 'PDC_LSM6DSO32.h' and 'PDC_LSM6DSO32.cpp' */
 PDC_LSM6DSO32 IMU(IMU_SS);
 
 /* ---------- I2C CONFIG ---------- */
 // TODO
 
 /* ---------- KALMAN FILTER CONFIG ---------- */
-/* define number of states and measurements as this allows for more dynamic matrix sizing
-   NOTE: if changing states and measurements, make sure to change any relevant matrices in setup() */
+/* define number of states and measurements as this allows for more controlled matrix sizing
+   NOTE: if changing states and measurements, make sure to change any relevant matrices in setup() or initKalman() */
 const uint8_t numStates = 3;
 const uint8_t numMeasurements = 2;
 /* state transition matrix which maps previous state to current state.
@@ -75,12 +72,11 @@ Matrix<numStates, numStates> P_matrix;
 
 /* -------------------- SETUP -------------------- */
 /* value to be used whenever we want to detect some error */
-bool err = 0;
+bool errCode = 0;
 /* if we do encounter an error, set the flag to true so we can warn that setup failed */
 bool errFlag = 0;
 
 void setup() {
-
   /* to store the return value of the altimeter 'CHIP_ID' identification register */
   uint8_t altimeter_CHIP_ID;
   /* new instance of the 'File' class (part of the SD library) that we will use to control the .csv file on the microSD card */
@@ -96,6 +92,7 @@ void setup() {
     ; /* wait for port to connect */
   }
   Serial.println("\n-------\n SETUP\n-------\n");
+  
   /* ---------- SPI Setup ---------- */
   /* we want to be the master of this bus! so set the 'SS' pin on the PDC as an output */
   pinMode(PDC_SS, OUTPUT);
@@ -121,8 +118,8 @@ void setup() {
   Serial.println("Altimeter?");
   /* communicate with altimeter: read the 'CHIP_ID' register. expect 0x50 */
   altimeter_CHIP_ID = readSPI(altimeter_SS, 0x00, 1);
+  // TODO: maybe it'd be more consistent to create a BMP388 object like we have for the LSM6DSO32
   /* we have read the 'CHIP_ID' register and now should check that the value read is as we expect */
-  // TODO: when a little more developed, this should be replaced with something more meaningful! e.g. comms to ground to indicate 'yes we're good on the altimeter'
   if (altimeter_CHIP_ID == 0x50) {
     Serial.println("  :)");
   }
@@ -133,7 +130,6 @@ void setup() {
 
   Serial.println("IMU?");
   /* our IMU class has an 'isAlive()' method, which reads the 'WHO_AM_I' register to check our connection. returns true if connected & working! */
-  // TODO: when a little more developed, these messages should be replaced with something more meaningful!
   if (IMU.isAlive()) {
     Serial.println("  :)");
   }
@@ -191,12 +187,13 @@ void setup() {
   /* accelerometer setup: 1. output update freq in Hz   (0, 12.5, 26, 52, 104, 208, 416, 833, 1660, 3330, 6660)
                           2. measurement range in +/- g (4, 8, 16, 32)
   */
-  err = IMU.setupAccelerometer(3330, 32);
-  if (err) {
-    /* the function returns TRUE if the setup failed due to invalid inputs
-        don't need to print this error as it's taken care of in the class */
+  /* set the accelerometer update rate high enough to allow us to capture lots of data, and 32g mode as launch will be quite tough.*/
+  errCode = IMU.setupAccelerometer(3330, 32);
+  if (errCode != 0) {
+    /* the function returns TRUE if the setup succeeded
+        don't need to print anything to serial for this error as it's taken care of in the class */
     errFlag = 1;
-    err = 0;
+    errCode = 0;
   }
 
   // TODO: IMU self test
@@ -210,7 +207,7 @@ void setup() {
   /* setup kalman filter for apogee detection (function in kalmanFilter.ino) */
   initKalman();
 
-  // indicate that setup is complete - write to SD 'setup complete' and maybe talk to main OBC to tell ground that we're ready to go
+  /* ---------- SETUP COMPLETE ---------- */
   if (errFlag) {
     Serial.println("\n----------\n SETUP :(\n----------");
   }
@@ -222,6 +219,11 @@ void setup() {
 /* -------------------- LOOP -------------------- */
 
 void loop() {
+  // filler code to keep us entertained during testing
+  float accelZ = IMU.readAccelerationZ();
+  Serial.print("Acceleration: ");
+  Serial.println(accelZ, 5);
+  
   // parachute deployment tasks
   // light sensor check (poll the sensor every x seconds to check ambient light levels. If new value much greater than old on all 4 sensors,
   // register apogee)

@@ -1,7 +1,7 @@
 /* read a value from a register of a device on SPI. as arguments, pass the device select pin, the address of the register, and the number of bytes that this
    register contains. it will return the value that is stored in the register that we are reading. return is 32 bits so can read 4 bytes total */
 // TODO: lookup 'shiftout()' - seen it mentioned as alternative(?) to SPI.Transfer?
-// TODO: revisit the result for multiple bytes
+// TODO: revisit the result for multiple bytes - maybe accept an argument for MSB or LSB first?
 uint32_t readSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t numBytes) {
 
   /* variable for our register value return */
@@ -23,11 +23,7 @@ uint32_t readSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t numBytes)
 
   /* now if we send nothing, we are listening for the result - the device will send the value in the register we requested for the first byte, just read the value into 'result' */
   result = SPI.transfer(0x00);
-
-  Serial.print("Read register: ");
-  Serial.print(registerSelect, BIN);
-  Serial.print(" Value: ");
-  Serial.println(result, BIN);
+  
   /* decrement the number of bytes that we have left to read */
   counter--;
 
@@ -68,11 +64,6 @@ void writeSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t data) {
   /* the device now knows which device we want to write to, so lets send our data */
   // TODO: is it possible or required to send more than one byte? if so, add support
   SPI.transfer(data);
-
-  Serial.print("Write register: ");
-  Serial.print(registerSelect, BIN);
-  Serial.print(" Value: ");
-  Serial.println(data, BIN);
   
   /* stop communications with device by setting the corresponding slave select on the PDC to high */
   digitalWrite(deviceSelect, HIGH);

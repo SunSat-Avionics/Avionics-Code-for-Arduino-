@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#define GRAVITY_MAGNITUDE  9.80665
 
 /* we define an LSM6DSO32 class to keep everything packed away neatly. it allows us to keep hold of things that we set
     e.g. measurement range, so that we don't have to read them from the device directly, plus it gives some neat

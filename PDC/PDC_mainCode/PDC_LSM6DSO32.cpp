@@ -6,6 +6,7 @@
 #include "PDC_SPI.h"
 #include <stdio.h>
 
+/* read the 'WHO_AM_I' register to check we have a valid connection to the IMU. returns true if successful */
 bool PDC_LSM6DSO32::isAlive() {
   /* have a code to signify result - true is success */
   bool successCode = 0;
@@ -25,7 +26,7 @@ bool PDC_LSM6DSO32::isAlive() {
   return (successCode);
 }
 
-/* read the z-axis acceleration and convert to an acceleration in m/s2 */
+/* read z-axis of the accelerometer and return the acceleration in m/s2 */
 float PDC_LSM6DSO32::readAccelerationZ() {
   uint16_t rawAccelZ;
   float accelerationZ = 0;
@@ -43,12 +44,13 @@ float PDC_LSM6DSO32::readAccelerationZ() {
 
   /* convert our output into an actual acceleration value in ms/2
       the raw value is somewhere in our measurement range, so multiply by resolution to get back to absolute value, then multiply by g to get m/s^2 */
-  accelerationZ = (float(rawAccelZ) / 1000) * accelResolution * 9.80665;
+  accelerationZ = (float(rawAccelZ) / 1000) * accelResolution * GRAVITY_MAGNITUDE;
   Serial.print("Acceleration: ");
   Serial.println(accelerationZ, 10);
   return (accelerationZ);
 }
 
+/* configure the update frequency of the ODR and the measurement range of the accelerometer. returns true if it succeeded */
 bool PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, uint8_t range) {
   uint8_t data = 0;
   bool errFlag = 0;
@@ -130,37 +132,54 @@ bool PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, uint8_t range) {
     accelerometerOutputFrequency = outputFrequency;
     accelerometerMeasurementRange = range;
   }
-
   return (errFlag);
 }
 
+/* WHEN AT REST measure the standard deviation of the noise in the z-axis */
 float PDC_LSM6DSO32::measureAccelerometerNoiseZ() {
-  uint8_t numReadings = 10; /* how many readings to calculate standard deviation over (25 seems to be max!) */
-  float accelerationZ[numReadings];
-  float avg = 0;
-  float stdDev = 0;
-    
+  /* how many readings to calculate standard deviation over */
+  uint8_t numReadings = 50; 
+  
+  float stdDev = 0; 
+  float mean = 0;
+  float sum = 0;
+  float prev_mean = 0;
+  float accZ = 0;
+
+  /* sometime the accelerometer will spit out useless values that are quite far from the expected value. use this threshold (larger than expected variation)
+     to kick them out of the calculations */
+  float threshold = 0.3;
+  
   /* for the specified number of readings, measure the acceleration */
-  for (uint8_t i = 0; i < numReadings; i++) {
+  for (uint8_t i = 1; i < numReadings; i++) {
+    /* force rate of measurements to allow for proper processing */
+    delay(100);
+    
     /* get the acceleration in the z-direction */
-    accelerationZ[i] = readAccelerationZ();
-    /* cumulative sum */
-    avg += accelerationZ[i];
-    // TODO: implement some sort of timing between readings (e.g. twice per second? faster? wait for new data?)
+    accZ = readAccelerationZ();
+
+    if(abs(GRAVITY_MAGNITUDE - accZ) > threshold){
+      /* for an erroneous reading, we should take the reading again to avoid skew */
+      i -= 1;
+      Serial.println("DEAD");
+    }
+    else{
+      /* Welford's algorithm for calculating standard deviation in real time. allows us to sidestep a large array of floats
+          which would very quickly eat up memory & limit the samples we can test! */
+      mean = mean + (accZ-mean)/i;
+      sum = sum + (accZ-mean)*(accZ-prev_mean);
+      prev_mean = mean;
+    }
   }
 
-  /* average of all measurements */
-  avg /= numReadings;
+  // TODO: determine if we should be dividing by n or by n-1 
+  stdDev = pow(sum/float(numReadings), 0.5);
 
-  /* calculate the standard deviation of all the readings */
-  for(uint8_t i = 0; i < numReadings; i++){
-    accelerationZ[i] = pow((accelerationZ[i] - avg), 2);
-    stdDev += accelerationZ[i];
-  }
-  stdDev /= numReadings;
-  stdDev = pow(stdDev, 0.5);
-
+  Serial.print("Standard Deviation: ");
+  Serial.println(stdDev,5);
+  
   // TODO: consider putting a cap on stdDev incase of disturbance during setup
+  // TODO: worth considering replacement or supplementation with a lookup table - if we want to change mode when switching to attitude determination, we can't measure the noise
   
   /* return the standard deviation of the noise */
   return (stdDev);
