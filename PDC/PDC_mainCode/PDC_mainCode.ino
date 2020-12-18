@@ -11,6 +11,8 @@
 
 /* the accel/gyro, barometer & micro-SD unit are on SPI, so include library for SPI commands (https://www.arduino.cc/en/reference/SPI) */
 #include <SPI.h>
+/* the RTC is on I2C, so include the library for I2C commands (https://www.arduino.cc/en/reference/wire) */
+#include <Wire.h>
 /* then included our own SPI functions */
 #include "PDC_SPI.h"
 /* we want the SD card library too (https://www.arduino.cc/en/reference/SD) */
@@ -30,17 +32,6 @@ using namespace BLA;
 
 
 /* ---------- SPI CONFIG ---------- */
-/*
-   create an SPISettngs object to define the characteristics of the bus
-   the three parameters are: 1. clock input frequency, 2. MSB/LSB first, and 3. SPI mode
-      for more information, see: https://www.arduino.cc/en/reference/SPI
-   1. altimeter & gyro/accel have max clock input freq. of 10MHz, micro-sd has 25MHz
-      to avoid reconfigs, we'll stick at 10MHz for now - see if this is fast enough for SD
-   2. all devices are MSB first
-   3. all devices are compatible with mode 00 (clock idle low, output: falling edge, capture: rising edge);
-*/
-/* this is then our object with settings for our transactions */
-
 /* the arduino nano has an 'SS' pin (10) which helps us choose if we want to be master or slave. pin 10 as output = PDC as master */
 const uint8_t PDC_SS = 10;
 /* define the DIG pins on the PDC that are connected to the 'slave select' (SS) pin of each device */
@@ -52,7 +43,8 @@ const uint8_t microSD_SS = 6;
 PDC_LSM6DSO32 IMU(IMU_SS);
 
 /* ---------- I2C CONFIG ---------- */
-// TODO
+/* the real-time clock (RTC) module is connected via I2C. The nano's data line for I2C (SDA) is at pin 23 */
+const uint8_t RTC = 23;
 
 /* ---------- KALMAN FILTER CONFIG ---------- */
 /* define number of states and measurements as this allows for more controlled matrix sizing
