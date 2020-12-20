@@ -40,12 +40,6 @@ bool PDC_254::openFile() {
     return (1);
   }
   else {
-    /* communicate with micro SD - write the csv headers to our file
-       should define (either here or elsewhere) the units of each of these headers... perhaps in readme */
-    // TODO: populate this more fully - what are the raw measurements from BMP, GYRO, light sensors, etc?
-    char headerData[] = "Date, Time, acc_x, acc_y, acc_z, Note";
-    writeData(headerData);
-    
     /* get the time since we started */
     // TODO print a new line at currentTime - timeSinceStartup with a note of 'program start' or similar
     uint32_t timeSinceStartup = millis();
@@ -54,8 +48,16 @@ bool PDC_254::openFile() {
 }
 
 /* write some data to the microSD card */
+/* data format:
+    Date, Time, acc_x, acc_y, acc_z, Note" */
+// TODO: populate this more fully - what are the raw measurements from BMP, GYRO, light sensors, etc? Make a .txt with headers and units
 bool PDC_254::writeData(char *data) {
   bool err = 0;
+
+  // if data doesn't fully populate all columns, fill with err or 0
+  // note: it's *probably* a better idea to do individual writes via SPI in a for loop (e.g. for each entry, write SPI)
+    // instead of trying to pass all entries into write SPI instead - would require some weird trickery of the input to the 
+    // function, and might end up wiriting to consecutive registers? needs more research
 
   if (cardInserted()) {
     dataLogFile.print(data);

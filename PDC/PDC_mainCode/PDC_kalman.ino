@@ -85,9 +85,14 @@ void initKalman() {
   Serial.println("  :)");
 }
 
-/* this function is used to filter the sensor data during ascent to help us predict apogee */
-// TODO: rory make a document to summarise why we need this and what it is doing
-// TODO: split into 'predict' and 'update'? and should we force trigger the prediction at regular intervals for consistency in the F matrix (and therefore the gain)?
-void parachuteKalmanFilter()
-{
+/* use the previous states and the underlying model to predict the current state of the system */
+void kalmanPredict(){
+  
+}
+
+/* use the sensor data to update (refine) the state predictions */
+// TODO: should we force trigger the prediction at regular intervals for consistency in the F matrix? i.e. the F matrix (and therefore the gain) depends on the 
+  // change in time, so might make sense to only take SPI readings at forced intervals, rather than just taking readings and measuring the time since the last reading
+void kalmanUpdate(){
+  
 }
