@@ -63,7 +63,13 @@ Matrix<numMeasurements, numStates> H_matrix;
 /* kalman gain matrix. dimensional analysis of the update equation gives us a 3x2 matrix so can declare here */
 Matrix<numStates, numMeasurements> K_matrix;
 /* P, Q and R matrices are only needed in setup, so they aren't needed globally */
-// TODO: define & initialise state and measurement matrices
+
+/* matrix that contains the current system state */
+Matrix<numStates, 1> stateMatrix;
+/* matrix that contains the most recent measurements */
+Matrix<numMeasurements, 1> measurementMatrix;
+
+// TODO: define matrices for previous (k-1) states?
 
 /* -------------------- SETUP -------------------- */
 /* value to be used whenever we want to detect some error */
@@ -186,6 +192,8 @@ void setup() {
   F_matrix.Fill(0.0);
   H_matrix.Fill(0.0);
   K_matrix.Fill(0.0);
+  stateMatrix.Fill(0.0);
+  measurementMatrix.Fill(0.0);
   
   /* setup kalman filter for apogee detection (function in kalmanFilter.ino) */
   initKalman();
