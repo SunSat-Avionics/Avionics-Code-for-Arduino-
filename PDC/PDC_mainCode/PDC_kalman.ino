@@ -25,14 +25,17 @@ void initKalman() {
     measurementIdentity(i, i) = 1.0;
   }
 
+  /* the P,Q,R matrices are needed for setup, but not for operation, so are defined locally */
+  /* error covariance matrix */
+  Matrix<numStates, numStates> P_matrix;
+  /* process noise covariance matrix */
+  Matrix<numStates, numStates> Q_matrix = stateIdentity;
+  /* measurement noise covariance matrix */
+  Matrix<numMeasurements, numMeasurements> R_matrix = measurementIdentity;
+  
   /* make a transpose of the measurement and transition matrices for calculations */
   Matrix<numStates, numMeasurements> H_matrixTranspose = ~H_matrix;
   Matrix<numStates, numStates> F_matrixTranspose = ~F_matrix;
-
-  /* measurement noise covariance matrix */
-  Matrix<numMeasurements, numMeasurements> R_matrix = measurementIdentity;
-  /* process noise covariance matrix */
-  Matrix<numStates, numStates> Q_matrix = stateIdentity;
 
   // TODO: either measure noise and create R matrix from this, or ask sensors which mode they are in and use
   // an enum to get the noise stats as per datasheet. current values are temporary!
