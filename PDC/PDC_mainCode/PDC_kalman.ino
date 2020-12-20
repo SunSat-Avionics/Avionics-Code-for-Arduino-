@@ -68,8 +68,6 @@ void initKalman() {
     /* multiply P*H^T by (H*P*H^T + R)^1 and store in K */
     K_matrix = (P_matrix * H_matrixTranspose) * sum_HPHT_R.Inverse();
 
-    // TODO: manual calculation of K and P for arbitrary setup to verify the above has worked
-
     /* ---------- P = (I - KH)P ---------- */
     /* multiply I-KH by P and store in P */
     P_matrix = (stateIdentity - (K_matrix * H_matrix)) * P_matrix;
@@ -86,10 +84,13 @@ void initKalman() {
   }
 
   Serial.println("  :)");
+  
+  // TODO: manual calculation of K and P for arbitrary setup to verify the above has worked
 }
 
 /* use the previous states and the underlying model to predict the current state of the system */
 void kalmanPredict(){
+  // x_k = F*x_k-1
   
 }
 
@@ -97,5 +98,6 @@ void kalmanPredict(){
 // TODO: should we force trigger the prediction at regular intervals for consistency in the F matrix? i.e. the F matrix (and therefore the gain) depends on the 
   // change in time, so might make sense to only take SPI readings at forced intervals, rather than just taking readings and measuring the time since the last reading
 void kalmanUpdate(){
+  // x_k = x_k-1 + K*[z_k - H*x_k-1]
   
 }

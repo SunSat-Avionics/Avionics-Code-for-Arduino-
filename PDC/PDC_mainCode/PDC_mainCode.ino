@@ -63,6 +63,7 @@ Matrix<numMeasurements, numStates> H_matrix;
 /* kalman gain matrix. dimensional analysis of the update equation gives us a 3x2 matrix so can declare here */
 Matrix<numStates, numMeasurements> K_matrix;
 /* P, Q and R matrices are only needed in setup, so they aren't needed globally */
+// TODO: define & initialise state and measurement matrices
 
 /* -------------------- SETUP -------------------- */
 /* value to be used whenever we want to detect some error */
