@@ -51,13 +51,17 @@ PDC_254 microSD(microSD_SS, microSD_CD);
 const uint8_t RTC = 23;
 
 /* ---------- KALMAN FILTER CONFIG ---------- */
+/* time step between Kalman iterations in seconds */
+// TODO: refine this based on tests. how long does measurement take? calculation time?
+const float kalmanTime = 0.5;
 /* define number of states and measurements as this allows for more controlled matrix sizing
    NOTE: if changing states and measurements, make sure to change any relevant matrices in setup() or initKalman() */
 const uint8_t numStates = 3;
 const uint8_t numMeasurements = 2;
-/* state transition matrix which maps previous state to current state.
-   leave this as an empty variable for now as it's value changes per timestep */
-Matrix<numStates, numStates> F_matrix;
+/* state transition matrix which maps previous state to current state */
+Matrix<numStates, numStates> F_matrix = {1.0,                   0.0, 0.0,
+                                         kalmanTime,            1.0, 0.0,
+                                         0.5*pow(kalmanTime,2), 0.0, 1.0};
 /* measurement matrix which maps the measurements to the state variables */
 Matrix<numMeasurements, numStates> H_matrix;
 /* kalman gain matrix. dimensional analysis of the update equation gives us a 3x2 matrix so can declare here */
@@ -76,12 +80,15 @@ Matrix<numMeasurements, 1> measurementMatrix;
   // then using this to set update frequency of sensors by rounding up (e.g. if kalman update freq is 10Hz, set accelerometer
   // to 12.5Hz in setup)
 
-/* -------------------- SETUP -------------------- */
+/* -------------------- ERRORS -------------------- */
+// TODO: replace this with an 8-bit (16 if required) binary string, where each bit signifies a different error in setup
+  // & can be sent to main OBC to tell it if we've been successful or not
 /* value to be used whenever we want to detect some error */
 bool errCode = 0;
 /* if we do encounter an error, set the flag to true so we can warn that setup failed */
 bool errFlag = 0;
 
+/* -------------------- SETUP -------------------- */
 void setup() {
   /* to store the return value of the altimeter 'CHIP_ID' identification register */
   uint8_t altimeter_CHIP_ID;
@@ -194,7 +201,6 @@ void setup() {
 
   /* ---------- KALMAN FILTER SETUP ---------- */
   /* fill all matrices with 0 to start */
-  F_matrix.Fill(0.0);
   H_matrix.Fill(0.0);
   K_matrix.Fill(0.0);
   stateMatrix.Fill(0.0);
