@@ -66,10 +66,15 @@ Matrix<numStates, numMeasurements> K_matrix;
 
 /* matrix that contains the current system state */
 Matrix<numStates, 1> stateMatrix;
+/* matrix that contains the previous system state */
+Matrix<numStates, 1> prevStateMatrix;
 /* matrix that contains the most recent measurements */
 Matrix<numMeasurements, 1> measurementMatrix;
 
-// TODO: define matrices for previous (k-1) states?
+// TODO: define our kalman frequency (e.g. const int kalmanFrequency = 10; (Hz)) and use this to define the F matrix
+  // the frequency will probably involve some experimenting to work out how high we can reasonably go based on calc times. maybe worth
+  // then using this to set update frequency of sensors by rounding up (e.g. if kalman update freq is 10Hz, set accelerometer
+  // to 12.5Hz in setup)
 
 /* -------------------- SETUP -------------------- */
 /* value to be used whenever we want to detect some error */
@@ -193,6 +198,7 @@ void setup() {
   H_matrix.Fill(0.0);
   K_matrix.Fill(0.0);
   stateMatrix.Fill(0.0);
+  prevStateMatrix.Fill(0.0);
   measurementMatrix.Fill(0.0);
   
   /* setup kalman filter for apogee detection (function in kalmanFilter.ino) */
