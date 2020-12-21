@@ -31,7 +31,7 @@ float PDC_LSM6DSO32::readAccelerationZ() {
   /* array for the 2 components of the acceleration measurement */
   uint8_t rawAccelZ[2];
   /* variable to concatenate the 2 components into */
-  uint16_t rawAccelConcat = 0;
+  int16_t rawAccelConcat = 0;
   /* variable to hold the actual acceleration in m/s^2 */
   float accelerationZ = 0;
   /* address of the register which has the first component of acceleration */
@@ -46,10 +46,10 @@ float PDC_LSM6DSO32::readAccelerationZ() {
       note in CTRL3_C, there is a default enabled bit which auto-increments the register address when reading multiple bytes so we dont need to read the H and L
       registers separately, as long as we tell readSPI() that we expect 2 bytes in the last argument */
   readSPI(slaveSelect, regAddress, 2, rawAccelZ);
-
+  
   /* we have rawAccelZ array with the LSB (0x2C) and MSB (0x2D) components, so concat these into a single value */
   rawAccelConcat = (rawAccelZ[1] << 8) | rawAccelZ[0];
-
+  
   /* convert our output into an actual acceleration value in m/s^2
       the raw value is somewhere in our measurement range, so multiply by resolution to get back to absolute value, then multiply by g to get m/s^2 */
   accelerationZ = (float(rawAccelConcat) / 1000) * accelResolution * GRAVITY_MAGNITUDE;
