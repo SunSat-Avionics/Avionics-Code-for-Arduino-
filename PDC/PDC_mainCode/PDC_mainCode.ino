@@ -49,6 +49,7 @@ PDC_254 microSD(microSD_SS, microSD_CD);
 /* ---------- I2C CONFIG ---------- */
 /* the real-time clock (RTC) module is connected via I2C. The nano's data line for I2C (SDA) is at pin 23 */
 const uint8_t RTC = 23;
+const uint8_t RTCaddress = 0x50;
 
 /* ---------- KALMAN FILTER CONFIG ---------- */
 /* time step between Kalman iterations in seconds */
@@ -130,7 +131,8 @@ void setup() {
   SPI.begin();
 
   /* ---------- I2C Setup ---------- */
-  // TODO
+  /* initialise CPU to use I2C */
+  Wire.begin();
 
   /* ---------- SPI Verification ---------- */
   /* communicate with altimeter: read the 'CHIP_ID' register. expect 0x50 */
