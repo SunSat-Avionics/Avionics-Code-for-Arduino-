@@ -91,11 +91,13 @@ void kalmanPredict() {
 }
 
 /* use the sensor data to update (refine) the state predictions */
-// TODO: should we force trigger the prediction at regular intervals for consistency in the F matrix? i.e. the F matrix (and therefore the gain) depends on the
-// change in time, so might make sense to only take SPI readings at forced intervals, rather than just taking readings and measuring the time since the last reading
+// TODO: can we get away without declaring variables in these local scopes? not needed elsewhere but will save us the time of re-declaring the values 
+// and timing here is quite important to keep strict!
 void kalmanUpdate() {
-  // TODO: take measurements
-
+  float accelerationZ = IMU.readAccelerationZ();
+  // TODO: take altitude measurement from altimeter
+  // TODO: create measurement vector from the readings
+  
   /* x_k = x_k-1 + K*[z_k - H*x_k-1] */
   stateMatrix = predictedStateMatrix + K_matrix * (measurementMatrix - H_matrix * predictedStateMatrix);
   previousStateMatrix = stateMatrix;

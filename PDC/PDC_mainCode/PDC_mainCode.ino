@@ -227,7 +227,7 @@ void loop() {
   // light sensor check (poll the sensor every x seconds to check ambient light levels. If new value much greater than old on all 4 sensors,
   // register apogee)
 
-
+  
   /* use the underlying dynamical model to predict the current state of the system */
   kalmanPredict();
   /* update the prediction by taking measurements */
