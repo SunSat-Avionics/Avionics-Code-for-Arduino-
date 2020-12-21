@@ -101,5 +101,6 @@ void kalmanUpdate(){
   // TODO: take measurements
   
   /* x_k = x_k-1 + K*[z_k - H*x_k-1] */
-  stateMatrix = predictedStateMatrix + K_matrix(measurementMatrix - H*predictedStateMatrix);
+  stateMatrix = predictedStateMatrix + K_matrix(measurementMatrix - H*predictedStateMatrix); 
+  previousStateMatrix = stateMatrix;
 }

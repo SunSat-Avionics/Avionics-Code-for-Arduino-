@@ -222,13 +222,17 @@ void loop() {
   // parachute deployment tasks
   // light sensor check (poll the sensor every x seconds to check ambient light levels. If new value much greater than old on all 4 sensors,
   // register apogee)
+  
+  /* use the underlying dynamical model to predict the current state of the system */
+  kalmanPredict();
+  /* update the prediction by taking measurements */
+  kalmanUpdate();
 
-  // altimeter check (check stream of readings and determine when the pressure begins to increase again). potentially feed this into the
-  // Kalman Filter to mitigate noise and back up the accel readings)
+  // TODO: implement timing to fit with gain calculation
+  // TODO: write state vector to file
 
-  // accelerometer check (update Kalman Filter of integral of acceleration to detect when the velocity is zero)
 
-  // write data to SD card (line format with timestamped measurements)
+  // write any other data (e.g. raw readings, notes) to SD card (line format with timestamped measurements)
 
 
   // attitude determination tasks
