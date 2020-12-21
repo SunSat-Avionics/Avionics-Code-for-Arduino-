@@ -103,7 +103,7 @@ void setup() {
   uint8_t altimeter_CHIP_ID[1];
   /* to flag errors when they're encountered */
   bool errFlag = 0;
-  
+
   /* ---------- Serial Setup ---------- */
   /* open serial comms at 9600 baud to allow us to monitor the process
        serial may become irrelevant - once the code is on the PDC we might not be connecting via serial
@@ -201,7 +201,7 @@ void setup() {
 
   /* setup kalman filter for apogee detection (function in kalmanFilter.ino) */
   initKalman();
-  
+
   /* ---------- SETUP COMPLETE ---------- */
   if (errCode != 0) {
     Serial.print("\n-----------\n");
