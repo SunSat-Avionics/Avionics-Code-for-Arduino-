@@ -51,6 +51,7 @@ PDC_254 microSD(microSD_SS, microSD_CD);
 /* ---------- I2C CONFIG ---------- */
 /* the real-time clock (RTC) module is connected via I2C. The nano's data line for I2C (SDA) is at pin 23 */
 const uint8_t RTC = 23;
+/* to communicate with an I2C device, we have to know the device address, and for the RTC it is 0x50 */
 const uint8_t RTCaddress = 0x50;
 
 /* ---------- KALMAN FILTER CONFIG ---------- */
@@ -92,9 +93,6 @@ const uint8_t imuErr = (1 << 1);
 const uint8_t msdErr = (1 << 2);
 const uint8_t logErr = (1 << 3);
 const uint8_t rtcErr = (1 << 4);
-
-/* if we do encounter an error, set the flag to true so we can warn that setup failed */
-bool errFlag = 0;
 
 /* -------------------- SETUP -------------------- */
 void setup() {

@@ -90,7 +90,7 @@ void initKalman() {
 
 /* use the previous states and the underlying model to predict the current state of the system */
 void kalmanPredict(){
-  // x_k = F*x_k-1
+  // x_k+1 = F*x_k
   
 }
 
