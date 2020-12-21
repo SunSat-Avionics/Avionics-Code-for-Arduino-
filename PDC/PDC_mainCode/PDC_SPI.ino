@@ -29,17 +29,10 @@ void readSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t numBytes, uin
   /* if we want to read from a particular register, we must send the address of the register to the device */
   SPI.transfer(registerSelect);
 
-  /* now if we send nothing, we are listening for the result - the device will send the value in the register we requested for the first byte, just read the value into 'result' */
-  result[0] = SPI.transfer(0x00);
-
-  /* decrement the number of bytes that we have left to read */
-  counter--;
-
-  while (counter != 0) {
-    /* if we have more than one byte to read, we need to store the rest of the bytes we read! */
-    result[numBytes - counter] = SPI.transfer(0x00);
-    /* decrement the number of bytes until we get to zero, when this while() will exit */
-    counter--;
+  for (uint8_t i = 0; i < numBytes; i++) {
+    /* now if we send nothing, we are listening for the result - the device will send the value in the register we requested for the first byte,
+       and then the values in the sequential registers until we stop sending anything */
+    result[i] = SPI.transfer(0x00);
   }
 
   /* stop communications with device by setting the corresponding slave select on the PDC to high */

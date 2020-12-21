@@ -65,7 +65,8 @@ const uint8_t numMeasurements = 2;
 /* state transition matrix which maps previous state to current state */
 Matrix<numStates, numStates> F_matrix = {1.0,                   0.0, 0.0,
                                          kalmanTime,            1.0, 0.0,
-                                         0.5*pow(kalmanTime,2), 0.0, 1.0};
+                                         0.5 * pow(kalmanTime, 2), 0.0, 1.0
+                                        };
 /* measurement matrix which maps the measurements to the state variables */
 Matrix<numMeasurements, numStates> H_matrix;
 /* kalman gain matrix. dimensional analysis of the update equation gives us a 3x2 matrix so can declare here */
@@ -82,9 +83,9 @@ Matrix<numStates, 1> predictedStateMatrix;
 Matrix<numMeasurements, 1> measurementMatrix;
 
 // TODO: define our kalman frequency (e.g. const int kalmanFrequency = 10; (Hz)) and use this to define the F matrix
-  // the frequency will probably involve some experimenting to work out how high we can reasonably go based on calc times. maybe worth
-  // then using this to set update frequency of sensors by rounding up (e.g. if kalman update freq is 10Hz, set accelerometer
-  // to 12.5Hz in setup)
+// the frequency will probably involve some experimenting to work out how high we can reasonably go based on calc times. maybe worth
+// then using this to set update frequency of sensors by rounding up (e.g. if kalman update freq is 10Hz, set accelerometer
+// to 12.5Hz in setup)
 
 /* -------------------- ERRORS -------------------- */
 /* value to be used whenever we want to detect some error */
@@ -163,7 +164,7 @@ void setup() {
   }
 
   // TODO write a note to the microSD to signify SD begin - maybe need a .writeNote() method which blanks everything but date, time and note
-  // TODO 
+  // TODO
   /* ---------- ---------- */
   // light sensor pin configuration (digital output to SI pin, analogue input(s) from AO pins, clock signal to CLK pins)
 
@@ -194,7 +195,7 @@ void setup() {
   previousStateMatrix.Fill(0.0);
   predictedStateMatrix.Fill(0.0);
   measurementMatrix.Fill(0.0);
-  
+
   /* setup kalman filter for apogee detection (function in kalmanFilter.ino) */
   initKalman();
 
@@ -223,7 +224,7 @@ void loop() {
   // light sensor check (poll the sensor every x seconds to check ambient light levels. If new value much greater than old on all 4 sensors,
   // register apogee)
 
-  
+
   /* use the underlying dynamical model to predict the current state of the system */
   kalmanPredict();
   /* update the prediction by taking measurements */

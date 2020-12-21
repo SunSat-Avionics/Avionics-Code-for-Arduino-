@@ -5,12 +5,12 @@ void readI2C(uint8_t deviceAddress, uint8_t deviceRegister, uint8_t numBytes, ui
   Wire.beginTransmission(deviceAddress);
   Wire.write(deviceRegister);
   Wire.endTransmission();
-  
+
   /* enable I2C communications by requesting data from our device of length numBytes */
   Wire.requestFrom(deviceAddress, numBytes);
 
   /* read a byte from the address for the specified number of bytes */
-  for(uint8_t i = 0; i < numBytes; i++){
+  for (uint8_t i = 0; i < numBytes; i++) {
     result[i] = Wire.read();
   }
 

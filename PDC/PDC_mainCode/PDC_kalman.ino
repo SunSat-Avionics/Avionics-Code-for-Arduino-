@@ -32,7 +32,7 @@ void initKalman() {
   Matrix<numStates, numStates> Q_matrix = stateIdentity;
   /* measurement noise covariance matrix */
   Matrix<numMeasurements, numMeasurements> R_matrix = measurementIdentity;
-  
+
   /* make a transpose of the measurement and transition matrices for calculations */
   Matrix<numStates, numMeasurements> H_matrixTranspose = ~H_matrix;
   Matrix<numStates, numStates> F_matrixTranspose = ~F_matrix;
@@ -84,23 +84,23 @@ void initKalman() {
   }
 
   Serial.println("  :)");
-  
+
   // TODO: manual calculation of K and P for arbitrary setup to verify the above has worked
 }
 
 /* use the previous states and the underlying model to predict the current state of the system */
-void kalmanPredict(){
+void kalmanPredict() {
   /* x_k+1 = F*x_k */
   predictedStateMatrix = F_matrix * previousStateMatrix;
 }
 
 /* use the sensor data to update (refine) the state predictions */
-// TODO: should we force trigger the prediction at regular intervals for consistency in the F matrix? i.e. the F matrix (and therefore the gain) depends on the 
-  // change in time, so might make sense to only take SPI readings at forced intervals, rather than just taking readings and measuring the time since the last reading
-void kalmanUpdate(){
+// TODO: should we force trigger the prediction at regular intervals for consistency in the F matrix? i.e. the F matrix (and therefore the gain) depends on the
+// change in time, so might make sense to only take SPI readings at forced intervals, rather than just taking readings and measuring the time since the last reading
+void kalmanUpdate() {
   // TODO: take measurements
-  
+
   /* x_k = x_k-1 + K*[z_k - H*x_k-1] */
-  stateMatrix = predictedStateMatrix + K_matrix*(measurementMatrix - H_matrix*predictedStateMatrix); 
+  stateMatrix = predictedStateMatrix + K_matrix * (measurementMatrix - H_matrix * predictedStateMatrix);
   previousStateMatrix = stateMatrix;
 }

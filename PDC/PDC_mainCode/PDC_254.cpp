@@ -59,11 +59,11 @@ bool PDC_254::writeData(char *data) {
   // for all data
   // writeSPI(date + ",");
   // ...
-  
+
   // if data doesn't fully populate all columns, fill with err or 0
   // note: it's *probably* a better idea to do individual writes via SPI in a for loop (e.g. for each entry, write SPI)
-    // instead of trying to pass all entries into write SPI instead - would require some weird trickery of the input to the 
-    // function, and might end up wiriting to consecutive registers? needs more research
+  // instead of trying to pass all entries into write SPI instead - would require some weird trickery of the input to the
+  // function, and might end up wiriting to consecutive registers? needs more research
 
   if (cardInserted()) {
     dataLogFile.print(data);
