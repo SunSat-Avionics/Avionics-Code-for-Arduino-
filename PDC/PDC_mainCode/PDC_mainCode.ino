@@ -89,7 +89,7 @@ Matrix<numMeasurements, 1> measurementMatrix;
 
 /* -------------------- ERRORS -------------------- */
 /* value to be used whenever we want to detect some error */
-bool errCode = 0;
+uint8_t errCode = 0;
 /* individual bit sets for an error at different components. will allow us to identify specific errors in an efficient way */
 const uint8_t altErr = (1 << 0);
 const uint8_t imuErr = (1 << 1);
@@ -101,7 +101,9 @@ const uint8_t rtcErr = (1 << 4);
 void setup() {
   /* to store the return value of the altimeter 'CHIP_ID' identification register */
   uint8_t altimeter_CHIP_ID[1];
-
+  /* to flag errors when they're encountered */
+  bool errFlag = 0;
+  
   /* ---------- Serial Setup ---------- */
   /* open serial comms at 9600 baud to allow us to monitor the process
        serial may become irrelevant - once the code is on the PDC we might not be connecting via serial
@@ -179,10 +181,11 @@ void setup() {
                           2. measurement range in +/- g (4, 8, 16, 32)
   */
   /* set the accelerometer update rate high enough to allow us to capture lots of data, and 32g mode as launch will be quite tough.*/
-  errCode = IMU.setupAccelerometer(3330, 32);
-  if (errCode != 0) {
+  errFlag = IMU.setupAccelerometer(3330, 32);
+  if (errFlag != 0) {
     /* the function returns TRUE if the setup succeeded. error if values are invalid */
     errCode |= imuErr;
+    errFlag = 0;
   }
 
   // TODO: IMU self test
@@ -198,13 +201,13 @@ void setup() {
 
   /* setup kalman filter for apogee detection (function in kalmanFilter.ino) */
   initKalman();
-
+  
   /* ---------- SETUP COMPLETE ---------- */
-  if (errCode) {
-    Serial.println("\n----------\n");
-    Serial.print("Error Code: ");
-    Serial.println(errCode, BIN);
-    Serial.println("\n----------");
+  if (errCode != 0) {
+    Serial.print("\n-----------\n");
+    Serial.print(" Err: ");
+    Serial.print(errCode, BIN);
+    Serial.println(" \n-----------");
   }
   else {
     Serial.println("\n----------\n SETUP :)\n----------");

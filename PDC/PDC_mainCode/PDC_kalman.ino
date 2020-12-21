@@ -2,8 +2,6 @@
 // TODO: verify that these calcs are actually working, and verify that the matrices carry between functions since they were delcared globally
 void initKalman() {
 
-  Serial.println("Kalman init");
-
   /* ---------- Define Matrices ---------- */
   /* set measurment matrix to map measurements to states */
   H_matrix(0, 0) = 1.0;
@@ -82,8 +80,6 @@ void initKalman() {
     Serial << " R: " << R_matrix << '\n';
     Serial << " Q: " << Q_matrix << '\n';
   }
-
-  Serial.println("  :)");
 
   // TODO: manual calculation of K and P for arbitrary setup to verify the above has worked
 }

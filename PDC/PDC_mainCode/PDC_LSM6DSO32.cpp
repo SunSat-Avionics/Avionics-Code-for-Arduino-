@@ -52,7 +52,7 @@ float PDC_LSM6DSO32::readAccelerationZ() {
 
   /* convert our output into an actual acceleration value in m/s^2
       the raw value is somewhere in our measurement range, so multiply by resolution to get back to absolute value, then multiply by g to get m/s^2 */
-  accelerationZ = (float(accelConcat) / 1000) * accelResolution * GRAVITY_MAGNITUDE;
+  accelerationZ = (float(rawAccelConcat) / 1000) * accelResolution * GRAVITY_MAGNITUDE;
   return (accelerationZ);
 }
 
