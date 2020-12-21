@@ -89,15 +89,17 @@ void initKalman() {
 }
 
 /* use the previous states and the underlying model to predict the current state of the system */
-void kalmanPredict(){
-  // x_k+1 = F*x_k
-  
+Matrix kalmanPredict(){
+  /* x_k+1 = F*x_k */
+  predictedStateMatrix = F_matrix * previousStateMatrix;
 }
 
 /* use the sensor data to update (refine) the state predictions */
 // TODO: should we force trigger the prediction at regular intervals for consistency in the F matrix? i.e. the F matrix (and therefore the gain) depends on the 
   // change in time, so might make sense to only take SPI readings at forced intervals, rather than just taking readings and measuring the time since the last reading
 void kalmanUpdate(){
-  // x_k = x_k-1 + K*[z_k - H*x_k-1]
+  // TODO: take measurements
   
+  /* x_k = x_k-1 + K*[z_k - H*x_k-1] */
+  stateMatrix = predictedStateMatrix + K_matrix(measurementMatrix - H*predictedStateMatrix);
 }

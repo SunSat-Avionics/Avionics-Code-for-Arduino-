@@ -75,7 +75,9 @@ Matrix<numStates, numMeasurements> K_matrix;
 /* matrix that contains the current system state */
 Matrix<numStates, 1> stateMatrix;
 /* matrix that contains the previous system state */
-Matrix<numStates, 1> prevStateMatrix;
+Matrix<numStates, 1> previousStateMatrix;
+/* matrix that contains the prediction of the next system state */
+Matrix<numStates, 1> preictedStateMatrix;
 /* matrix that contains the most recent measurements */
 Matrix<numMeasurements, 1> measurementMatrix;
 
@@ -189,7 +191,8 @@ void setup() {
   H_matrix.Fill(0.0);
   K_matrix.Fill(0.0);
   stateMatrix.Fill(0.0);
-  prevStateMatrix.Fill(0.0);
+  previousStateMatrix.Fill(0.0);
+  predictedStateMatrix.Fill(0.0);
   measurementMatrix.Fill(0.0);
   
   /* setup kalman filter for apogee detection (function in kalmanFilter.ino) */
