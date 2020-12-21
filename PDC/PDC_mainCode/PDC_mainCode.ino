@@ -15,6 +15,8 @@
 #include "PDC_SPI.h"
 /* the RTC is on I2C, so include the library for I2C commands (https://www.arduino.cc/en/reference/wire) */
 #include <Wire.h>
+/* then include our own I2C functions */
+#include "PDC_I2C.h"
 /* include the functions for the kalman filter */
 #include "PDC_kalman.h"
 /* include our IMU class */
