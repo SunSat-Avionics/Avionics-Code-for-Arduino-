@@ -77,7 +77,7 @@ Matrix<numStates, 1> stateMatrix;
 /* matrix that contains the previous system state */
 Matrix<numStates, 1> previousStateMatrix;
 /* matrix that contains the prediction of the next system state */
-Matrix<numStates, 1> preictedStateMatrix;
+Matrix<numStates, 1> predictedStateMatrix;
 /* matrix that contains the most recent measurements */
 Matrix<numMeasurements, 1> measurementMatrix;
 
@@ -99,7 +99,7 @@ const uint8_t rtcErr = (1 << 4);
 /* -------------------- SETUP -------------------- */
 void setup() {
   /* to store the return value of the altimeter 'CHIP_ID' identification register */
-  uint8_t altimeter_CHIP_ID;
+  uint8_t altimeter_CHIP_ID[1];
 
   /* ---------- Serial Setup ---------- */
   /* open serial comms at 9600 baud to allow us to monitor the process
@@ -138,10 +138,10 @@ void setup() {
 
   /* ---------- SPI Verification ---------- */
   /* communicate with altimeter: read the 'CHIP_ID' register. expect 0x50 */
-  altimeter_CHIP_ID = readSPI(altimeter_SS, 0x00, 1);
+  readSPI(altimeter_SS, 0x00, 1, altimeter_CHIP_ID);
   // TODO: maybe it'd be more consistent to create a BMP388 object like we have for the LSM6DSO32
   /* we have read the 'CHIP_ID' register and now should check that the value read is as we expect */
-  if (altimeter_CHIP_ID != 0x50) {
+  if (altimeter_CHIP_ID[0] != 0x50) {
     errCode |= altErr;
   }
 

@@ -8,15 +8,15 @@
 bool PDC_LSM6DSO32::isAlive() {
   /* have a code to signify result - true is success */
   bool successCode = 0;
-  uint8_t WHO_AM_I = 0;
+  uint8_t WHO_AM_I[1];
   uint8_t WHO_AM_I_expect = 0b01101100;
   uint8_t regAddress = 0x0f;
 
   /* read the 'WHO_AM_I' register on the IMU (at 0x0f) */
-  WHO_AM_I = readSPI(slaveSelect, regAddress, 1);
+  readSPI(slaveSelect, regAddress, 1, WHO_AM_I);
 
   /* check that it's what we expect */
-  if (WHO_AM_I == WHO_AM_I_expect) {
+  if (WHO_AM_I[0] == WHO_AM_I_expect) {
     /* if it is, set our success code to true */
     successCode = 1;
   }
@@ -26,7 +26,8 @@ bool PDC_LSM6DSO32::isAlive() {
 
 /* read z-axis of the accelerometer and return the acceleration in m/s2 */
 float PDC_LSM6DSO32::readAccelerationZ() {
-  uint16_t rawAccelZ;
+  uint8_t rawAccelZ[2];
+  uint16_t accelConcat = 0;
   float accelerationZ = 0;
   uint8_t regAddress = 0x2C;
 
@@ -38,11 +39,16 @@ float PDC_LSM6DSO32::readAccelerationZ() {
   /* read z-axis acceleration.
       note in CTRL3_C, there is a default enabled bit which auto-increments the register address when reading multiple bytes so we dont need to read the H and L
       registers separately, as long as we tell readSPI() that we expect 2 bytes in the last argument */
-  rawAccelZ = readSPI(slaveSelect, regAddress, 2);
+  readSPI(slaveSelect, regAddress, 2, rawAccelZ);
+
+  /* we have rawAccelZ array with the LSB and MSB components, so concat these into a single value */
+  accelConcat = (rawAccelZ[1] << 8) | rawAccelZ[0];
+
+  //(SPI.transfer(0x00) << 8 * (numBytes - counter)) | result;
 
   /* convert our output into an actual acceleration value in ms/2
       the raw value is somewhere in our measurement range, so multiply by resolution to get back to absolute value, then multiply by g to get m/s^2 */
-  accelerationZ = (float(rawAccelZ) / 1000) * accelResolution * GRAVITY_MAGNITUDE;
+  accelerationZ = (float(accelConcat) / 1000) * accelResolution * GRAVITY_MAGNITUDE;
   return (accelerationZ);
 }
 

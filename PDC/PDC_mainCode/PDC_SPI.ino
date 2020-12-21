@@ -11,10 +11,9 @@
    register contains. it will return the value that is stored in the register that we are reading. return is 32 bits so can read 4 bytes total */
 // TODO: lookup 'shiftout()' - seen it mentioned as alternative(?) to SPI.Transfer?
 // TODO: revisit the result for multiple bytes - maybe accept an argument for MSB or LSB first?
-uint32_t readSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t numBytes) {
+void readSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t numBytes, uint8_t *result) {
 
-  /* variable for our register value return */
-  uint32_t result = 0;
+  /* to keep track of how many bytes are left to read */
   uint8_t counter = numBytes;
 
   /* the r/w bit is first to transfer so we can shift it up to the top of the register
@@ -31,15 +30,14 @@ uint32_t readSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t numBytes)
   SPI.transfer(registerSelect);
 
   /* now if we send nothing, we are listening for the result - the device will send the value in the register we requested for the first byte, just read the value into 'result' */
-  result = SPI.transfer(0x00);
+  result[0] = SPI.transfer(0x00);
 
   /* decrement the number of bytes that we have left to read */
   counter--;
 
   while (counter != 0) {
-    /* if we have more than one byte to read, shift the next result up to fill the MSB byte, and hold the result so far at the bottom
-       this is because the registers are usually read in sequence of LSB -> MSB */
-    result = (SPI.transfer(0x00) << 8 * (numBytes - counter)) | result;
+    /* if we have more than one byte to read, we need to store the rest of the bytes we read! */
+    result[numBytes - counter] = SPI.transfer(0x00);
     /* decrement the number of bytes until we get to zero, when this while() will exit */
     counter--;
   }
@@ -50,8 +48,7 @@ uint32_t readSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t numBytes)
   /* we're done now! restart interrupt mechanisms */
   SPI.endTransaction();
 
-  /* send our address value back to the caller */
-  return (result);
+  /* *result is then modified, and caller can access it for the data */
 }
 
 /* write some data to a register of a device on the SPI bus */

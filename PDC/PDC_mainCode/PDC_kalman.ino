@@ -89,7 +89,7 @@ void initKalman() {
 }
 
 /* use the previous states and the underlying model to predict the current state of the system */
-Matrix kalmanPredict(){
+void kalmanPredict(){
   /* x_k+1 = F*x_k */
   predictedStateMatrix = F_matrix * previousStateMatrix;
 }
@@ -101,6 +101,6 @@ void kalmanUpdate(){
   // TODO: take measurements
   
   /* x_k = x_k-1 + K*[z_k - H*x_k-1] */
-  stateMatrix = predictedStateMatrix + K_matrix(measurementMatrix - H*predictedStateMatrix); 
+  stateMatrix = predictedStateMatrix + K_matrix*(measurementMatrix - H_matrix*predictedStateMatrix); 
   previousStateMatrix = stateMatrix;
 }
