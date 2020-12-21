@@ -10,7 +10,6 @@
 /* read a value from a register of a device on SPI. as arguments, pass the device select pin, the address of the register, and the number of bytes that this
    register contains. it will return the value that is stored in the register that we are reading. return is 32 bits so can read 4 bytes total */
 // TODO: lookup 'shiftout()' - seen it mentioned as alternative(?) to SPI.Transfer?
-// TODO: revisit the result for multiple bytes - maybe accept an argument for MSB or LSB first?
 void readSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t numBytes, uint8_t *result) {
 
   /* to keep track of how many bytes are left to read */

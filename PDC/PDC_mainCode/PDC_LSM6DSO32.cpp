@@ -8,11 +8,14 @@
 bool PDC_LSM6DSO32::isAlive() {
   /* have a code to signify result - true is success */
   bool successCode = 0;
+  /* 'array' to hold the output */
   uint8_t WHO_AM_I[1];
+  /* the output that we expect */
   uint8_t WHO_AM_I_expect = 0b01101100;
+  /* the address of the WHO_AM_I register */
   uint8_t regAddress = 0x0f;
 
-  /* read the 'WHO_AM_I' register on the IMU (at 0x0f) */
+  /* read the 'WHO_AM_I' register on the IMU */
   readSPI(slaveSelect, regAddress, 1, WHO_AM_I);
 
   /* check that it's what we expect */
@@ -20,15 +23,18 @@ bool PDC_LSM6DSO32::isAlive() {
     /* if it is, set our success code to true */
     successCode = 1;
   }
-
   return (successCode);
 }
 
 /* read z-axis of the accelerometer and return the acceleration in m/s2 */
 float PDC_LSM6DSO32::readAccelerationZ() {
+  /* array for the 2 components of the acceleration measurement */
   uint8_t rawAccelZ[2];
-  uint16_t accelConcat = 0;
+  /* variable to concatenate the 2 components into */
+  uint16_t rawAccelConcat = 0;
+  /* variable to hold the actual acceleration in m/s^2 */
   float accelerationZ = 0;
+  /* address of the register which has the first component of acceleration */
   uint8_t regAddress = 0x2C;
 
   /* the resolution of the accelerometer is its range (e.g. +/4g) divided by the number of combinations available
@@ -41,12 +47,10 @@ float PDC_LSM6DSO32::readAccelerationZ() {
       registers separately, as long as we tell readSPI() that we expect 2 bytes in the last argument */
   readSPI(slaveSelect, regAddress, 2, rawAccelZ);
 
-  /* we have rawAccelZ array with the LSB and MSB components, so concat these into a single value */
-  accelConcat = (rawAccelZ[1] << 8) | rawAccelZ[0];
+  /* we have rawAccelZ array with the LSB (0x2C) and MSB (0x2D) components, so concat these into a single value */
+  rawAccelConcat = (rawAccelZ[1] << 8) | rawAccelZ[0];
 
-  //(SPI.transfer(0x00) << 8 * (numBytes - counter)) | result;
-
-  /* convert our output into an actual acceleration value in ms/2
+  /* convert our output into an actual acceleration value in m/s^2
       the raw value is somewhere in our measurement range, so multiply by resolution to get back to absolute value, then multiply by g to get m/s^2 */
   accelerationZ = (float(accelConcat) / 1000) * accelResolution * GRAVITY_MAGNITUDE;
   return (accelerationZ);
@@ -54,7 +58,11 @@ float PDC_LSM6DSO32::readAccelerationZ() {
 
 /* configure the update frequency of the ODR and the measurement range of the accelerometer. returns true if it succeeded */
 bool PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, uint8_t range) {
+  /* data to write to the IMU */
   uint8_t data = 0;
+  /* the address of the CTRL1_XL register which controls these two parameters */
+  uint8_t regAddress = 0x10;
+  /* flag for incase inputs are invalid */
   bool errFlag = 0;
 
   /* bits[2:3] in the CTRL1_XL register are the ones with our measurement range config
@@ -127,9 +135,9 @@ bool PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, uint8_t range) {
   }
 
   /* write our data package to the accelerometer which now contains information about measurement range and update freq
-      (only write if we got valid inputs)*/
+      (only write if we got valid inputs) */
   if (!errFlag) {
-    writeSPI(slaveSelect, 0x10, data);
+    writeSPI(slaveSelect, regAddress, data);
     /* now set the corrsponding attributes so we don't have to read from device if we need this value again */
     accelerometerOutputFrequency = outputFrequency;
     accelerometerMeasurementRange = range;
@@ -141,7 +149,7 @@ bool PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, uint8_t range) {
 float PDC_LSM6DSO32::measureAccelerometerNoiseZ() {
   /* how many readings to calculate standard deviation over */
   uint8_t numReadings = 50;
-
+  /* stat variables */
   float stdDev = 0;
   float mean = 0;
   float sum = 0;
