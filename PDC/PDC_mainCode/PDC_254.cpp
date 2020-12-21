@@ -54,6 +54,12 @@ bool PDC_254::openFile() {
 bool PDC_254::writeData(char *data) {
   bool err = 0;
 
+  // date = ...
+  // time = ...
+  // for all data
+  // writeSPI(date + ",");
+  // ...
+  
   // if data doesn't fully populate all columns, fill with err or 0
   // note: it's *probably* a better idea to do individual writes via SPI in a for loop (e.g. for each entry, write SPI)
     // instead of trying to pass all entries into write SPI instead - would require some weird trickery of the input to the 
