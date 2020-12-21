@@ -222,13 +222,14 @@ void loop() {
   // parachute deployment tasks
   // light sensor check (poll the sensor every x seconds to check ambient light levels. If new value much greater than old on all 4 sensors,
   // register apogee)
+
   
   /* use the underlying dynamical model to predict the current state of the system */
   kalmanPredict();
   /* update the prediction by taking measurements */
   kalmanUpdate();
 
-  // TODO: implement timing to fit with gain calculation
+  // TODO: implement timing to fit with gain calculation. e.g. while(current time step - previous timestep < kalman time), do nothing (or something...))
   // TODO: write state vector to file
 
 
