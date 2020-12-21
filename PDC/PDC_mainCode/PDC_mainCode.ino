@@ -81,10 +81,15 @@ Matrix<numMeasurements, 1> measurementMatrix;
   // to 12.5Hz in setup)
 
 /* -------------------- ERRORS -------------------- */
-// TODO: replace this with an 8-bit (16 if required) binary string, where each bit signifies a different error in setup
-  // & can be sent to main OBC to tell it if we've been successful or not
 /* value to be used whenever we want to detect some error */
 bool errCode = 0;
+/* individual bit sets for an error at different components. will allow us to identify specific errors in an efficient way */
+const uint8_t altErr = (1 << 0);
+const uint8_t imuErr = (1 << 1);
+const uint8_t msdErr = (1 << 2);
+const uint8_t logErr = (1 << 3);
+const uint8_t rtcErr = (1 << 4);
+
 /* if we do encounter an error, set the flag to true so we can warn that setup failed */
 bool errFlag = 0;
 
@@ -128,49 +133,29 @@ void setup() {
   // TODO
 
   /* ---------- SPI Verification ---------- */
-  Serial.println("Altimeter?");
   /* communicate with altimeter: read the 'CHIP_ID' register. expect 0x50 */
   altimeter_CHIP_ID = readSPI(altimeter_SS, 0x00, 1);
   // TODO: maybe it'd be more consistent to create a BMP388 object like we have for the LSM6DSO32
   /* we have read the 'CHIP_ID' register and now should check that the value read is as we expect */
-  if (altimeter_CHIP_ID == 0x50) {
-    Serial.println("  :)");
-  }
-  else {
-    Serial.println("  :(");
-    errFlag = 1;
+  if (altimeter_CHIP_ID != 0x50) {
+    errCode |= altErr;
   }
 
-  Serial.println("IMU?");
   /* our IMU class has an 'isAlive()' method, which reads the 'WHO_AM_I' register to check our connection. returns true if connected & working! */
-  if (IMU.isAlive()) {
-    Serial.println("  :)");
-  }
-  else {
-    Serial.println("  :(");
-    errFlag = 1;
+  if (!IMU.isAlive()) {
+    errCode |= imuErr;
   }
 
-  Serial.println("micro-SD?");
   /* attempt to init micro SD card */
   // TODO: if we have a shield with 'CD' (chip detect) pin, make use of this to check pin is in place.
-  if (microSD.isAlive()) {
-    Serial.println("  :)");
-  }
-  else {
-    Serial.println("  :(");
-    errFlag = 1;
+  if (!microSD.isAlive()) {
+    errCode |= msdErr;
   }
 
-  Serial.println("log file?");
   /* attempt to open a .csv file which we want to log data to
      returns 0 if successful */
   if (microSD.openFile() != 0) {
-    Serial.println("  :(");
-    errFlag = 1;
-  }
-  else {
-    Serial.println("  :)");
+    errCode |= logErr;
   }
 
   // TODO write a note to the microSD to signify SD begin - maybe need a .writeNote() method which blanks everything but date, time and note
@@ -191,10 +176,8 @@ void setup() {
   /* set the accelerometer update rate high enough to allow us to capture lots of data, and 32g mode as launch will be quite tough.*/
   errCode = IMU.setupAccelerometer(3330, 32);
   if (errCode != 0) {
-    /* the function returns TRUE if the setup succeeded
-        don't need to print anything to serial for this error as it's taken care of in the class */
-    errFlag = 1;
-    errCode = 0;
+    /* the function returns TRUE if the setup succeeded. error if values are invalid */
+    errCode |= imuErr;
   }
 
   // TODO: IMU self test
@@ -211,8 +194,11 @@ void setup() {
   initKalman();
 
   /* ---------- SETUP COMPLETE ---------- */
-  if (errFlag) {
-    Serial.println("\n----------\n SETUP :(\n----------");
+  if (errCode) {
+    Serial.println("\n----------\n");
+    Serial.print("Error Code: ");
+    Serial.println(errCode, BIN);
+    Serial.println("\n----------");
   }
   else {
     Serial.println("\n----------\n SETUP :)\n----------");
