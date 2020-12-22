@@ -97,6 +97,9 @@ const uint8_t msdErr = (1 << 2);
 const uint8_t logErr = (1 << 3);
 const uint8_t rtcErr = (1 << 4);
 
+/* flag that we can set when we think apogee has been reached */
+bool apogee = 0;
+
 /* -------------------- SETUP -------------------- */
 void setup() {
   /* to store the return value of the altimeter 'CHIP_ID' identification register */
@@ -216,24 +219,35 @@ void setup() {
 }
 
 /* -------------------- LOOP -------------------- */
-
 void loop() {
   // filler code to keep us entertained during testing
-  float accelZ = IMU.readAccelerationZ();
+  float accelerationZ = IMU.readAccelerationZ();
   Serial.print("Acceleration: ");
-  Serial.println(accelZ, 5);
+  Serial.println(accelerationZ, 5);
 
   // parachute deployment tasks
   // light sensor check (poll the sensor every x seconds to check ambient light levels. If new value much greater than old on all 4 sensors,
   // register apogee)
 
-  
-  /* use the underlying dynamical model to predict the current state of the system */
-  kalmanPredict();
-  /* update the prediction by taking measurements */
-  kalmanUpdate();
+  /* tasks to perform before we have detected apogee */
+  if(!apogee){
+    // while(current time step - previous timestep < kalman time), do nothing (or something like check light sensor))
+    /* use the underlying dynamical model to predict the current state of the system */
+    kalmanPredict();
+    /* update the prediction by taking measurements */
+    kalmanUpdate();
+    // write measurements and states to micro-SD
 
-  // TODO: implement timing to fit with gain calculation. e.g. while(current time step - previous timestep < kalman time), do nothing (or something...))
+    /* get the velocity from our state vector */
+    float velocity = stateMatrix(1, 0);
+    /* once the velocity is negative, we have crossed the point of zero-velocity in the z-direction and so apogee is reached  */
+    if(velocity < 0){
+      /* flag that apogee has been detected, and allow us to move on */
+      apogee = 1;
+      // write a note with data to inform apogee
+    }
+  }
+ 
   // TODO: write state vector to file
 
 
