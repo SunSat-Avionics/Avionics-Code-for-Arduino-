@@ -1,8 +1,7 @@
-#include <Arduino.h>
-#include "PDC_SPI.h"
-#include <stdio.h>
-/* we want the SD card library too (https://www.arduino.cc/en/reference/SD) */
-#include <SD.h>
+#include <Arduino.h>  /* for some arduino syntax in these cpp files */
+#include "PDC_SPI.h"  /* get the SPI functions we've defined */
+#include <stdio.h>    /* std stuff for printing */
+#include <SD.h>       /* we want the SD card library too (https://www.arduino.cc/en/reference/SD) */
 
 /* 254 CLASS
  *  we define a 254 class to keep everything packed away neatly. 
