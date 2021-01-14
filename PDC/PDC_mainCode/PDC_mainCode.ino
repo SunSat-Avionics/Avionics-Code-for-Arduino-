@@ -141,6 +141,7 @@ void setup() {
   // TODO reboot peripherals
   IMU.restart(); 
   
+  
   /* ---------- I2C Setup ---------- */
   /* initialise CPU to use I2C */
   Wire.begin();

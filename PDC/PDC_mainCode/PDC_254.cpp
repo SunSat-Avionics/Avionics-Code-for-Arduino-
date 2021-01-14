@@ -1,23 +1,23 @@
-#include "PDC_254.h"
+#include "PDC_254.h"  /* grab the class definition */
 
+/**
+ * @brief  Check if connection to device is ok
+ * @retval 0 in case of success, an error code otherwise
+ */
 bool PDC_254::isAlive() {
-  /* have a code to signify result - true is success */
-  bool success = 1;
+  bool isAlive = 1; /* aliveness indicator */
 
-  /* first, check that a card is inserted. if so, try to initialise the card */
+  /* check that a card is inserted. if so, try to initialise the card */
   if (!cardInserted()) {
-    /* flag error if card not inserted, isAlive will return false */
-    success = 0;
+    isAlive = 0;  /* flag error if card not inserted */
   }
   else {
-    /* initialise card if inserted */
     if (!SD.begin(slaveSelect)) {
-      /* flag error if card can't be initialised, isAlive will return false */
-      success = 0;
+      isAlive = 0;  /* flag error if card can't be initialised */
     }
   }
 
-  return (success);
+  return (isAlive);
 }
 
 /* detect if a card is inserted. will be useful for writing data and flagging errors (e.g. if !microSD.cardInserted then error;) */
