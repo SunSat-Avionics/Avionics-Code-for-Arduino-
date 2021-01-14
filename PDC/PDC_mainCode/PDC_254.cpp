@@ -2,7 +2,7 @@
 
 /**
  * @brief  Check if connection to device is ok
- * @retval 0 in case of success, an error code otherwise
+ * @retval 1 in case of success, 0 otherwise
  */
 bool PDC_254::isAlive() {
   bool isAlive = 1; /* aliveness indicator */
@@ -20,8 +20,12 @@ bool PDC_254::isAlive() {
   return (isAlive);
 }
 
-/* detect if a card is inserted. will be useful for writing data and flagging errors (e.g. if !microSD.cardInserted then error;) */
+/**
+ * @brief  Detect that a card is inserted
+ * @retval 1 in case of success, 0 otherwise
+ */
 bool PDC_254::cardInserted() {
+  /* the card detect pin is high when a card is inserted into the module */
   if (cardDetect == LOW) {
     return (0);
   }
@@ -30,6 +34,10 @@ bool PDC_254::cardInserted() {
   }
 }
 
+/**
+ * @brief  Open a file to write the data to
+ * @retval 0 in case of success, 1 otherwise
+ */
 bool PDC_254::openFile() {
   /* new instance of the 'File' class (part of the SD library) that we will use to control the .csv file on the microSD card */
   // TODO: once RTC is up & running, name the file with timestamp as per ISO 8601 format (kind of..)(yyyy-mm-ddThh-mm-ss.csv)
@@ -47,9 +55,13 @@ bool PDC_254::openFile() {
   }
 }
 
-/* write some data to the microSD card */
+/**
+ * @brief  Write data to the file on the microSD card
+ * @retval 0 in case of success, 1 otherwise
+ */
 /* data format:
-    Date, Time, acc_x, acc_y, acc_z, Note" */
+    Date, Time, acc_x, acc_y, acc_z, Note" 
+ */
 // TODO: populate this more fully - what are the raw measurements from BMP, GYRO, light sensors, etc? Make a .txt with headers and units
 // TODO: name value pairs? leaves us better equipped for changing headers and incomplete data
 bool PDC_254::writeData(char *data) {
