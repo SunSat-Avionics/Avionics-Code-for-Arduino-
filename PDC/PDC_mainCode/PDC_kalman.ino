@@ -1,5 +1,6 @@
-/* setup the kalman filter matrices and gain. this works on steady-state assumption so gain isn't calculated at every time step */
-// TODO: verify that these calcs are actually working, and verify that the matrices carry between functions since they were delcared globally
+/**
+ * @brief  Initialise the kalman filter based on steady-state assumption
+ */
 void initKalman() {
 
   /* ---------- Define Matrices ---------- */
@@ -11,7 +12,6 @@ void initKalman() {
   Matrix<numStates, numStates> stateIdentity;
   stateIdentity.Fill(0.0);
   for (int i = 0; i < numStates; i++) {
-    /* define identity matrix */
     stateIdentity(i, i) = 1.0;
   }
 
@@ -19,7 +19,6 @@ void initKalman() {
   Matrix<numMeasurements, numMeasurements> measurementIdentity;
   measurementIdentity.Fill(0.0);
   for (uint8_t i = 0; i < numMeasurements; i++) {
-    /* define identity matrix */
     measurementIdentity(i, i) = 1.0;
   }
 
@@ -49,8 +48,10 @@ void initKalman() {
   Serial.print("Variance_a: ");
   Serial.println(R_matrix(0, 0), 8);
 
+  //TODO repeat for the altimeter
+  
   /* ---------- initialise Kalman Gain matrix, K ---------- */
-  /* declare matrices for interim storage */
+  /* declare matrix for an interim storage */
   Matrix<numMeasurements, numMeasurements> sum_HPHT_R;
 
   /* initial guess for P */
@@ -84,15 +85,17 @@ void initKalman() {
   // TODO: manual calculation of K and P for arbitrary setup to verify the above has worked
 }
 
-/* use the previous states and the underlying model to predict the current state of the system */
+/**
+ * @brief  Kalman predict the current state of the system
+ */
 void kalmanPredict() {
   /* x_k+1 = F*x_k */
   predictedStateMatrix = F_matrix * previousStateMatrix;
 }
 
-/* use the sensor data to update (refine) the state predictions */
-// TODO: can we get away without declaring variables in these local scopes? not needed elsewhere but will save us the time of re-declaring the values 
-// and timing here is quite important to keep strict!
+/**
+ * @brief  Kalman update the current state of the system
+ */
 void kalmanUpdate() {
   float accelerationZ = IMU.readAccelerationZ();
   // TODO: take altitude measurement from altimeter

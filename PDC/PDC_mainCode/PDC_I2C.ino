@@ -1,4 +1,10 @@
-/* read from a device on I2C, where the arguments are: the I2C address of the device */
+/**
+ * @brief  Read a register over I2C
+ * @param  the I2C address of the device that we want to read
+ * @param  the address of the register that we want to read on the selected device
+ * @param  the number of bytes that we want to read in this transaction
+ * @param  the value that is returned by the device
+ */
 void readI2C(uint8_t deviceAddress, uint8_t deviceRegister, uint8_t numBytes, uint8_t *result) {
 
   /* set the register pointer on the device to the specified location */

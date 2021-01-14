@@ -138,6 +138,9 @@ void setup() {
   /* initialise all lines and CPU to use SPI */
   SPI.begin();
 
+  // TODO reboot peripherals
+  IMU.restart(); 
+  
   /* ---------- I2C Setup ---------- */
   /* initialise CPU to use I2C */
   Wire.begin();
@@ -204,7 +207,7 @@ void setup() {
 
   /* setup kalman filter for apogee detection (function in kalmanFilter.ino) */
   initKalman();
-
+  
   /* ---------- SETUP COMPLETE ---------- */
   if (errCode != 0) {
     Serial.print("\n-----------\n");
@@ -241,6 +244,7 @@ void loop() {
     /* get the velocity from our state vector */
     float velocity = stateMatrix(1, 0);
     /* once the velocity is negative, we have crossed the point of zero-velocity in the z-direction and so apogee is reached  */
+    // TODO maybe change the 0 to some threshold so that we start taking more frequent data below 10m/s for example
     if(velocity < 0){
       /* flag that apogee has been detected, and allow us to move on */
       apogee = 1;
