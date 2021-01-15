@@ -242,8 +242,14 @@ void setup() {
 /* -------------------- LOOP -------------------- */
 void loop() {
   // filler code to keep us entertained during testing
+  float accelX = IMU.accel.readX() * 9.80665;
+  float accelY = IMU.accel.readY() * 9.80665;
   float accelZ = IMU.accel.readZ() * 9.80665;
-  Serial.print("Z accel: ");
+  Serial.print("X accel: ");
+  Serial.print(accelX, 5);
+  Serial.print(" Y accel: ");
+  Serial.print(accelY, 5);
+  Serial.print(" Z accel: ");
   Serial.println(accelZ, 5);
 
   // parachute deployment tasks

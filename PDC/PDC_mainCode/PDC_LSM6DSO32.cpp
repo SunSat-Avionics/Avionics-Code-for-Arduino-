@@ -174,7 +174,6 @@ float IMUChild::measureNoiseZ() {
     delay(100); /* force rate of measurements to allow for proper processing */
 
     accZ = readZ() * GRAVITY_MAGNITUDE; /* get z-axis acceleration */
-    Serial.println(accZ);
     
     if (abs(GRAVITY_MAGNITUDE - accZ) > threshold) {
       i -= 1; /* for an erroneous reading, we should take the reading again to avoid skew */
