@@ -185,10 +185,23 @@ void setup() {
 
   /* ---------- SENSOR SETUP ---------- */
   /* accelerometer setup: 1. output update freq in Hz   (0, 12.5, 26, 52, 104, 208, 416, 833, 1660, 3330, 6660)
-                          2. measurement range in +/- g (4, 8, 16, 32)
-  */
+   *                      2. measurement range in +/- g (4, 8, 16, 32)
+   */
   /* set the accelerometer update rate high enough to allow us to capture lots of data, and 32g mode as launch will be quite tough.*/
   errFlag = IMU.setupAccel(3330, 32);
+  if (errFlag != 0) {
+    /* the function returns TRUE if the setup succeeded. error if values are invalid */
+    errCode |= imuErr;
+    errFlag = 0;
+  }
+
+  // TODO: work out a sensible dps range
+
+  /* gyroscope setup: 1. output update freq in Hz     (0, 12.5, 26, 52, 104, 208, 416, 833, 1660, 3330, 6660)
+   *                  2. measurement range in +/- dps (125, 250, 500, 1000, 2000)
+   */
+  /* set the gyro update rate high enough to allow us to capture lots of data, and 125dps (for now).*/
+  errFlag = IMU.setupGyro(3330, 125);
   if (errFlag != 0) {
     /* the function returns TRUE if the setup succeeded. error if values are invalid */
     errCode |= imuErr;
@@ -219,15 +232,17 @@ void setup() {
   else {
     Serial.println("\n----------\n SETUP :)\n----------");
   }
+
+  delay(2000);
   // TODO write a note to the microSD to signify end of setup - maybe need a .writeNote() method which blanks everything but date, time and note
 }
 
 /* -------------------- LOOP -------------------- */
 void loop() {
   // filler code to keep us entertained during testing
-  float accelerationZ = IMU.readAccelZ();
-  Serial.print("Acceleration: ");
-  Serial.println(accelerationZ, 5);
+  float gyroZ = IMU.readGyro('Z');
+  Serial.print("Z rate: ");
+  Serial.println(gyroZ, 5);
 
   // parachute deployment tasks
   // light sensor check (poll the sensor every x seconds to check ambient light levels. If new value much greater than old on all 4 sensors,

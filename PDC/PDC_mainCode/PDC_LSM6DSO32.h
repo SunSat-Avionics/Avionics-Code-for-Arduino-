@@ -13,11 +13,14 @@ const float GRAVITY_MAGNITUDE = 9.80665; /* set the magnitude of the gravity vec
 class PDC_LSM6DSO32 {
   private:
     /* ---------- ATTRIBUTES ---------- */
-    uint8_t slaveSelect;                    /* the pin on the PDC that the IMU CS pin connects to. is set on contruction */
-    float accelerometerOutputFrequency;     /* the rate at which the accelerometer ODR updates */
-    uint8_t accelerometerMeasurementRange;  /* the accelerometer measurement range in g (can be +/-4, 8, 16, 32) */
-    float accelResolution;                  /* the resolution of the accelerometer in milli-g per bit */
-
+    uint8_t slaveSelect;            /* the pin on the PDC that the IMU CS pin connects to. is set on contruction */
+    float accelOutputFrequency;     /* the rate at which the accelerometer ODR updates */
+    float gyroOutputFrequency;      /* the rate at which the gyroscope ODR updates */
+    uint8_t accelMeasurementRange;  /* the accelerometer measurement range in g (can be +/-4, 8, 16, 32) */
+    uint16_t gyroMeasurementRange;  /* the gyroscope measurement range in dps (can be +/-125, 250, 500, 1000, 2000) */
+    float accelResolution;          /* the resolution of the accelerometer in milli-g per bit */
+    float gyroResolution;           /* the resolution of the gyroscope in milli-dps per bit */
+    
   public:
     /* ---------- CONSTRUCTOR ---------- */
     PDC_LSM6DSO32(uint8_t CS) {
@@ -27,12 +30,11 @@ class PDC_LSM6DSO32 {
     /* ---------- METHODS --------- */
     bool isAlive();      /* check if connected and responsive */
     void restart();      /* restart the device */
-    bool setupAccel(float outputFrequency, uint8_t range);  /* set the measurement range (+/- range g) */
+    bool setupAccel(float outputFrequency, uint8_t range);  /* set the accelerometer output update frequency (Hz) + measurement range (+/- range g) */
+    bool setupGyro(float outputFrequency, uint16_t range);   /* set the gyroscope output update frequency (Hz) + measurement range (+/- range dps) */
     float readAccelZ();  /* read the acceleration in z-direction (m/s2) */
     float measureAccelNoiseZ(); /* measure the RMS noise in the z-direction of the accelerometer for a given number of readings */
-    float readGyroX();  
-    float readGyroY();  
-    float readGyroZ();  
+    float readGyro(uint8_t axis);   
 };
 
 /* Example usage
