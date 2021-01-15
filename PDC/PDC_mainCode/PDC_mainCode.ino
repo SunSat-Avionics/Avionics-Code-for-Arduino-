@@ -141,7 +141,6 @@ void setup() {
   // TODO reboot peripherals
   IMU.restart(); 
   
-  
   /* ---------- I2C Setup ---------- */
   /* initialise CPU to use I2C */
   Wire.begin();
@@ -183,32 +182,33 @@ void setup() {
   // take measurements in the ground state (e.g. temp and pressure). write them to SD with a note of 'ground conditions' or similar.
   // also worth storing them in variables to use to calculate local mach etc.
 
-  /* ---------- SENSOR SETUP ---------- */
-  /* accelerometer setup: 1. output update freq in Hz   (0, 12.5, 26, 52, 104, 208, 416, 833, 1660, 3330, 6660)
-   *                      2. measurement range in +/- g (4, 8, 16, 32)
-   */
-  /* set the accelerometer update rate high enough to allow us to capture lots of data, and 32g mode as launch will be quite tough.*/
-  errFlag = IMU.setupAccel(3330, 32);
-  if (errFlag != 0) {
-    /* the function returns TRUE if the setup succeeded. error if values are invalid */
-    errCode |= imuErr;
-    errFlag = 0;
-  }
-
-  IMU.accel.init(3330, 32);
-
+  /*  SENSOR CONFIG VALUES
+   *  PARAM 1 (OUTPUT UPDATE FREQUENCY)
+   *  0.  off
+   *  1.  12.5Hz
+   *  2.  26Hz
+   *  3.  52Hz
+   *  4.  104Hz
+   *  5.  208Hz
+   *  6.  416Hz
+   *  7.  833Hz
+   *  8.  1660Hz
+   *  9.  3330Hz
+   *  10. 6660Hz
+   *  
+   *  PARAM 2 (MEASUREMENT RANGE)
+   *  0. 4g  / 250dps
+   *  1. --  / 125dps
+   *  2. 32g / 500dps
+   *  3. --  / --
+   *  4. 8g  / 1000dps
+   *  5. --  / --
+   *  6. 16g / 2000dps
+  */
+  
   // TODO: work out a sensible dps range
-
-  /* gyroscope setup: 1. output update freq in Hz     (0, 12.5, 26, 52, 104, 208, 416, 833, 1660, 3330, 6660)
-   *                  2. measurement range in +/- dps (125, 250, 500, 1000, 2000)
-   */
-  /* set the gyro update rate high enough to allow us to capture lots of data, and 125dps (for now).*/
-  errFlag = IMU.setupGyro(3330, 125);
-  if (errFlag != 0) {
-    /* the function returns TRUE if the setup succeeded. error if values are invalid */
-    errCode |= imuErr;
-    errFlag = 0;
-  }
+  IMU.accel.init(9, 2);
+  IMU.gyro.init(9, 1);
 
   // TODO: IMU self test
 

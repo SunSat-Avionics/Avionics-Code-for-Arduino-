@@ -1,84 +1,117 @@
+/*******************************************************************
+ * In this file we define some class structures for the LSM6DSO32
+ *  IMU. 
+ * A library for this component already exists via adafruit
+ *  (see https://github.com/adafruit/Adafruit_LSM6DS ), but we 
+ *  have built our own from scratch for a number of reasons
+ *  - flexibility (if we want to add/remove functionality, it is 
+ *    easy to do so)
+ *  - readability (adafruit lib uses lots of abstraction and
+ *    requires much deeper understanding of all of this)
+ *  - efficiency (this library should be much more lightweight
+ *    than the adafruit one)
+ * 
+ ************************** Example usage **************************
+ * 
+ * --- CREATE A NEW INSTANCE OF LSM6DSO32 ---
+ * const int IMU_SS = 5;
+ * PDC_LSM6DSO32 IMU(IMU_SS);
+ * 
+ * --- CHECK IF IMU IS RESPONSIVE (REQUIRES SPI TO BE SET UP) ---
+ * if (!IMU.isAlive()) {
+ *   // error!
+ * }
+ * 
+ * --- RESTART IMU ---
+ * IMU.restart();
+ * 
+ * --- CONFIGURE ACCELEROMETER TO UPDATE AT 3330Hz AND MEASURE ACROSS +/-32g ---
+ * IMU.accel.init(9, 1);
+ * 
+ * --- READ Z AXIS ACCELERATION ---
+ * float accelZ = IMU.accel.readZ();
+ * 
+ * --- READ Y AXIS ANGULAR RATE ---
+ * float rateY = IMU.gyro.readY();
+ * 
+ *******************************************************************/
+
 #include <Arduino.h>  /* bring some arduino syntax into the cpp files */
 #include "PDC_SPI.h"  /* grab our SPI functions */
 #include <stdio.h>    /* std stuff for cpp */
 
 const float GRAVITY_MAGNITUDE = 9.80665; /* set the magnitude of the gravity vector */
 
-class IMUPart{
+/**************************************************************************
+ *  a child of the LSM6DSO32 IMU
+ *    this class can be instantiated for an accelerometer or a gyroscope
+ *    the class object then self contains useful bits of info like data
+ *      address registers, configuration parameters, etc.
+ *    includes methods to initialise, read data, measure noise
+ **************************************************************************/
+class IMUChild{
   private:
-    float outputFrequency;     
-    uint16_t measurementRange;
-    float resolution;
+    float readValue(uint8_t LSB_address); /* a private method to read a value at the provided address */
     
-    uint8_t x_address;
-    uint8_t y_address;
-    uint8_t z_address;
+    /* ---------- ATTRIBUTES ---------- */
+    float outputFrequency;      /* the rate at which the device output should refresh (Hz [ac/gy]) */
+    uint16_t measurementRange;  /* the full scale of measurements (+/- g [ac]; +/- dps [gy]) */
+    float resolution;           /* the resolution of the measurement (milli-g per bit [ac]; milli-dps per bit [gy]) */
+    
+    uint8_t x_address;          /* the address of the LSB data register in the x-axis */
+    uint8_t y_address;          /* the address of the LSB data register in the y-axis */
+    uint8_t z_address;          /* the address of the LSB data register in the z-axis */
+    uint8_t CTRL_address;       /* the address of the control register (for output frequency / measurement range) */
 
-    uint8_t slaveSelect;
+    uint8_t slaveSelect;        /* the pin on the PDC that connects to the IMU CS pin */
 
   public:
-    void addressSet(uint8_t x_add, uint8_t y_add, uint8_t z_add, uint8_t CS) {
-      x_address = x_add;
+    /* ---------- CONSTRUCTOR ---------- */
+    void addressSet(uint8_t x_add, uint8_t y_add, uint8_t z_add, uint8_t CTRL_add, uint8_t CS) {
+      /* internally remember the locations of useful addresses */
+      x_address = x_add;  
       y_address = y_add;
       z_address = z_add;
+      CTRL_address = CTRL_add;
+      
+      /* internally remember the slave select pin so we can modify it's state */
       slaveSelect = CS;
     };
-    bool init(float outputFrequency, uint16_t range);
-    float readX();
-    float readY();
-    float readZ();
-    float readValue(uint8_t LSB_address, uint8_t slaveSelect);
+
+    /* ---------- METHODS ---------- */
+    void init(uint8_t f, uint8_t r);  /* configure the device over SPI - set the measurement range & output frequency */
+    float readX();                    /* read data in the X axis */
+    float readY();                    /* read data in the Y axis */
+    float readZ();                    /* read data in the Z axis */
+    float measureNoiseZ();            /* measure sensor noise */
 };
 
-/* LSM6DSO32 CLASS
- *  we define an LSM6DSO32 class to keep everything packed away neatly. 
- *  it allows us to keep hold of things that we set e.g. measurement range, so that we don't have to read them from the device directly
- *  also gives us fine control over functionality
- *  adafruit have a library for this component already but this is more readable, flexible, and lightweight
- */
+/**************************************************************************
+ *  a class for the LSM6DSO32 IMU
+ *    this class contains an accelerometer and gyroscope 'sub' class of
+ *      type 'IMUChild' defined above. 
+ *    this parent class contains some methods for more general functions
+ *      like verifying SPI connection, restarting, etc.
+ **************************************************************************/
 class PDC_LSM6DSO32 {
   private:
     /* ---------- ATTRIBUTES ---------- */
-    uint8_t slaveSelect;            /* the pin on the PDC that the IMU CS pin connects to. is set on contruction */
-    float accelOutputFrequency;     /* the rate at which the accelerometer ODR updates */
-    float gyroOutputFrequency;      /* the rate at which the gyroscope ODR updates */
-    uint8_t accelMeasurementRange;  /* the accelerometer measurement range in g (can be +/-4, 8, 16, 32) */
-    uint16_t gyroMeasurementRange;  /* the gyroscope measurement range in dps (can be +/-125, 250, 500, 1000, 2000) */
-    float accelResolution;          /* the resolution of the accelerometer in milli-g per bit */
-    float gyroResolution;           /* the resolution of the gyroscope in milli-dps per bit */
+    uint8_t slaveSelect;  /* the pin on the PDC that the IMU CS pin connects to. is set on contruction */
     
   public:
-    IMUPart accel;
-    IMUPart gyro;
+    IMUChild accel; /* an accelerometer child */
+    IMUChild gyro;  /* a gyroscope child */
     
     /* ---------- CONSTRUCTOR ---------- */
     PDC_LSM6DSO32(uint8_t CS) {
       slaveSelect = CS; /* set slaveSelect to the specified SS pin */
-      accel.addressSet(0x28, 0x2A, 0x2C, CS);
-      gyro.addressSet(0x22, 0x24, 0x26, CS);
+
+      /* properly attribute register addresses to the children */
+      accel.addressSet(0x28, 0x2A, 0x2C, 0x10, CS); 
+      gyro.addressSet(0x22, 0x24, 0x26, 0x11, CS); 
     };
     
     /* ---------- METHODS --------- */
-    bool isAlive();      /* check if connected and responsive */
-    void restart();      /* restart the device */
-    bool setupAccel(float outputFrequency, uint8_t range);  /* set the accelerometer output update frequency (Hz) + measurement range (+/- range g) */
-    bool setupGyro(float outputFrequency, uint16_t range);   /* set the gyroscope output update frequency (Hz) + measurement range (+/- range dps) */
-    float readAccelZ();  /* read the acceleration in z-direction (m/s2) */
-    float measureAccelNoiseZ(); /* measure the RMS noise in the z-direction of the accelerometer for a given number of readings */
-    float readGyro(uint8_t axis);   
+    bool isAlive(); /* check if connected and responsive */
+    void restart(); /* restart the device */
 };
-
-
-/* Example usage
-
-  const int IMU_SS = 5;
-
-  PDC_LSM6DSO32 IMU(IMU_SS); where the argument is the CS pin
-  if(IMU.isAlive()){
-	if flag is 1, we're all good
-  }
-  IMU.setAccelerometerMeasurementRange(4); (+/- in g)
-  IMU.measureAccelerometerNoiseZ(); measure the standard deviation (m/s^2) of the noise in the z-direction
-  accZ = IMU.readAccelerationZ(); get the acceleration in m/s2 in the z-direction
-
-*/

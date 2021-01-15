@@ -44,7 +44,7 @@ void initKalman() {
   // and the loop would still allow us to change R based on the setups of the sensors
 
   /* measure the standard deviation of the accelerometer noise, then square it to get variance for R */
-  R_matrix(0, 0) = pow(IMU.measureAccelNoiseZ(), 2);
+  R_matrix(0, 0) = pow(IMU.accel.measureNoiseZ(), 2);
   Serial.print("Variance_a: ");
   Serial.println(R_matrix(0, 0), 8);
 
@@ -97,7 +97,7 @@ void kalmanPredict() {
  * @brief  Kalman update the current state of the system
  */
 void kalmanUpdate() {
-  float accelerationZ = IMU.readAccelZ();
+  float accelerationZ = IMU.accel.readZ();
   // TODO: take altitude measurement from altimeter
   // TODO: create measurement vector from the readings
   
