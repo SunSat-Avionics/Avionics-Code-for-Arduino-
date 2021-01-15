@@ -45,6 +45,9 @@ const uint8_t microSD_CD = 7;
 
 /* create an LSM6DSO32 object for our IMU. class defines are in 'PDC_LSM6DSO32.h' and 'PDC_LSM6DSO32.cpp' */
 PDC_LSM6DSO32 IMU(IMU_SS);
+/* ensure that our IMU children can control the state of the SS pin */
+uint8_t IMUChild::slaveSelect = IMU_SS;
+
 /* create a 254 breakout class for the microSD card module. class defines are in 'PDC_254.h' and 'PDC_254.cpp' */
 PDC_254 microSD(microSD_SS, microSD_CD);
 
@@ -55,6 +58,7 @@ const uint8_t RTC = 23;
 const uint8_t RTCaddress = 0x50;
 
 /* ---------- KALMAN FILTER CONFIG ---------- */
+// TODO: can some of these variables become a bit less global?
 /* time step between Kalman iterations in seconds */
 // TODO: refine this based on tests. how long does measurement take? calculation time?
 const float kalmanTime = 0.5;
@@ -62,6 +66,7 @@ const float kalmanTime = 0.5;
    NOTE: if changing states and measurements, make sure to change any relevant matrices in setup() or initKalman() */
 const uint8_t numStates = 3;
 const uint8_t numMeasurements = 2;
+
 /* state transition matrix which maps previous state to current state */
 Matrix<numStates, numStates> F_matrix = {1.0,                   0.0, 0.0,
                                          kalmanTime,            1.0, 0.0,
@@ -106,7 +111,7 @@ void setup() {
   uint8_t altimeter_CHIP_ID[1];
   /* to flag errors when they're encountered */
   bool errFlag = 0;
-
+  
   /* ---------- Serial Setup ---------- */
   /* open serial comms at 9600 baud to allow us to monitor the process
        serial may become irrelevant - once the code is on the PDC we might not be connecting via serial
@@ -116,7 +121,7 @@ void setup() {
   while (!Serial) {
     ; /* wait for port to connect */
   }
-  Serial.println("\n-------\n SETUP\n-------\n");
+  Serial.println("\n-----\nSETUP\n-----\n");
 
   /* ---------- SPI Setup ---------- */
   /* we want to be the master of this bus! so set the 'SS' pin on the PDC as an output */
@@ -140,6 +145,10 @@ void setup() {
 
   // TODO reboot peripherals
   IMU.restart(); 
+
+  /* attribute data registers, control registers to the accel and gyro children of the IMU class */
+  IMU.accel.addressSet(0x28, 0x10); 
+  IMU.gyro.addressSet(0x22, 0x11);
   
   /* ---------- I2C Setup ---------- */
   /* initialise CPU to use I2C */
@@ -209,7 +218,7 @@ void setup() {
   // TODO: work out a sensible dps range
   IMU.accel.init(9, 2);
   IMU.gyro.init(9, 1);
-
+  
   // TODO: IMU self test
 
   /* ---------- KALMAN FILTER SETUP ---------- */
@@ -220,9 +229,9 @@ void setup() {
   previousStateMatrix.Fill(0.0);
   predictedStateMatrix.Fill(0.0);
   measurementMatrix.Fill(0.0);
-
+  
   /* setup kalman filter for apogee detection (function in kalmanFilter.ino) */
-  initKalman();
+  initKalman();  
   
   /* ---------- SETUP COMPLETE ---------- */
   if (errCode != 0) {
@@ -232,10 +241,11 @@ void setup() {
     Serial.println(" \n-----------");
   }
   else {
-    Serial.println("\n----------\n SETUP :)\n----------");
+    Serial.println("\n-----\nSETUP :)\n-----");
   }
 
   delay(2000);
+
   // TODO write a note to the microSD to signify end of setup - maybe need a .writeNote() method which blanks everything but date, time and note
 }
 
@@ -245,11 +255,12 @@ void loop() {
   float gyroX = IMU.gyro.readX();
   float gyroY = IMU.gyro.readY();
   float gyroZ = IMU.gyro.readZ();
-  Serial.print("X rate: ");
+
+  Serial.print("X: ");
   Serial.print(gyroX, 5);
-  Serial.print(" Y rate: ");
+  Serial.print(" Y: ");
   Serial.print(gyroY, 5);
-  Serial.print(" Z rate: ");
+  Serial.print(" Z: ");
   Serial.println(gyroZ, 5);
 
   // parachute deployment tasks

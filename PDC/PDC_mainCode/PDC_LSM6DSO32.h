@@ -13,9 +13,10 @@
  * 
  ************************** Example usage **************************
  * 
- * --- CREATE A NEW INSTANCE OF LSM6DSO32 ---
- * const int IMU_SS = 5;
+ * --- (GLOBALLY) CREATE A NEW INSTANCE OF LSM6DSO32 ---
+ * const uint8_t IMU_SS = 5;
  * PDC_LSM6DSO32 IMU(IMU_SS);
+ * uint8_t IMUChild::slaveSelect = IMU_SS;
  * 
  * --- CHECK IF IMU IS RESPONSIVE (REQUIRES SPI TO BE SET UP) ---
  * if (!IMU.isAlive()) {
@@ -37,6 +38,8 @@
  *******************************************************************/
 
 //TODO maybe add a method which measures *all* values in one go for some reason
+
+/* for detailed function information, see PDC_LSM6DSO32.h */
 
 #include <Arduino.h>  /* bring some arduino syntax into the cpp files */
 #include "PDC_SPI.h"  /* grab our SPI functions */
@@ -65,22 +68,14 @@ class IMUChild{
     uint8_t z_address;          /* the address of the LSB data register in the z-axis */
     uint8_t CTRL_address;       /* the address of the control register (for output frequency / measurement range) */
 
-    uint8_t slaveSelect;        /* the pin on the PDC that connects to the IMU CS pin */
+    static uint8_t slaveSelect; /* the pin on the PDC that connects to the IMU CS pin (static as is same for all children) */
 
   public:
     /* ---------- CONSTRUCTOR ---------- */
-    void addressSet(uint8_t x_add, uint8_t y_add, uint8_t z_add, uint8_t CTRL_add, uint8_t CS) {
-      /* internally remember the locations of useful addresses */
-      x_address = x_add;  
-      y_address = y_add;
-      z_address = z_add;
-      CTRL_address = CTRL_add;
-      
-      /* internally remember the slave select pin so we can modify it's state */
-      slaveSelect = CS;
-    };
+    IMUChild(){};
 
     /* ---------- METHODS ---------- */
+    void addressSet(uint8_t x_add, uint8_t CTRL_add); /* remember the device data and control registers */
     void init(uint8_t f, uint8_t r);  /* configure the device over SPI - set the measurement range & output frequency */
     float readX();                    /* read data in the X axis */
     float readY();                    /* read data in the Y axis */
@@ -106,11 +101,7 @@ class PDC_LSM6DSO32 {
     
     /* ---------- CONSTRUCTOR ---------- */
     PDC_LSM6DSO32(uint8_t CS) {
-      slaveSelect = CS; /* set slaveSelect to the specified SS pin */
-
-      /* properly attribute register addresses to the children */
-      accel.addressSet(0x28, 0x2A, 0x2C, 0x10, CS); 
-      gyro.addressSet(0x22, 0x24, 0x26, 0x11, CS); 
+      slaveSelect = CS; /* set slaveSelect to the specified SS pin */ 
     };
     
     /* ---------- METHODS --------- */

@@ -42,10 +42,10 @@ void initKalman() {
   // rather than taking it separately for pressure and temperature!
   // the looping would be slower but would save memory that would be used for storing an enum which we'd probably only use once
   // and the loop would still allow us to change R based on the setups of the sensors
-
+  
   /* measure the standard deviation of the accelerometer noise, then square it to get variance for R */
   R_matrix(0, 0) = pow(IMU.accel.measureNoiseZ(), 2);
-  Serial.print("Variance_a: ");
+  Serial.print("varA: ");
   Serial.println(R_matrix(0, 0), 8);
 
   //TODO repeat for the altimeter
@@ -75,13 +75,13 @@ void initKalman() {
     /* add Q to F*P*F^T and store in P */
     P_matrix = (F_matrix * P_matrix * F_matrixTranspose) + Q_matrix;
 
-    Serial.println("  Matrices: ");
-    Serial << " P: " << P_matrix << '\n';
-    Serial << " K: " << K_matrix << '\n';
-    Serial << " R: " << R_matrix << '\n';
-    Serial << " Q: " << Q_matrix << '\n';
+    //Serial.println("  Matrices: ");
+    //Serial << " P: " << P_matrix << '\n';
+    //Serial << " K: " << K_matrix << '\n';
+    //Serial << " R: " << R_matrix << '\n';
+    //Serial << " Q: " << Q_matrix << '\n';
   }
-
+  
   // TODO: manual calculation of K and P for arbitrary setup to verify the above has worked
 }
 

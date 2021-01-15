@@ -3,6 +3,8 @@
 // measure offset
 // class within a class? so can have IMU.gyro.x() for example
 
+/* for example usage, see PDC_LSM6DSO32.h */
+
 #include "PDC_LSM6DSO32.h"  /* include the definition of the class */
 
 /*********************************************************
@@ -33,6 +35,18 @@ void PDC_LSM6DSO32::restart(){
   
   writeSPI(slaveSelect, CTRL3_C_address, dataToWrite); /* write the command to the device */
   delay(2000); /* wait for it to properly start up again */
+}
+
+/*********************************************************
+ * @brief  Internally take note of important registers
+ * @param  the address of the x-axis LSB data register
+ * @param  the address of the control register
+ *********************************************************/
+void IMUChild::addressSet(uint8_t x_add, uint8_t CTRL_add) {
+  x_address = x_add;        /* set x LSB address attribute as specified */  
+  y_address = x_add + 2;    /* y LSB address is then two along */
+  z_address = x_add + 4;    /* z LSB address is another two along */
+  CTRL_address = CTRL_add;  /* and then the address to configure this child */
 }
 
 /*********************************************************
@@ -115,7 +129,8 @@ float IMUChild::readValue(uint8_t LSB_address){
   uint8_t rawValue[2];        /* we will read two bytes from the device into here */    
   int16_t rawValueConcat = 0; /* we will concatenate the two bytes into a single value here */
   float measuredValue = 0;    /* and we will convert the concatenated value into a 'measured' value here */
-
+  
+  
   readSPI(slaveSelect, LSB_address, 2, rawValue); /* read two bytes from the device. 
                                                    *  since CTRLC_3 'IF_INC' bit is enabled, the address will
                                                    *  auto-increment and read the LSB then MSB registers so we
