@@ -195,6 +195,8 @@ void setup() {
     errFlag = 0;
   }
 
+  IMU.accel.init(3330, 32);
+
   // TODO: work out a sensible dps range
 
   /* gyroscope setup: 1. output update freq in Hz     (0, 12.5, 26, 52, 104, 208, 416, 833, 1660, 3330, 6660)
@@ -240,9 +242,9 @@ void setup() {
 /* -------------------- LOOP -------------------- */
 void loop() {
   // filler code to keep us entertained during testing
-  float gyroZ = IMU.readGyro('Z');
-  Serial.print("Z rate: ");
-  Serial.println(gyroZ, 5);
+  float accelZ = IMU.accel.readZ() * 9.80665;
+  Serial.print("Z accel: ");
+  Serial.println(accelZ, 5);
 
   // parachute deployment tasks
   // light sensor check (poll the sensor every x seconds to check ambient light levels. If new value much greater than old on all 4 sensors,

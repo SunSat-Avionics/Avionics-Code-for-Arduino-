@@ -356,7 +356,7 @@ float PDC_LSM6DSO32::readGyro(uint8_t axis){
 
 /* ---------------------------------------------------- */
 
-uint16_t readValue(uint8_t LSB_address, uint8_t slaveSelect){
+float IMUPart::readValue(uint8_t LSB_address, uint8_t slaveSelect){
   uint8_t rawValue[2];        
   int16_t rawValueConcat = 0;
   float measuredValue = 0;
@@ -364,22 +364,100 @@ uint16_t readValue(uint8_t LSB_address, uint8_t slaveSelect){
   readSPI(slaveSelect, LSB_address, 2, rawValue);
   
   rawValueConcat = (rawValue[1] << 8) | rawValue[0];
-   
-  return (rawValueConcat);
+  measuredValue = (float(rawValueConcat) / 1000) * resolution;
+  return (measuredValue);
 }
 
-float actualAccel(int16_t rawAccel){
-  return((float(rawAccel) / 1000) * resolution * GRAVITY_MAGNITUDE);
+float IMUPart::readX(){
+  return(readValue(x_address, slaveSelect));
 }
 
-template<class T> float IMUPart<T>::readX(uint8_t x_address, uint8_t CS){
-  int16_t rawValue = readValue(x_address, CS);
+float IMUPart::readY(){
+  return(readValue(y_address, slaveSelect));
 }
 
-template<class T> float IMUPart<T>::readY(uint8_t y_address, uint8_t CS){
-  int16_t rawValue = readValue(y_address, CS);
+float IMUPart::readZ(){
+  return(readValue(z_address, slaveSelect));
 }
 
-template<class T> float IMUPart<T>::readZ(uint8_t z_address, uint8_t CS){
-  int16_t rawValue = readValue(z_address, CS);
+bool IMUPart::init(float outputFrequency, uint16_t range) {
+  uint8_t data = 0;                 
+  uint8_t CTRL1_XL_address = 0x10;
+  bool errFlag = 0;              
+  uint16_t outputFrequencySwitch = outputFrequency;
+  
+  switch (range) {
+    case 4:
+      data |= (0 << 2);
+      break;
+    case 8:
+      data |= (2 << 2);
+      break;
+    case 16:
+      data |= (3 << 2);
+      break;
+    case 32:
+      data |= (1 << 2);
+      break;
+    default:
+      errFlag = 1;  /* notify of invalid input */
+      break;
+  }
+  
+  /* switch case wont let us use 12.5 as a switch, so round it to 12 for use here */
+  if (outputFrequency == 12.5) {
+    outputFrequencySwitch = 12;
+  }
+
+  /* output frequency configuration
+   *  bits[4:7] in the CTRL1_XL register are for ODR update frequency config and so we shift values into this spot
+   *  unit is 'Hz'
+   */
+  switch (outputFrequencySwitch) {
+    case 0:
+      data |= (0 << 4);
+      break;
+    case 12:
+      data |= (1 << 4);
+      break;
+    case 26:
+      data |= (2 << 4);
+      break;
+    case 52:
+      data |= (3 << 4);
+      break;
+    case 104:
+      data |= (4 << 4);
+      break;
+    case 208:
+      data |= (5 << 4);
+      break;
+    case 416:
+      data |= (6 << 4);
+      break;
+    case 833:
+      data |= (7 << 4);
+      break;
+    case 1660:
+      data |= (8 << 4);
+      break;
+    case 3330:
+      data |= (9 << 4);
+      break;
+    case 6660:
+      data |= (10 << 4);
+      break;
+    default:
+      errFlag = 1;  /* notify of invalid input */
+      break;
+  }
+
+  if (!errFlag) {
+    writeSPI(slaveSelect, CTRL1_XL_address, data);
+    outputFrequency = outputFrequency;
+    measurementRange = range;
+    resolution = (measurementRange * 2.0 * 1000.0) / 65536.0;
+  }
+  
+  return (errFlag);
 }

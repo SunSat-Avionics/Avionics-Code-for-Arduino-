@@ -4,7 +4,6 @@
 
 const float GRAVITY_MAGNITUDE = 9.80665; /* set the magnitude of the gravity vector */
 
-template<class T>
 class IMUPart{
   private:
     float outputFrequency;     
@@ -24,10 +23,11 @@ class IMUPart{
       z_address = z_add;
       slaveSelect = CS;
     };
-    bool init(float outputFrequency, T range);
-    float readX(uint8_t x_address, uint8_t CS);
-    float readY(uint8_t y_address, uint8_t CS);
-    float readZ(uint8_t z_address, uint8_t CS);
+    bool init(float outputFrequency, uint16_t range);
+    float readX();
+    float readY();
+    float readZ();
+    float readValue(uint8_t LSB_address, uint8_t slaveSelect);
 };
 
 /* LSM6DSO32 CLASS
@@ -48,8 +48,8 @@ class PDC_LSM6DSO32 {
     float gyroResolution;           /* the resolution of the gyroscope in milli-dps per bit */
     
   public:
-    IMUPart<uint8_t> accel;
-    IMUPart<uint16_t> gyro;
+    IMUPart accel;
+    IMUPart gyro;
     
     /* ---------- CONSTRUCTOR ---------- */
     PDC_LSM6DSO32(uint8_t CS) {
