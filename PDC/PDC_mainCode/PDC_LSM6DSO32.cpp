@@ -1,6 +1,7 @@
 // Methods TODO:
 // read values (gyro xyz, accel xy, temp?, general reg?)
 // measure offset
+// class within a class? so can have IMU.gyro.x() for example
 
 #include "PDC_LSM6DSO32.h"  /* include the definition of the class */
 
@@ -351,4 +352,34 @@ float PDC_LSM6DSO32::readGyro(uint8_t axis){
   gyroRate = (float(rawGyroConcat) / 1000) * gyroResolution;
   
   return (gyroRate);
+}
+
+/* ---------------------------------------------------- */
+
+uint16_t readValue(uint8_t LSB_address, uint8_t slaveSelect){
+  uint8_t rawValue[2];        
+  int16_t rawValueConcat = 0;
+  float measuredValue = 0;
+
+  readSPI(slaveSelect, LSB_address, 2, rawValue);
+  
+  rawValueConcat = (rawValue[1] << 8) | rawValue[0];
+   
+  return (rawValueConcat);
+}
+
+float actualAccel(int16_t rawAccel){
+  return((float(rawAccel) / 1000) * resolution * GRAVITY_MAGNITUDE);
+}
+
+template<class T> float IMUPart<T>::readX(uint8_t x_address, uint8_t CS){
+  int16_t rawValue = readValue(x_address, CS);
+}
+
+template<class T> float IMUPart<T>::readY(uint8_t y_address, uint8_t CS){
+  int16_t rawValue = readValue(y_address, CS);
+}
+
+template<class T> float IMUPart<T>::readZ(uint8_t z_address, uint8_t CS){
+  int16_t rawValue = readValue(z_address, CS);
 }

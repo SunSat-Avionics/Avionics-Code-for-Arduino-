@@ -4,6 +4,32 @@
 
 const float GRAVITY_MAGNITUDE = 9.80665; /* set the magnitude of the gravity vector */
 
+template<class T>
+class IMUPart{
+  private:
+    float outputFrequency;     
+    uint16_t measurementRange;
+    float resolution;
+    
+    uint8_t x_address;
+    uint8_t y_address;
+    uint8_t z_address;
+
+    uint8_t slaveSelect;
+
+  public:
+    void addressSet(uint8_t x_add, uint8_t y_add, uint8_t z_add, uint8_t CS) {
+      x_address = x_add;
+      y_address = y_add;
+      z_address = z_add;
+      slaveSelect = CS;
+    };
+    bool init(float outputFrequency, T range);
+    float readX(uint8_t x_address, uint8_t CS);
+    float readY(uint8_t y_address, uint8_t CS);
+    float readZ(uint8_t z_address, uint8_t CS);
+};
+
 /* LSM6DSO32 CLASS
  *  we define an LSM6DSO32 class to keep everything packed away neatly. 
  *  it allows us to keep hold of things that we set e.g. measurement range, so that we don't have to read them from the device directly
@@ -22,11 +48,16 @@ class PDC_LSM6DSO32 {
     float gyroResolution;           /* the resolution of the gyroscope in milli-dps per bit */
     
   public:
+    IMUPart<uint8_t> accel;
+    IMUPart<uint16_t> gyro;
+    
     /* ---------- CONSTRUCTOR ---------- */
     PDC_LSM6DSO32(uint8_t CS) {
       slaveSelect = CS; /* set slaveSelect to the specified SS pin */
+      accel.addressSet(0x28, 0x2A, 0x2C, CS);
+      gyro.addressSet(0x22, 0x24, 0x26, CS);
     };
-
+    
     /* ---------- METHODS --------- */
     bool isAlive();      /* check if connected and responsive */
     void restart();      /* restart the device */
@@ -36,6 +67,7 @@ class PDC_LSM6DSO32 {
     float measureAccelNoiseZ(); /* measure the RMS noise in the z-direction of the accelerometer for a given number of readings */
     float readGyro(uint8_t axis);   
 };
+
 
 /* Example usage
 
