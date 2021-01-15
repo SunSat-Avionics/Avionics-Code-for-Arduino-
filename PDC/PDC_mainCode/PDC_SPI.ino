@@ -35,7 +35,7 @@ void readSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t numBytes, uin
     result[i] = SPI.transfer(0x00); /* send nothing. this is us 'listening' to the bus for the values that we have requested */
     /* if we have requested multiple bytes, the device will auto-increment the address and send values from the next register in sequence next time we 'listen' */
   }
-
+  
   /* ---------- END TRANSACTION ---------- */
   /* stop communications with device by setting the corresponding slave select on the PDC to high */
   digitalWrite(deviceSelect, HIGH); 

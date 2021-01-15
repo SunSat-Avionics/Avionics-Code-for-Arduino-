@@ -242,15 +242,15 @@ void setup() {
 /* -------------------- LOOP -------------------- */
 void loop() {
   // filler code to keep us entertained during testing
-  float accelX = IMU.accel.readX() * 9.80665;
-  float accelY = IMU.accel.readY() * 9.80665;
-  float accelZ = IMU.accel.readZ() * 9.80665;
-  Serial.print("X accel: ");
-  Serial.print(accelX, 5);
-  Serial.print(" Y accel: ");
-  Serial.print(accelY, 5);
-  Serial.print(" Z accel: ");
-  Serial.println(accelZ, 5);
+  float gyroX = IMU.gyro.readX();
+  float gyroY = IMU.gyro.readY();
+  float gyroZ = IMU.gyro.readZ();
+  Serial.print("X rate: ");
+  Serial.print(gyroX, 5);
+  Serial.print(" Y rate: ");
+  Serial.print(gyroY, 5);
+  Serial.print(" Z rate: ");
+  Serial.println(gyroZ, 5);
 
   // parachute deployment tasks
   // light sensor check (poll the sensor every x seconds to check ambient light levels. If new value much greater than old on all 4 sensors,

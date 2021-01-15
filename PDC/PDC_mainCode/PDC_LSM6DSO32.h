@@ -2,7 +2,7 @@
  * In this file we define some class structures for the LSM6DSO32
  *  IMU. 
  * A library for this component already exists via adafruit
- *  (see https://github.com/adafruit/Adafruit_LSM6DS ), but we 
+ *  (see https://github.com/adafruit/Adafruit_LSM6DS), but we 
  *  have built our own from scratch for a number of reasons
  *  - flexibility (if we want to add/remove functionality, it is 
  *    easy to do so)
@@ -26,7 +26,7 @@
  * IMU.restart();
  * 
  * --- CONFIGURE ACCELEROMETER TO UPDATE AT 3330Hz AND MEASURE ACROSS +/-32g ---
- * IMU.accel.init(9, 1);
+ * IMU.accel.init(9, 2);
  * 
  * --- READ Z AXIS ACCELERATION ---
  * float accelZ = IMU.accel.readZ();
@@ -35,6 +35,8 @@
  * float rateY = IMU.gyro.readY();
  * 
  *******************************************************************/
+
+//TODO maybe add a method which measures *all* values in one go for some reason
 
 #include <Arduino.h>  /* bring some arduino syntax into the cpp files */
 #include "PDC_SPI.h"  /* grab our SPI functions */

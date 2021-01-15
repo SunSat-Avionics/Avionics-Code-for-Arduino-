@@ -32,7 +32,7 @@ void PDC_LSM6DSO32::restart(){
   uint8_t dataToWrite = 1 || 1 << 7;  /* set bits 7 and 0 to high which reboots memory and resets software */
   
   writeSPI(slaveSelect, CTRL3_C_address, dataToWrite); /* write the command to the device */
-  delay(1000); /* wait for it to properly start up again */
+  delay(2000); /* wait for it to properly start up again */
 }
 
 /*********************************************************
@@ -67,18 +67,18 @@ void IMUChild::init(uint8_t frequency, uint8_t range) {
 
   /* set the internally stored output frequency */
   switch(frequency){
-    case(0):  outputFrequency = 0;
-    case(1):  outputFrequency = 12.5;
-    case(2):  outputFrequency = 26;
-    case(3):  outputFrequency = 52;
-    case(4):  outputFrequency = 104;
-    case(5):  outputFrequency = 208;
-    case(6):  outputFrequency = 416;
-    case(7):  outputFrequency = 833;
-    case(8):  outputFrequency = 1660;
-    case(9):  outputFrequency = 3330;
-    case(10): outputFrequency = 6660;
-    default:  outputFrequency = 0;
+    case(0):  outputFrequency = 0;    break;
+    case(1):  outputFrequency = 12.5; break;
+    case(2):  outputFrequency = 26;   break;
+    case(3):  outputFrequency = 52;   break;
+    case(4):  outputFrequency = 104;  break;
+    case(5):  outputFrequency = 208;  break;   
+    case(6):  outputFrequency = 416;  break;
+    case(7):  outputFrequency = 833;  break;  
+    case(8):  outputFrequency = 1660; break;
+    case(9):  outputFrequency = 3330; break;
+    case(10): outputFrequency = 6660; break;
+    default:  outputFrequency = 0;    break;
   }
 
   /* set the internally stored measurement range (if condition checks if accelerometer or gyroscope) */
@@ -100,9 +100,9 @@ void IMUChild::init(uint8_t frequency, uint8_t range) {
       default:  measurementRange = 0;     break;
     }
   }
-  
+
   writeSPI(slaveSelect, CTRL_address, data);  /* write the data to the control register */
-  
+
   resolution = (measurementRange * 2.0 * 1000.0) / 65536.0; /* calculate the device resolution per bit (milli-g or milli-dps) */
 }
 
@@ -123,8 +123,9 @@ float IMUChild::readValue(uint8_t LSB_address){
                                                    */
   
   rawValueConcat = (rawValue[1] << 8) | rawValue[0];  /* concatenate the two bytes into a single val by shifting the MSB up by one byte */
+
   measuredValue = (float(rawValueConcat) / 1000) * resolution;  /* use the sensor resolution to convert raw value into an actual measurement */
-  
+
   return (measuredValue);
 }
 
