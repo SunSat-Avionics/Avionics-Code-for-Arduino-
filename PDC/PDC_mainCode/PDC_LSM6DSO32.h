@@ -25,11 +25,14 @@ class PDC_LSM6DSO32 {
     };
 
     /* ---------- METHODS --------- */
-    bool isAlive();             /* check if connected and responsive */
-    void restart();             /* restart the device */
-    bool setupAccelerometer(float outputFrequency, uint8_t range);  /* set the measurement range (+/- range g) */
-    float readAccelerationZ();  /* read the acceleration in z-direction (m/s2) */
-    float measureAccelerometerNoiseZ(); /* measure the RMS noise in the z-direction of the accelerometer for a given number of readings */
+    bool isAlive();      /* check if connected and responsive */
+    void restart();      /* restart the device */
+    bool setupAccel(float outputFrequency, uint8_t range);  /* set the measurement range (+/- range g) */
+    float readAccelZ();  /* read the acceleration in z-direction (m/s2) */
+    float measureAccelNoiseZ(); /* measure the RMS noise in the z-direction of the accelerometer for a given number of readings */
+    float readGyroX();  
+    float readGyroY();  
+    float readGyroZ();  
 };
 
 /* Example usage

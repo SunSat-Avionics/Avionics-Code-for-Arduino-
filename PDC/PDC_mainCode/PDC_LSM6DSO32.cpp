@@ -40,7 +40,7 @@ void PDC_LSM6DSO32::restart(){
  * @param  full measurement range of output in +/- g (4, 8, 16, 32)
  * @retval 0 in case of success, an error code otherwise
  */
-bool PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, uint8_t range) {
+bool PDC_LSM6DSO32::setupAccel(float outputFrequency, uint8_t range) {
   uint8_t data = 0;                 /* data to write to the IMU */
   uint8_t CTRL1_XL_address = 0x10;  /* the address of the CTRL1_XL register which controls these two parameters */
   bool errFlag = 0;                 /* flag for incase inputs are invalid */
@@ -136,7 +136,7 @@ bool PDC_LSM6DSO32::setupAccelerometer(float outputFrequency, uint8_t range) {
  * @brief  Read z-axis acceleration
  * @retval measured acceleration in m/s^2
  */
-float PDC_LSM6DSO32::readAccelerationZ() {
+float PDC_LSM6DSO32::readAccelZ() {
   uint8_t rawAccelZ[2];             /* for the 2 components of the acceleration measurement */
   int16_t rawAccelConcat = 0;       /* to concatenate the 2 components into */
   float accelerationZ = 0;          /* to hold the actual acceleration in m/s^2 */
@@ -163,7 +163,7 @@ float PDC_LSM6DSO32::readAccelerationZ() {
  * @brief  Measure the noise in the accelerometer z-axis
  * @retval standard deviation of the noise in m/s^2
  */
-float PDC_LSM6DSO32::measureAccelerometerNoiseZ() {
+float PDC_LSM6DSO32::measureAccelNoiseZ() {
   uint8_t numReadings = 50; /* how many readings to calculate standard deviation over */
   /* stat variables */
   float stdDev = 0;
@@ -177,11 +177,10 @@ float PDC_LSM6DSO32::measureAccelerometerNoiseZ() {
 
   /* for the specified number of readings, measure the acceleration */
   for (uint8_t i = 1; i < numReadings; i++) {
-    /* force rate of measurements to allow for proper processing */
     // TODO: consider replacing with a non-blocking function?
-    delay(100);
+    delay(100); /* force rate of measurements to allow for proper processing */
 
-    accZ = readAccelerationZ(); /* get z-axis acceleration */
+    accZ = readAccelZ(); /* get z-axis acceleration */
 
     if (abs(GRAVITY_MAGNITUDE - accZ) > threshold) {
       i -= 1; /* for an erroneous reading, we should take the reading again to avoid skew */
@@ -201,6 +200,46 @@ float PDC_LSM6DSO32::measureAccelerometerNoiseZ() {
 
   // TODO: consider putting a cap on stdDev incase of disturbance during setup
   // TODO: worth considering replacement or supplementation with a lookup table - if we want to change mode when switching to attitude determination, we can't measure the noise
+  //       or maybe we should go between the measurement modes on the ground and measure stddev in each of them??
 
   return (stdDev);
+}
+
+/**
+ * @brief  Read the x-axis (pitch) angular rate 
+ * @param  a character that specified the axis we want to read the rate in
+ * @retval pitch angle rate in 
+ */
+float readGyro(uint8_t axis){
+  uint8_t L_G_address;
+  /* set the L_G (the LSB gyro) register address based on which axis is requested */
+  if(axis == 'X' || axis == 'x'){
+    L_G_address = 0x22;  /* x-axis (pitch) */
+  }
+  else if(axis == 'Y' || axis == 'y'){
+    L_G_address = 0x24;  /* y-axis (roll) */
+  }
+  else if(axis == 'Z' || axis == 'z'){
+    L_G_address = 0x26;  /* z-axis (yaw) */
+  }
+
+  uint8_t rawGryo[2];         /* for the 2 components of the angular rate measurement */
+  int16_t rawGyroConcat = 0;  /* to concatenate the 2 components into */
+  float gyroRate = 0;         /* to hold the actual angular rate in */
+
+  /* read angular rate
+   *  note in CTRL3_C, there is a default enabled bit which auto-increments the register address when reading multiple bytes so we dont need to read the H and L
+   *  registers separately, as long as we tell readSPI() that we expect 2 bytes in the last argument 
+   */
+  readSPI(slaveSelect, OUT_Z_LA_address, 2, rawAccelZ);
+  
+  /* we have rawAccelZ array with the LSB (0x2C) and MSB (0x2D) components, so concat these into a single value */
+  rawAccelConcat = (rawAccelZ[1] << 8) | rawAccelZ[0];
+  
+  /* convert our output into an actual acceleration value in m/s^2
+   *  the raw value is somewhere in our measurement range, so multiply by resolution to get back to absolute value, then multiply by g to get m/s^2 
+   */
+  accelerationZ = (float(rawAccelConcat) / 1000) * accelResolution * GRAVITY_MAGNITUDE;
+  
+  return (accelerationZ);
 }

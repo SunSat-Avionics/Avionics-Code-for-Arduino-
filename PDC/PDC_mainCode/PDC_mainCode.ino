@@ -188,7 +188,7 @@ void setup() {
                           2. measurement range in +/- g (4, 8, 16, 32)
   */
   /* set the accelerometer update rate high enough to allow us to capture lots of data, and 32g mode as launch will be quite tough.*/
-  errFlag = IMU.setupAccelerometer(3330, 32);
+  errFlag = IMU.setupAccel(3330, 32);
   if (errFlag != 0) {
     /* the function returns TRUE if the setup succeeded. error if values are invalid */
     errCode |= imuErr;
@@ -225,7 +225,7 @@ void setup() {
 /* -------------------- LOOP -------------------- */
 void loop() {
   // filler code to keep us entertained during testing
-  float accelerationZ = IMU.readAccelerationZ();
+  float accelerationZ = IMU.readAccelZ();
   Serial.print("Acceleration: ");
   Serial.println(accelerationZ, 5);
 

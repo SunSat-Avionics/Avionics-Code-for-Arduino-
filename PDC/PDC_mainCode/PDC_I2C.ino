@@ -1,3 +1,5 @@
+// TODO can we monitor ACK to register a successful communication?
+// TODO still need to better understand arduino I2C - not something i've encountered before!
 /**
  * @brief  Read a register over I2C
  * @param  the I2C address of the device that we want to read
