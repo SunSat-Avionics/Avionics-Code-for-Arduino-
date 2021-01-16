@@ -170,7 +170,8 @@ float IMUChild::readZ(){
 
 /*********************************************************
  * @brief  measure standard deviation of noise in an axis
- * @retval the measurement noise standard devation
+ * @retval the measurement noise standard devation in
+ *         g [ac] or dps [gy]
  *********************************************************/
 float IMUChild::measureNoiseZ() {
   uint8_t numReadings = 50; /* how many readings to calculate standard deviation over */
@@ -189,9 +190,9 @@ float IMUChild::measureNoiseZ() {
     // TODO: consider replacing with a non-blocking function?
     delay(100); /* force rate of measurements to allow for proper processing */
 
-    accZ = readZ() * GRAVITY_MAGNITUDE; /* get z-axis acceleration */
+    accZ = readZ(); /* get z-axis acceleration */
     
-    if (abs(GRAVITY_MAGNITUDE - accZ) > threshold) {
+    if (abs(1 - accZ) > threshold) {
       i -= 1; /* for an erroneous reading, we should take the reading again to avoid skew */
     }
     else {
