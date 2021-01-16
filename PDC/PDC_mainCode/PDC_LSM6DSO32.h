@@ -10,13 +10,18 @@
  *    requires much deeper understanding of all of this)
  *  - efficiency (this library should be much more lightweight
  *    than the adafruit one)
- * 
+ * Wherever possible, this file & the corresponding .cpp file 
+ *  are designed to account for the fact that in future iterations,
+ *  the IMU used may change. hopefully if this is the case, all
+ *  that should be required is the redefining of some high level
+ *  parameters (e.g. register addresses). may not be entirely 
+ *  possible as some devices may separate paramters that are here 
+ *  contained in one register but we'll see how it goes...
  ************************** Example usage **************************
  * 
  * --- (GLOBALLY) CREATE A NEW INSTANCE OF LSM6DSO32 ---
  * const uint8_t IMU_SS = 5;
  * PDC_LSM6DSO32 IMU(IMU_SS);
- * uint8_t IMUChild::slaveSelect = IMU_SS;
  * 
  * --- CHECK IF IMU IS RESPONSIVE (REQUIRES SPI TO BE SET UP) ---
  * if (!IMU.isAlive()) {
@@ -44,8 +49,14 @@
 #include <Arduino.h>  /* bring some arduino syntax into the cpp files */
 #include "PDC_SPI.h"  /* grab our SPI functions */
 #include <stdio.h>    /* std stuff for cpp */
+#include "headers.h"
 
-const float GRAVITY_MAGNITUDE = 9.80665; /* set the magnitude of the gravity vector */
+const float GRAVITY_MAGNITUDE = 9.80665;    /* set the magnitude of the gravity vector */
+
+const uint8_t accel_xData_register = 0x28;  /* the register address of the accelerometer LSB X-axis data register */
+const uint8_t gyro_xData_register = 0x22;   /* the register address of the gyroscope LSB X-axis data register */
+const uint8_t accel_CTRL_register = 0x10;   /* the register address of the accelerometer control register */
+const uint8_t gyro_CTRL_register = 0x11;    /* the register address of the gyroscope control register */
 
 /**************************************************************************
  *  a child of the LSM6DSO32 IMU
@@ -59,9 +70,11 @@ class IMUChild{
     float readValue(uint8_t LSB_address); /* a private method to read a value at the provided address */
     
     /* ---------- ATTRIBUTES ---------- */
+    uint8_t devType;            /* the type of device 0 = accel, 1 = gyro */
     float outputFrequency;      /* the rate at which the device output should refresh (Hz [ac/gy]) */
     uint16_t measurementRange;  /* the full scale of measurements (+/- g [ac]; +/- dps [gy]) */
     float resolution;           /* the resolution of the measurement (milli-g per bit [ac]; milli-dps per bit [gy]) */
+    
     
     uint8_t x_address;          /* the address of the LSB data register in the x-axis */
     uint8_t y_address;          /* the address of the LSB data register in the y-axis */

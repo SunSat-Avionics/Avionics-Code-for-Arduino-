@@ -1,8 +1,7 @@
-/**
+/**************************************************************************
  * @brief  Initialise the kalman filter based on steady-state assumption
- */
+ **************************************************************************/
 void initKalman() {
-
   /* ---------- Define Matrices ---------- */
   /* set measurment matrix to map measurements to states */
   H_matrix(0, 0) = 1.0;
@@ -85,17 +84,16 @@ void initKalman() {
   // TODO: manual calculation of K and P for arbitrary setup to verify the above has worked
 }
 
-/**
+/**************************************************************************
  * @brief  Kalman predict the current state of the system
- */
+ **************************************************************************/
 void kalmanPredict() {
-  /* x_k+1 = F*x_k */
-  predictedStateMatrix = F_matrix * previousStateMatrix;
+  predictedStateMatrix = F_matrix * previousStateMatrix;  /* x_k+1 = F*x_k */
 }
 
-/**
+/**************************************************************************
  * @brief  Kalman update the current state of the system
- */
+ **************************************************************************/
 void kalmanUpdate() {
   float accelerationZ = IMU.accel.readZ();
   // TODO: take altitude measurement from altimeter

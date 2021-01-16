@@ -20,10 +20,10 @@ bool PDC_254::isAlive() {
   return (isAlive);
 }
 
-/**
+/**********************************************
  * @brief  Detect that a card is inserted
  * @retval 1 in case of success, 0 otherwise
- */
+ **********************************************/
 bool PDC_254::cardInserted() {
   /* the card detect pin is high when a card is inserted into the module */
   if (cardDetect == LOW) {
@@ -34,10 +34,10 @@ bool PDC_254::cardInserted() {
   }
 }
 
-/**
+/**********************************************
  * @brief  Open a file to write the data to
  * @retval 0 in case of success, 1 otherwise
- */
+ **********************************************/
 bool PDC_254::openFile() {
   /* new instance of the 'File' class (part of the SD library) that we will use to control the .csv file on the microSD card */
   // TODO: once RTC is up & running, name the file with timestamp as per ISO 8601 format (kind of..)(yyyy-mm-ddThh-mm-ss.csv)
@@ -55,10 +55,10 @@ bool PDC_254::openFile() {
   }
 }
 
-/**
+/*****************************************************
  * @brief  Write data to the file on the microSD card
  * @retval 0 in case of success, 1 otherwise
- */
+ *****************************************************/
 /* data format:
     Date, Time, acc_x, acc_y, acc_z, Note" 
  */

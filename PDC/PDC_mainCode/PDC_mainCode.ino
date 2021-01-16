@@ -10,6 +10,7 @@
  * The PDC is an Arduino Nano serving the dual purpose of parachute deployment activities (e.g. apogee detection), and attitude determination.
  ***********************************************************************************************************************************************/
 
+#include "headers.h"
 #include <SPI.h>                /* the IMU, barometer & micro-SD unit are on SPI. include library for SPI commands (https://www.arduino.cc/en/reference/SPI) */
 #include "PDC_SPI.h"            /* then included our own SPI functions */
 #include <Wire.h>               /* the RTC is on I2C, so include the library for I2C commands (https://www.arduino.cc/en/reference/wire) */
@@ -33,7 +34,6 @@ const uint8_t IMU_SS = 5;       /* the DIG pin connected to the IMU SS pin */
 const uint8_t microSD_SS = 6;   /* the DIG pin connected to the micro-SD SS pin */
 
 PDC_LSM6DSO32 IMU(IMU_SS);                /* create an LSM6DSO32 object for our IMU. class defines are in 'PDC_LSM6DSO32.h' and 'PDC_LSM6DSO32.cpp' */
-uint8_t IMUChild::slaveSelect = IMU_SS;   /* ensure that our IMU children have access to the SS pin */
 
 const uint8_t microSD_CD = 7;             /* the microSD card module has a chip detect pin which shorts to ground if the card isn't inserted */
 PDC_254 microSD(microSD_SS, microSD_CD);  /* create a 254 breakout class for the microSD card module. class defines are in 'PDC_254.h' and 'PDC_254.cpp' */
@@ -116,8 +116,11 @@ void setup() {
   SPI.begin();  /* initialise all lines and CPU to use SPI */
 
   /* ---------- PERIPHERAL SETUP ---------- */
-  IMU.accel.addressSet(0x28, 0x10); /* tell the accelerometer where to find the start of it's data registers, and where to find it's control register */
-  IMU.gyro.addressSet(0x22, 0x11);  /* tell the gyroscope where to find the start of it's data registers, and where to find it's control register */
+  /* tell the IMU components where to find the start of their data registers, and where to find there control registers 
+   *  (values are defined in LSM6DSO32.h)
+   */
+  IMU.accel.addressSet(accel_xData_register, accel_CTRL_register);
+  IMU.gyro.addressSet(gyro_xData_register, gyro_CTRL_register);  
 
   pinMode(microSD_CD, INPUT);       /* set the card detect pin to be an input that we can measure to check for a card */
 

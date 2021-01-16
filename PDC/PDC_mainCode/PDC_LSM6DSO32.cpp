@@ -37,6 +37,18 @@ void PDC_LSM6DSO32::restart(){
   delay(2000); /* wait for it to properly start up again */
 }
 
+uint8_t IMUChild::slaveSelect = IMU_SS; /* set the child slave select to be the defined IMU slave select pin */
+
+/*********************************************************
+ * @brief  Self-test the accelerometer and gyroscope
+ *********************************************************/
+ //void PDC_LSM6DSO32::selfTest(){
+  //accel.readX();
+  //measure value
+  //turn self test on
+  
+ //}
+
 /*********************************************************
  * @brief  Internally take note of important registers
  * @param  the address of the x-axis LSB data register
@@ -47,6 +59,14 @@ void IMUChild::addressSet(uint8_t x_add, uint8_t CTRL_add) {
   y_address = x_add + 2;    /* y LSB address is then two along */
   z_address = x_add + 4;    /* z LSB address is another two along */
   CTRL_address = CTRL_add;  /* and then the address to configure this child */
+
+  /* work out if we've just created an accelerometer or a gyroscope child */
+  if(CTRL_address == accel_CTRL_register){
+    devType = 0;
+  }
+  else if(CTRL_address == gyro_CTRL_register){
+    devType = 1;
+  }
 }
 
 /*********************************************************
@@ -93,7 +113,7 @@ void IMUChild::init(uint8_t frequency, uint8_t range) {
   }
 
   /* set the internally stored measurement range (if condition checks if accelerometer or gyroscope) */
-  if(CTRL_address == 0x10){
+  if(devType == 0){
     switch(range){
       case(0): measurementRange = 4;  break;
       case(2): measurementRange = 32; break;
@@ -101,7 +121,7 @@ void IMUChild::init(uint8_t frequency, uint8_t range) {
       case(6): measurementRange = 16; break;
       default: measurementRange = 0;  break;
     } 
-  } else if(CTRL_address == 0x11){
+  } else if(devType == 1){
     switch(range){
       case(0):  measurementRange = 250;   break;
       case(1):  measurementRange = 125;   break;
