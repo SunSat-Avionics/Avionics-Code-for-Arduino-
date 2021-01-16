@@ -217,7 +217,7 @@ void setup() {
   
   // TODO: work out a sensible dps range
   IMU.accel.init(9, 2);
-  IMU.gyro.init(9, 1);
+  IMU.gyro.init(9, 0);
   
   // TODO: IMU self test
 
@@ -256,12 +256,8 @@ void loop() {
   float gyroY = IMU.gyro.readY();
   float gyroZ = IMU.gyro.readZ();
 
-  Serial.print("X: ");
-  Serial.print(gyroX, 5);
   Serial.print(" Y: ");
-  Serial.print(gyroY, 5);
-  Serial.print(" Z: ");
-  Serial.println(gyroZ, 5);
+  Serial.println(gyroY, 5);
 
   // parachute deployment tasks
   // light sensor check (poll the sensor every x seconds to check ambient light levels. If new value much greater than old on all 4 sensors,
@@ -270,6 +266,7 @@ void loop() {
   /* tasks to perform before we have detected apogee */
   if(!apogee){
     // while(current time step - previous timestep < kalman time), do nothing (or something like check light sensor))
+    // could also do lots of prediction steps before one update step?
     /* use the underlying dynamical model to predict the current state of the system */
     kalmanPredict();
     /* update the prediction by taking measurements */
@@ -294,6 +291,7 @@ void loop() {
 
 
   // attitude determination tasks
-  // quaternion conversion from gyro Euler output then update kalman filter with gyro readings
+  // quaternion conversion from gyro Euler output
+  // kalman filter likely wont work for attitude det after all - too non-linear. some other filtering necessary
   // try coarse sun sensing to determine relative pose of sun
 }
