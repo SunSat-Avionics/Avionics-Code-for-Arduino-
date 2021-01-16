@@ -1,7 +1,6 @@
 // Methods TODO:
-// read values (gyro xyz, accel xy, temp?, general reg?)
+// read values (temp?)
 // measure offset
-// class within a class? so can have IMU.gyro.x() for example
 
 /* for example usage, see PDC_LSM6DSO32.h */
 
@@ -37,17 +36,90 @@ void PDC_LSM6DSO32::restart(){
   delay(2000); /* wait for it to properly start up again */
 }
 
-uint8_t IMUChild::slaveSelect = IMU_SS; /* set the child slave select to be the defined IMU slave select pin */
-
 /*********************************************************
  * @brief  Self-test the accelerometer and gyroscope
  *********************************************************/
- //void PDC_LSM6DSO32::selfTest(){
-  //accel.readX();
-  //measure value
-  //turn self test on
+uint8_t PDC_LSM6DSO32::selfTest(){
+  float selfTestOn[3];    /* store values when self test is on */
+  float selfTestOff[3];   /* store values when self test is off */
+  float difference = 0.0; /* calculate the on/off differences */
   
- //}
+  uint8_t j;          /* loop index counter */
+  uint16_t dly = 500; /* delay (ms) to allow for self-test to switch on/off */ 
+  uint8_t flag = 0;   /* flag to return. 0 if successful */
+
+  /* ---------- EXPECTED RANGE DEFINITIONS ---------- */
+  float accMin = 50.0/1000.0;   /* the datasheet-specified minimum self-test change (converted to g) */
+  float accMax = 1700.0/1000.0; /* the datasheet-specified maximum self-test change (converted to g) */
+  float gyrMin = 150;           /* the datasheet-specified minimum self-test change (at 2000dps range) */
+  float gyrMax = 700;           /* the datasheet-specified maximum self-test change (at 2000dps range) */
+  
+  uint8_t CTRL5_C_address = 0x14; /* address of the register to turn self-test on/off */
+  uint8_t selfTestAccel = 1;      /* data to write to CTRL5_C to turn accelerometer self test on */
+  uint8_t selfTestGyro = 1 << 2;  /* data to write to CTRL5_C to turn gyroscope self test on */
+  accel.init(9, 0);               /*  set accel measurement range to 4g to match datasheet test conditions */
+  gyro.init(9, 6);                /* set gyro measurement range to 2000dps to match datasheet test conditions */
+
+  /* ---------- ACCELEROMETER SELF TEST ---------- */
+  /* read all 3 accelerometer axes with self-test off */
+  selfTestOff[0] = accel.readX();
+  selfTestOff[1] = accel.readY(); 
+  selfTestOff[2] = accel.readZ();
+
+  /* turn on accelerometer self test */
+  writeSPI(slaveSelect, CTRL5_C_address, selfTestAccel);
+  delay(dly);
+
+  /* read all 3 accelerometer axes with self-test on */
+  selfTestOn[0] = accel.readX();
+  selfTestOn[1] = accel.readY(); 
+  selfTestOn[2] = accel.readZ();
+
+  /* turn off accelerometer self test */
+  writeSPI(slaveSelect, CTRL5_C_address, 0);
+  delay(dly);
+
+  /* calculate the difference */
+  for(j = 0; j < 3; j++){
+    difference = selfTestOn[j] - selfTestOff[j];
+    if((difference < accMin) || (difference > accMax)){
+      flag = 1;
+    }
+  }
+
+  difference = 0; /* reset */
+
+  /* ---------- GYROSCOPE SELF TEST ---------- */
+  /* read all 3 gyroscope axes with self-test off */
+  selfTestOff[0] = gyro.readX();
+  selfTestOff[1] = gyro.readY(); 
+  selfTestOff[2] = gyro.readZ();
+
+  /* turn on gyroscope self test */
+  writeSPI(slaveSelect, CTRL5_C_address, selfTestGyro);
+  delay(dly);
+
+  /* read all 3 gyroscope axes with self-test on */
+  selfTestOn[0] = gyro.readX();
+  selfTestOn[1] = gyro.readY(); 
+  selfTestOn[2] = gyro.readZ();
+
+  /* turn off gyroscope self test */
+  writeSPI(slaveSelect, CTRL5_C_address, 0);
+  delay(dly);
+  
+  /* calculate the differences and check they are as expected */
+  for(j = 0; j < 3; j++){
+    difference = selfTestOn[j] - selfTestOff[j];
+    if((difference < gyrMin) || (difference > gyrMax)){
+      flag = 1;
+    }
+  }
+  
+  return(flag);
+}
+
+uint8_t IMUChild::slaveSelect = IMU_SS; /* set the child slave select to be the defined IMU slave select pin */
 
 /*********************************************************
  * @brief  Internally take note of important registers

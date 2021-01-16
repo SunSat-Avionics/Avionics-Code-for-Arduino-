@@ -101,7 +101,7 @@ void setup() {
    * NOTE: keep serial comms sparse and short! they take up significant memory if too verbose or unique!! */
   Serial.begin(9600);
   while(!Serial){/* wait for port to connect */};
-  Serial.println("\n-----\nSETUP\n-----\n");  /* inform start of setup */
+  Serial.println("\n-\nSETUP\n-\n");  /* inform start of setup */
 
   /* ---------- SPI Setup ---------- */
   pinMode(PDC_SS, OUTPUT);          /* we want to be the master of this bus! so set the 'SS' pin on the PDC as an output */
@@ -162,6 +162,11 @@ void setup() {
   IMU.restart();        /* reboot & clear the IMU, giving it a bit of time to start back up */
   // TODO reboot other peripherals
 
+  uint8_t selfTest = IMU.selfTest();
+  Serial.print("selfTest: ");
+  Serial.println(selfTest);
+  // TODO: decide if self test is actually sensible... what if vehicle isn't perfectly still?
+
   /************************************************************************
    *                        IMU CONFIG VALUES                             *
    *  --------------------------------------------------------------------*
@@ -181,8 +186,6 @@ void setup() {
   // TODO: work out a sensible dps range
   IMU.accel.init(9, 2); /*  set the accelerometer output update frequency and measurement range */
   IMU.gyro.init(9, 0);  /*  set the gyroscope output update frequency and measurement range */
-  
-  // TODO: IMU self test
 
   /* ---------- KALMAN FILTER SETUP ---------- */
   /* fill all matrices with 0 to start */

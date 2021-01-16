@@ -120,4 +120,5 @@ class PDC_LSM6DSO32 {
     /* ---------- METHODS --------- */
     bool isAlive(); /* check if connected and responsive */
     void restart(); /* restart the device */
+    uint8_t selfTest();
 };
