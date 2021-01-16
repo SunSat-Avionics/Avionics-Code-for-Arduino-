@@ -252,11 +252,9 @@ void setup() {
 /* -------------------- LOOP -------------------- */
 void loop() {
   // filler code to keep us entertained during testing
-  float gyroX = IMU.gyro.readX();
   float gyroY = IMU.gyro.readY();
-  float gyroZ = IMU.gyro.readZ();
 
-  Serial.print(" Y: ");
+  Serial.print("Y: ");
   Serial.println(gyroY, 5);
 
   // parachute deployment tasks
