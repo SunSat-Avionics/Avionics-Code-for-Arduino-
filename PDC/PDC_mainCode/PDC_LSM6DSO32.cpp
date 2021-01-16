@@ -52,25 +52,22 @@ void IMUChild::addressSet(uint8_t x_add, uint8_t CTRL_add) {
 /*********************************************************
  * @brief  Initialise the component
  * @param  code for output update frequency
- *          0.  off
- *          1.  12.5Hz
- *          2.  26Hz
- *          3.  52Hz
- *          4.  104Hz
- *          5.  208Hz
- *          6.  416Hz
- *          7.  833Hz
- *          8.  1660Hz
- *          9.  3330Hz
- *          10. 6660Hz
- * @param  code for output measurement range
- *          0. 4g  / 250dps
- *          1. --  / 125dps
- *          2. 32g / 500dps
- *          3. --  / --
- *          4. 8g  / 1000dps
- *          5. --  / --
- *          6. 16g / 2000dps
+ ************************************************************************
+ *                        SENSOR CONFIG VALUES                          *
+ *  --------------------------------------------------------------------*
+ *  PARAM 1 (OUTPUT UPDATE FREQUENCY)  |   PARAM 2 (MEASUREMENT RANGE)  *
+ *  0.  off                            |   0. 4g  / 250dps              *
+ *  1.  12.5Hz                         |   1. --  / 125dps              *
+ *  2.  26Hz                           |   2. 32g / 500dps              *
+ *  3.  52Hz                           |   3. --  / --                  *
+ *  4.  104Hz                          |   4. 8g  / 1000dps             *
+ *  5.  208Hz                          |   5. --  / --                  *
+ *  6.  416Hz                          |   6. 16g / 2000dps             *
+ *  7.  833Hz                          |                                *
+ *  8.  1660Hz                         |                                *
+ *  9.  3330Hz                         |                                *
+ *  10. 6660Hz                         |                                *
+ ************************************************************************
  * @retval the measured X axis value in g [ac] or dps [gy]
  *********************************************************/
 void IMUChild::init(uint8_t frequency, uint8_t range) {

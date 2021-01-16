@@ -1,9 +1,9 @@
 #include "PDC_254.h"  /* grab the class definition */
 
-/**
+/**********************************************
  * @brief  Check if connection to device is ok
  * @retval 1 in case of success, 0 otherwise
- */
+ **********************************************/
 bool PDC_254::isAlive() {
   bool isAlive = 1; /* aliveness indicator */
 
