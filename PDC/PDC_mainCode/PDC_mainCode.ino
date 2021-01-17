@@ -119,7 +119,7 @@ void setup() {
   pinMode(microSD_CD, INPUT);       /* set the card detect pin to be an input that we can measure to check for a card */
 
   // TODO: light sensor pin configuration (digital output to SI pin, analogue input(s) from AO pins, clock signal to CLK pins)
-  setCLK(1000000); /* use the ATMega328P counter1 to generate a clock signal on pin 9 (OC1A) at 1MHz */
+  setCLK(OC1A_1MHZ); /* use the ATMega328P counter1 to generate a clock signal on pin 9 (OC1A) at 1MHz */
 
   /* ---------- I2C Setup ---------- */
   Wire.begin(); /* initialise CPU to use I2C */
