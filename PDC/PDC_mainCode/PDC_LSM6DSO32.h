@@ -85,8 +85,8 @@ const uint8_t ACC_ODR_208  = 5;
 const uint8_t ACC_ODR_416  = 6;
 const uint8_t ACC_ODR_833  = 7;
 const uint8_t ACC_ODR_1660 = 8;
-const uint8_t ACC_ODR_3300 = 9;
-const uint8_t ACC_ODR_6600 = 10;
+const uint8_t ACC_ODR_3330 = 9;
+const uint8_t ACC_ODR_6660 = 10;
 
 /* GYROSCOPE OUTPUT DATA REGISTER UPDATE FREQUENCY (Hz) */
 const uint8_t GYR_ODR_0    = 0;
@@ -98,8 +98,8 @@ const uint8_t GYR_ODR_208  = 5;
 const uint8_t GYR_ODR_416  = 6;
 const uint8_t GYR_ODR_833  = 7;
 const uint8_t GYR_ODR_1660 = 8;
-const uint8_t GYR_ODR_3300 = 9;
-const uint8_t GYR_ODR_6600 = 10;
+const uint8_t GYR_ODR_3330 = 9;
+const uint8_t GYR_ODR_6660 = 10;
 
 /* ACCELEROMETER FULL SCALE MEASUREMENT RANGE (g) */
 const uint8_t ACC_RNG_4  = 0;
@@ -140,9 +140,17 @@ class IMUChild {
     static uint8_t slaveSelect; /* the pin on the PDC that connects to the IMU CS pin (static as is same for all children) */
 
   public:
-    /* ---------- CONSTRUCTOR ---------- */
-    IMUChild(void) {};
-
+    /* ---------- INITIALISER ---------- */
+    IMUChild(void): 
+      devType(0),
+      outputFrequency(0),
+      measurementRange(0),
+      resolution(0),
+      x_address(0),
+      y_address(0),
+      z_address(0),
+      CTRL_address(0)
+    {};
     /* ---------- METHODS ---------- */
     void addressSet(uint8_t x_add, uint8_t CTRL_add); /* remember the device data and control registers */
     void init(uint8_t f, uint8_t r);  /* configure the device over SPI - set the measurement range & output frequency */

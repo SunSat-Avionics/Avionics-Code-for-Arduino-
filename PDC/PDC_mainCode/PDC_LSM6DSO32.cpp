@@ -40,6 +40,7 @@ void PDC_LSM6DSO32::restart() {
    @brief  Self-test the accelerometer and gyroscope
    @retval 0 if success, 1 otherwise
  *********************************************************/
+ // TODO: read the initial config (rng, frq) and reset to these after self testing
 uint8_t PDC_LSM6DSO32::selfTest() {
   /* acc and gyr can self test. electrostatic force applied to the elements to artifically displace & register a reading
       we can then measure the value when the self test is enabled vs disabled & compare the outputs
@@ -63,8 +64,8 @@ uint8_t PDC_LSM6DSO32::selfTest() {
   uint8_t CTRL5_C_address = 0x14; /* address of the register to turn self-test on/off */
   uint8_t selfTestAccel = 1;      /* data to write to CTRL5_C to turn accelerometer self test on */
   uint8_t selfTestGyro = 1 << 2;  /* data to write to CTRL5_C to turn gyroscope self test on */
-  accel.init(ACC_ODR_3300, ACC_RNG_4);    /*  set accel measurement range to 4g to match datasheet test conditions */
-  gyro.init(GYR_ODR_3300, GYR_RNG_2000);  /* set gyro measurement range to 2000dps to match datasheet test conditions */
+  accel.init(ACC_ODR_3330, ACC_RNG_4);    /*  set accel measurement range to 4g to match datasheet test conditions */
+  gyro.init(GYR_ODR_3330, GYR_RNG_2000);  /* set gyro measurement range to 2000dps to match datasheet test conditions */
 
   /* ---------- ACCELEROMETER SELF TEST ---------- */
   /* read all 3 accelerometer axes with self-test off */

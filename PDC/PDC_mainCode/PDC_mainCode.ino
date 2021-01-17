@@ -173,8 +173,8 @@ void setup() {
       +  6660Hz                         |
    **********************************************************************/
   // TODO: work out a sensible dps range
-  IMU.accel.init(ACC_ODR_3300, ACC_RNG_32); /*  set the accelerometer output update frequency and measurement range */
-  IMU.gyro.init(GYR_ODR_3300, GYR_RNG_250);  /*  set the gyroscope output update frequency and measurement range */
+  IMU.accel.init(ACC_ODR_3330, ACC_RNG_32); /*  set the accelerometer output update frequency and measurement range */
+  IMU.gyro.init(GYR_ODR_3330, GYR_RNG_250);  /*  set the gyroscope output update frequency and measurement range */
 
   /* ---------- KALMAN FILTER SETUP ---------- */
   initKalman(); /* setup kalman filter for apogee detection (see PDC_kalman.ino) */
