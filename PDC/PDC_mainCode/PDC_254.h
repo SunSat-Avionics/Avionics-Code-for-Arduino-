@@ -1,20 +1,20 @@
 /*******************************************************************
- * In this file we define some class structures for the 254
- *  micro-SD breakout board
- * A library for this component already exists via adafruit
- *  (see https://github.com/adafruit/MicroSD-breakout-board), but 
- *  we have built our own from scratch for a number of reasons
- *  - flexibility (if we want to add/remove functionality, it is 
- *    easy to do so)
- *  - readability (adafruit lib uses lots of abstraction and
- *    requires much deeper understanding of all of this)
- *  - efficiency (this library should be much more lightweight
- *    than the adafruit one)
- * 
+   In this file we define some class structures for the 254
+    micro-SD breakout board
+   A library for this component already exists via adafruit
+    (see https://github.com/adafruit/MicroSD-breakout-board), but
+    we have built our own from scratch for a number of reasons
+    - flexibility (if we want to add/remove functionality, it is
+      easy to do so)
+    - readability (adafruit lib uses lots of abstraction and
+      requires much deeper understanding of all of this)
+    - efficiency (this library should be much more lightweight
+      than the adafruit one)
+
  ************************** Example usage **************************
- * 
- * --- TODO ---
- * 
+
+   --- TODO ---
+
  *******************************************************************/
 
 #include <Arduino.h>  /* for some arduino syntax in these cpp files */
@@ -22,11 +22,11 @@
 #include <stdio.h>    /* std stuff for printing */
 #include <SD.h>       /* we want the SD card library too (https://www.arduino.cc/en/reference/SD) */
 
-/************************************************************************************************************** 
- *  254 MICRO-SD BREAKOUT CLASS
- *    we define a 254 class to keep everything packed away neatly. 
- *    it allows us to keep hold of things that we need in attributes
- *    also gives us fine control over functionality
+/**************************************************************************************************************
+    254 MICRO-SD BREAKOUT CLASS
+      we define a 254 class to keep everything packed away neatly.
+      it allows us to keep hold of things that we need in attributes
+      also gives us fine control over functionality
  **************************************************************************************************************/
 class PDC_254 {
   private:

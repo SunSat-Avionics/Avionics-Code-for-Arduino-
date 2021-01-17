@@ -1,13 +1,13 @@
 /***********************************************************************************************************************************************
- * SUNSAT Parachute Deployment and Attitude Determination Software
- *
- * Created 22 Nov 20
- * Contributors: Rory Haggart, Waleed Hamad
- *
- * Description
- * -----------
- * For the Sheffield University Nova SATellite (SUNSAT) platform, this code is to be onboard the 'parachute deployment computer' (PDC).
- * The PDC is an Arduino Nano serving the dual purpose of parachute deployment activities (e.g. apogee detection), and attitude determination.
+   SUNSAT Parachute Deployment and Attitude Determination Software
+
+   Created 22 Nov 20
+   Contributors: Rory Haggart, Waleed Hamad
+
+   Description
+   -----------
+   For the Sheffield University Nova SATellite (SUNSAT) platform, this code is to be onboard the 'parachute deployment computer' (PDC).
+   The PDC is an Arduino Nano serving the dual purpose of parachute deployment activities (e.g. apogee detection), and attitude determination.
  ***********************************************************************************************************************************************/
 
 #include "headers.h"
@@ -19,9 +19,9 @@
 #include "PDC_LSM6DSO32.h"      /* include our IMU class */
 #include "PDC_254.h"            /* include our micro-SD class */
 #include <BasicLinearAlgebra.h> /* for Matrix operations
-                                 *   if this line throws an error, you probably don't have the Matrix Library locally.
-                                 *   see: https://github.com/tomstewart89/BasicLinearAlgebra or search 'basic linear algebra' in the IDE library manager 
-                                 */
+                                     if this line throws an error, you probably don't have the Matrix Library locally.
+                                     see: https://github.com/tomstewart89/BasicLinearAlgebra or search 'basic linear algebra' in the IDE library manager 
+*/
 using namespace BLA;            /* use the basic linear algebra namespace */
 
 // TODO consider the below library for faster read/write/mode if timings become an issue. requires us to know the pin at compile time, so won't help in the SPI
@@ -43,30 +43,22 @@ const uint8_t RTC = 23;           /* the real-time clock (RTC) module is connect
 const uint8_t RTCaddress = 0x50;  /* to communicate with an I2C device, we have to know the device address, and for the RTC it is 0x50 */
 
 /* ---------- KALMAN FILTER CONFIG ---------- */
-/* 
- *  we use a Kalman filter to estimate the point of apogee in flight
- *  the implementation is explained and described in 'kalmanFilter.pdf' in the github repo
- *  the state matrix is as below and we are measuring acceleration with the IMU, and displacement
- *   with the altimeter. Looking to get a good velocity estimate so point of zero crossing is apogee.
- *  | acceleration (z) |
- *  | velocity (z)     |
- *  | displacement (z) |
- */
- 
+/*
+    we use a Kalman filter to estimate the point of apogee in flight
+    the implementation is explained and described in 'kalmanFilter.pdf' in the github repo
+    the state matrix is as below and we are measuring acceleration with the IMU, and displacement
+     with the altimeter. Looking to get a good velocity estimate so point of zero crossing is apogee.
+    | acceleration (z) |
+    | velocity (z)     |
+    | displacement (z) |
+*/
+
 // TODO: can some of these variables become a bit less global?
 // TODO: refine kalmanTime based on tests. how long does measurement take? calculation time?
 // TODO: then *consider* using this to set update frequency of sensors by rounding up (e.g. if kalman update freq is 10Hz, set accelerometer to 12.5Hz in setup)
 const float kalmanTime = 0.5;       /* time step (s) between Kalman iterations */
 const uint8_t numStates = 3;        /* number of states that we're interested in */
 const uint8_t numMeasurements = 2;  /* number of measurements that we're taking */
-
-/* state transition matrix which maps previous state to current state  */
-Matrix<numStates, numStates> F_matrix = {1.0,                      0.0, 0.0,
-                                         kalmanTime,               1.0, 0.0,
-                                         0.5 * pow(kalmanTime, 2), 0.0, 1.0}; 
-
-Matrix<numMeasurements, numStates> H_matrix;  /* measurement matrix which maps the measurements to the state variables */
-Matrix<numStates, numMeasurements> K_matrix;  /* kalman gain matrix which weights our measurements against the underlying model */
 
 /* P, Q and R matrices are only needed in setup, so they aren't needed globally */
 
@@ -79,6 +71,7 @@ Matrix<numMeasurements, 1> measurementMatrix; /* matrix that contains the most r
 uint8_t errCode = 0;  /* value to be used whenever we want to detect some error */
 
 /* individual bit sets for an error at different components. will allow us to identify specific errors in an efficient way */
+// TODO: probably turn this into a 16 bit so we have better understanding of what actually caused the issue (isAlive, selfTest, etc)
 const uint8_t altErr = (1 << 0);  /* if the altimeter encounters an issue, set bit 0 */
 const uint8_t imuErr = (1 << 1);  /* if the IMU encounters an issue, set bit 1 */
 const uint8_t msdErr = (1 << 2);  /* if the micro-SD encounters an issue, set bit 2 */
@@ -94,13 +87,15 @@ bool apogee = 0;  /* flag that we can set when we think apogee has been reached 
 void setup() {
   uint8_t altimeter_CHIP_ID[1]; /* for the return value of the altimeter 'CHIP_ID' identification register */
   bool errFlag = 0;             /* to flag errors when they're encountered */
-  
+
   /* ---------- Serial Setup ---------- */
   /* open serial comms at 9600 baud to allow us to monitor the process
-   *   serial will become irrelevant - once the code is on the PDC we shouldn't need it but it's useful for ground testing.
-   * NOTE: keep serial comms sparse and short! they take up significant memory if too verbose or unique!! */
+       serial will become irrelevant - once the code is on the PDC we shouldn't need it but it's useful for ground testing.
+     NOTE: keep serial comms sparse and short! they take up significant memory if too verbose or unique!! */
   Serial.begin(9600);
-  while(!Serial){/* wait for port to connect */};
+  while (!Serial) {
+    /* wait for port to connect */
+  };
   Serial.println("\n-\nSETUP\n-\n");  /* inform start of setup */
 
   /* ---------- SPI Setup ---------- */
@@ -116,16 +111,10 @@ void setup() {
   SPI.begin();  /* initialise all lines and CPU to use SPI */
 
   /* ---------- PERIPHERAL SETUP ---------- */
-  /* tell the IMU components where to find the start of their data registers, and where to find there control registers 
-   *  (values are defined in LSM6DSO32.h)
-   */
-  IMU.accel.addressSet(accel_xData_register, accel_CTRL_register);
-  IMU.gyro.addressSet(gyro_xData_register, gyro_CTRL_register);  
-
   pinMode(microSD_CD, INPUT);       /* set the card detect pin to be an input that we can measure to check for a card */
 
   // TODO: light sensor pin configuration (digital output to SI pin, analogue input(s) from AO pins, clock signal to CLK pins)
-  
+
   /* ---------- I2C Setup ---------- */
   Wire.begin(); /* initialise CPU to use I2C */
 
@@ -154,7 +143,7 @@ void setup() {
   }
 
   // TODO write a note to the microSD to signify SD begin - maybe need a .writeNote() method which blanks everything but date, time and note
-  
+
   // setup interrupt pin? TBD - can we simply configure one of the GPIO to go high and connect this to main OBC interrupt, and then execute
   // the interrupt routine on OBC? or will we communicate with main OBC via I2C?
 
@@ -167,37 +156,29 @@ void setup() {
   Serial.println(selfTest);
   // TODO: decide if self test is actually sensible... what if vehicle isn't perfectly still?
 
-  /************************************************************************
-   *                        IMU CONFIG VALUES                             *
-   *  --------------------------------------------------------------------*
-   *  PARAM 1 (OUTPUT UPDATE FREQUENCY)  |   PARAM 2 (MEASUREMENT RANGE)  *
-   *  0.  off                            |   0. 4g  / 250dps              *
-   *  1.  12.5Hz                         |   1. --  / 125dps              *
-   *  2.  26Hz                           |   2. 32g / 500dps              *
-   *  3.  52Hz                           |   3. --  / --                  *
-   *  4.  104Hz                          |   4. 8g  / 1000dps             *
-   *  5.  208Hz                          |   5. --  / --                  *
-   *  6.  416Hz                          |   6. 16g / 2000dps             *
-   *  7.  833Hz                          |                                *
-   *  8.  1660Hz                         |                                *
-   *  9.  3330Hz                         |                                *
-   *  10. 6660Hz                         |                                *
-   ************************************************************************/
+  /**********************************************************************
+                            IMU CONFIG VALUES
+      ------------------------------------------------------------------
+      PARAM 1 (OUTPUT UPDATE FREQUENCY) |   PARAM 2 (MEASUREMENT RANGE)
+      +  off                            |   + 4g  / 250dps
+      +  12.5Hz                         |   + --  / 125dps
+      +  26Hz                           |   + 32g / 500dps
+      +  52Hz                           |   + --  / --
+      +  104Hz                          |   + 8g  / 1000dps
+      +  208Hz                          |   + --  / --
+      +  416Hz                          |   + 16g / 2000dps
+      +  833Hz                          |
+      +  1660Hz                         |
+      +  3330Hz                         |
+      +  6660Hz                         |
+   **********************************************************************/
   // TODO: work out a sensible dps range
-  IMU.accel.init(9, 2); /*  set the accelerometer output update frequency and measurement range */
-  IMU.gyro.init(9, 0);  /*  set the gyroscope output update frequency and measurement range */
+  IMU.accel.init(ACC_ODR_3300, ACC_RNG_32); /*  set the accelerometer output update frequency and measurement range */
+  IMU.gyro.init(GYR_ODR_3300, GYR_RNG_250);  /*  set the gyroscope output update frequency and measurement range */
 
   /* ---------- KALMAN FILTER SETUP ---------- */
-  /* fill all matrices with 0 to start */
-  H_matrix.Fill(0.0);
-  K_matrix.Fill(0.0);
-  stateMatrix.Fill(0.0);
-  previousStateMatrix.Fill(0.0);
-  predictedStateMatrix.Fill(0.0);
-  measurementMatrix.Fill(0.0);
-  
-  initKalman(); /* setup kalman filter for apogee detection (see kalmanFilter.ino) */
-  
+  initKalman(); /* setup kalman filter for apogee detection (see PDC_kalman.ino) */
+
   /* ---------- SETUP COMPLETE ---------- */
   if (errCode != 0) {
     Serial.print("\n-\n");
@@ -229,7 +210,7 @@ void loop() {
   // register apogee)
 
   /* tasks to perform before we have detected apogee */
-  if(!apogee){
+  if (!apogee) {
     // while(current time step - previous timestep < kalman time), do nothing (or something like check light sensor))
     // could also do lots of prediction steps before one update step?
     /* use the underlying dynamical model to predict the current state of the system */
@@ -242,13 +223,13 @@ void loop() {
     float velocity = stateMatrix(1, 0);
     /* once the velocity is negative, we have crossed the point of zero-velocity in the z-direction and so apogee is reached  */
     // TODO maybe change the 0 to some threshold so that we start taking more frequent data below 10m/s for example
-    if(velocity < 0){
+    if (velocity < 0) {
       /* flag that apogee has been detected, and allow us to move on */
       apogee = 1;
       // write a note with data to inform apogee
     }
   }
- 
+
   // TODO: write state vector to file
 
 

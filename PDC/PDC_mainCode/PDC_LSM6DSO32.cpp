@@ -7,15 +7,15 @@
 #include "PDC_LSM6DSO32.h"  /* include the definition of the class */
 
 /*********************************************************
- * @brief  Read component ID
- * @retval 1 in case of success, 0 otherwise
+   @brief  Read component ID
+   @retval 1 in case of success, 0 otherwise
  *********************************************************/
 bool PDC_LSM6DSO32::isAlive() {
   bool isAlive = 0;                     /* signify result - 1 is success */
   uint8_t WHO_AM_I[1];                  /* internal variable to hold the output */
   uint8_t WHO_AM_I_expect = 0b01101100; /* the output that we expect */
   uint8_t WHO_AM_I_address = 0x0f;      /* the address of the WHO_AM_I register */
-  
+
   readSPI(slaveSelect, WHO_AM_I_address, 1, WHO_AM_I);  /* read the 'WHO_AM_I' register on the IMU */
 
   /* check that it's what we expect */
@@ -26,44 +26,50 @@ bool PDC_LSM6DSO32::isAlive() {
 }
 
 /*********************************************************
- * @brief  Restart IMU
+   @brief  Restart IMU
  *********************************************************/
-void PDC_LSM6DSO32::restart(){
+void PDC_LSM6DSO32::restart() {
   uint8_t CTRL3_C_address = 0x12;     /* address of the CTRL3_C register on the device which allows us to reboot memory */
   uint8_t dataToWrite = 1 || 1 << 7;  /* set bits 7 and 0 to high which reboots memory and resets software */
-  
+
   writeSPI(slaveSelect, CTRL3_C_address, dataToWrite); /* write the command to the device */
   delay(2000); /* wait for it to properly start up again */
 }
 
 /*********************************************************
- * @brief  Self-test the accelerometer and gyroscope
+   @brief  Self-test the accelerometer and gyroscope
+   @retval 0 if success, 1 otherwise
  *********************************************************/
-uint8_t PDC_LSM6DSO32::selfTest(){
+uint8_t PDC_LSM6DSO32::selfTest() {
+  /* acc and gyr can self test. electrostatic force applied to the elements to artifically displace & register a reading
+      we can then measure the value when the self test is enabled vs disabled & compare the outputs
+      datasheet specifies a range of outputs to expect in self test, so we verify this
+  */
+
   float selfTestOn[3];    /* store values when self test is on */
   float selfTestOff[3];   /* store values when self test is off */
   float difference = 0.0; /* calculate the on/off differences */
-  
+
   uint8_t j;          /* loop index counter */
-  uint16_t dly = 500; /* delay (ms) to allow for self-test to switch on/off */ 
+  uint16_t dly = 500; /* delay (ms) to allow for self-test to switch on/off */
   uint8_t flag = 0;   /* flag to return. 0 if successful */
 
   /* ---------- EXPECTED RANGE DEFINITIONS ---------- */
-  float accMin = 50.0/1000.0;   /* the datasheet-specified minimum self-test change (converted to g) */
-  float accMax = 1700.0/1000.0; /* the datasheet-specified maximum self-test change (converted to g) */
+  float accMin = 50.0 / 1000.0; /* the datasheet-specified minimum self-test change (converted to g) */
+  float accMax = 1700.0 / 1000.0; /* the datasheet-specified maximum self-test change (converted to g) */
   float gyrMin = 150;           /* the datasheet-specified minimum self-test change (at 2000dps range) */
   float gyrMax = 700;           /* the datasheet-specified maximum self-test change (at 2000dps range) */
-  
+
   uint8_t CTRL5_C_address = 0x14; /* address of the register to turn self-test on/off */
   uint8_t selfTestAccel = 1;      /* data to write to CTRL5_C to turn accelerometer self test on */
   uint8_t selfTestGyro = 1 << 2;  /* data to write to CTRL5_C to turn gyroscope self test on */
-  accel.init(9, 0);               /*  set accel measurement range to 4g to match datasheet test conditions */
-  gyro.init(9, 6);                /* set gyro measurement range to 2000dps to match datasheet test conditions */
+  accel.init(ACC_ODR_3300, ACC_RNG_4);    /*  set accel measurement range to 4g to match datasheet test conditions */
+  gyro.init(GYR_ODR_3300, GYR_RNG_2000);  /* set gyro measurement range to 2000dps to match datasheet test conditions */
 
   /* ---------- ACCELEROMETER SELF TEST ---------- */
   /* read all 3 accelerometer axes with self-test off */
   selfTestOff[0] = accel.readX();
-  selfTestOff[1] = accel.readY(); 
+  selfTestOff[1] = accel.readY();
   selfTestOff[2] = accel.readZ();
 
   /* turn on accelerometer self test */
@@ -72,7 +78,7 @@ uint8_t PDC_LSM6DSO32::selfTest(){
 
   /* read all 3 accelerometer axes with self-test on */
   selfTestOn[0] = accel.readX();
-  selfTestOn[1] = accel.readY(); 
+  selfTestOn[1] = accel.readY();
   selfTestOn[2] = accel.readZ();
 
   /* turn off accelerometer self test */
@@ -80,9 +86,9 @@ uint8_t PDC_LSM6DSO32::selfTest(){
   delay(dly);
 
   /* calculate the difference */
-  for(j = 0; j < 3; j++){
+  for (j = 0; j < 3; j++) {
     difference = selfTestOn[j] - selfTestOff[j];
-    if((difference < accMin) || (difference > accMax)){
+    if ((difference < accMin) || (difference > accMax)) {
       flag = 1;
     }
   }
@@ -92,7 +98,7 @@ uint8_t PDC_LSM6DSO32::selfTest(){
   /* ---------- GYROSCOPE SELF TEST ---------- */
   /* read all 3 gyroscope axes with self-test off */
   selfTestOff[0] = gyro.readX();
-  selfTestOff[1] = gyro.readY(); 
+  selfTestOff[1] = gyro.readY();
   selfTestOff[2] = gyro.readZ();
 
   /* turn on gyroscope self test */
@@ -101,105 +107,92 @@ uint8_t PDC_LSM6DSO32::selfTest(){
 
   /* read all 3 gyroscope axes with self-test on */
   selfTestOn[0] = gyro.readX();
-  selfTestOn[1] = gyro.readY(); 
+  selfTestOn[1] = gyro.readY();
   selfTestOn[2] = gyro.readZ();
 
   /* turn off gyroscope self test */
   writeSPI(slaveSelect, CTRL5_C_address, 0);
   delay(dly);
-  
+
   /* calculate the differences and check they are as expected */
-  for(j = 0; j < 3; j++){
+  for (j = 0; j < 3; j++) {
     difference = selfTestOn[j] - selfTestOff[j];
-    if((difference < gyrMin) || (difference > gyrMax)){
+    if ((difference < gyrMin) || (difference > gyrMax)) {
       flag = 1;
     }
   }
-  
-  return(flag);
+
+  return (flag);
 }
 
-uint8_t IMUChild::slaveSelect = IMU_SS; /* set the child slave select to be the defined IMU slave select pin */
+/*****************************************************************************
+   @brief  set the child slave select to be the defined IMU slave select pin
+ *****************************************************************************/
+uint8_t IMUChild::slaveSelect = IMU_SS;
 
 /*********************************************************
- * @brief  Internally take note of important registers
- * @param  the address of the x-axis LSB data register
- * @param  the address of the control register
+   @brief  Internally take note of important registers
+   @param  the address of the x-axis LSB data register
+   @param  the address of the control register
  *********************************************************/
 void IMUChild::addressSet(uint8_t x_add, uint8_t CTRL_add) {
-  x_address = x_add;        /* set x LSB address attribute as specified */  
+  x_address = x_add;        /* set x LSB address attribute as specified */
   y_address = x_add + 2;    /* y LSB address is then two along */
   z_address = x_add + 4;    /* z LSB address is another two along */
   CTRL_address = CTRL_add;  /* and then the address to configure this child */
 
   /* work out if we've just created an accelerometer or a gyroscope child */
-  if(CTRL_address == accel_CTRL_register){
+  if (CTRL_address == ACC_CTRL_REG) {
     devType = 0;
   }
-  else if(CTRL_address == gyro_CTRL_register){
+  else if (CTRL_address == GYR_CTRL_REG) {
     devType = 1;
   }
 }
 
 /*********************************************************
- * @brief  Initialise the component
- * @param  code for output update frequency
- ************************************************************************
- *                        SENSOR CONFIG VALUES                          *
- *  --------------------------------------------------------------------*
- *  PARAM 1 (OUTPUT UPDATE FREQUENCY)  |   PARAM 2 (MEASUREMENT RANGE)  *
- *  0.  off                            |   0. 4g  / 250dps              *
- *  1.  12.5Hz                         |   1. --  / 125dps              *
- *  2.  26Hz                           |   2. 32g / 500dps              *
- *  3.  52Hz                           |   3. --  / --                  *
- *  4.  104Hz                          |   4. 8g  / 1000dps             *
- *  5.  208Hz                          |   5. --  / --                  *
- *  6.  416Hz                          |   6. 16g / 2000dps             *
- *  7.  833Hz                          |                                *
- *  8.  1660Hz                         |                                *
- *  9.  3330Hz                         |                                *
- *  10. 6660Hz                         |                                *
- ************************************************************************
- * @retval the measured X axis value in g [ac] or dps [gy]
+   @brief  Initialise the component
+   @param  code for output update frequency
+   @retval the measured X axis value in g [ac] or dps [gy]
  *********************************************************/
 void IMUChild::init(uint8_t frequency, uint8_t range) {
-  uint8_t data = 0;                            
-  
+  uint8_t data = 0;
+
   data |= range << 1;     /* set bits [3:1] to configure range. note accel only uses [3:2] so have padded with bit 1 to make equivalent */
   data |= frequency << 4; /* set bits [7:4] to configure output frequency */
 
   /* set the internally stored output frequency */
-  switch(frequency){
-    case(0):  outputFrequency = 0;    break;
-    case(1):  outputFrequency = 12.5; break;
-    case(2):  outputFrequency = 26;   break;
-    case(3):  outputFrequency = 52;   break;
-    case(4):  outputFrequency = 104;  break;
-    case(5):  outputFrequency = 208;  break;   
-    case(6):  outputFrequency = 416;  break;
-    case(7):  outputFrequency = 833;  break;  
-    case(8):  outputFrequency = 1660; break;
-    case(9):  outputFrequency = 3330; break;
-    case(10): outputFrequency = 6660; break;
+  switch (frequency) {
+    case (0):  outputFrequency = 0;    break;
+    case (1):  outputFrequency = 12.5; break;
+    case (2):  outputFrequency = 26;   break;
+    case (3):  outputFrequency = 52;   break;
+    case (4):  outputFrequency = 104;  break;
+    case (5):  outputFrequency = 208;  break;
+    case (6):  outputFrequency = 416;  break;
+    case (7):  outputFrequency = 833;  break;
+    case (8):  outputFrequency = 1660; break;
+    case (9):  outputFrequency = 3330; break;
+    case (10): outputFrequency = 6660; break;
     default:  outputFrequency = 0;    break;
   }
 
   /* set the internally stored measurement range (if condition checks if accelerometer or gyroscope) */
-  if(devType == 0){
-    switch(range){
-      case(0): measurementRange = 4;  break;
-      case(2): measurementRange = 32; break;
-      case(4): measurementRange = 8;  break;
-      case(6): measurementRange = 16; break;
+  if (devType == 0) {
+    switch (range) {
+      case (0): measurementRange = 4;  break;
+      case (2): measurementRange = 32; break;
+      case (4): measurementRange = 8;  break;
+      case (6): measurementRange = 16; break;
       default: measurementRange = 0;  break;
-    } 
-  } else if(devType == 1){
-    switch(range){
-      case(0):  measurementRange = 250;   break;
-      case(1):  measurementRange = 125;   break;
-      case(2):  measurementRange = 500;   break;
-      case(4):  measurementRange = 1000;  break;
-      case(6):  measurementRange = 2000;  break;
+    }
+  } else if (devType == 1) {
+    switch (range) {
+      case (0):  measurementRange = 250;   break;
+      case (1):  measurementRange = 125;   break;
+      case (2):  measurementRange = 500;   break;
+      case (4):  measurementRange = 1000;  break;
+      case (6):  measurementRange = 2000;  break;
       default:  measurementRange = 0;     break;
     }
   }
@@ -210,22 +203,22 @@ void IMUChild::init(uint8_t frequency, uint8_t range) {
 }
 
 /*********************************************************
- * @brief  Read a value from a specified register
- * @param  the address of the LSB data register
- * @retval the value in g [ac] or dps [gy]
+   @brief  Read a value from a specified register
+   @param  the address of the LSB data register
+   @retval the value in g [ac] or dps [gy]
  *********************************************************/
-float IMUChild::readValue(uint8_t LSB_address){
-  uint8_t rawValue[2];        /* we will read two bytes from the device into here */    
+float IMUChild::readValue(uint8_t LSB_address) {
+  uint8_t rawValue[2];        /* we will read two bytes from the device into here */
   int16_t rawValueConcat = 0; /* we will concatenate the two bytes into a single value here */
   float measuredValue = 0;    /* and we will convert the concatenated value into a 'measured' value here */
-  
-  
-  readSPI(slaveSelect, LSB_address, 2, rawValue); /* read two bytes from the device. 
-                                                   *  since CTRLC_3 'IF_INC' bit is enabled, the address will
-                                                   *  auto-increment and read the LSB then MSB registers so we
-                                                   *  have the two bytes we need!
-                                                   */
-  
+
+
+  readSPI(slaveSelect, LSB_address, 2, rawValue); /* read two bytes from the device.
+                                                      since CTRLC_3 'IF_INC' bit is enabled, the address will
+                                                      auto-increment and read the LSB then MSB registers so we
+                                                      have the two bytes we need!
+*/
+
   rawValueConcat = (rawValue[1] << 8) | rawValue[0];  /* concatenate the two bytes into a single val by shifting the MSB up by one byte */
 
   measuredValue = (float(rawValueConcat) / 1000) * resolution;  /* use the sensor resolution to convert raw value into an actual measurement */
@@ -234,33 +227,33 @@ float IMUChild::readValue(uint8_t LSB_address){
 }
 
 /*********************************************************
- * @brief  Read data from the X axis
- * @retval the measured X axis value in g [ac] or dps [gy]
+   @brief  Read data from the X axis
+   @retval the measured X axis value in g [ac] or dps [gy]
  *********************************************************/
-float IMUChild::readX(){
-  return(readValue(x_address));
+float IMUChild::readX() {
+  return (readValue(x_address));
 }
 
 /*********************************************************
- * @brief  Read data from the Y axis
- * @retval the measured Y axis value in g [ac] or dps [gy]
+   @brief  Read data from the Y axis
+   @retval the measured Y axis value in g [ac] or dps [gy]
  *********************************************************/
-float IMUChild::readY(){
-  return(readValue(y_address));
+float IMUChild::readY() {
+  return (readValue(y_address));
 }
 
 /*********************************************************
- * @brief  Read data from the Y axis
- * @retval the measured Y axis value in g [ac] or dps [gy]
+   @brief  Read data from the Y axis
+   @retval the measured Y axis value in g [ac] or dps [gy]
  *********************************************************/
-float IMUChild::readZ(){
-  return(readValue(z_address));
+float IMUChild::readZ() {
+  return (readValue(z_address));
 }
 
 /*********************************************************
- * @brief  measure standard deviation of noise in an axis
- * @retval the measurement noise standard devation in
- *         g [ac] or dps [gy]
+   @brief  measure standard deviation of noise in an axis
+   @retval the measurement noise standard devation in
+           g [ac] or dps [gy]
  *********************************************************/
 float IMUChild::measureNoiseZ() {
   uint8_t numReadings = 50; /* how many readings to calculate standard deviation over */
@@ -280,14 +273,14 @@ float IMUChild::measureNoiseZ() {
     delay(100); /* force rate of measurements to allow for proper processing */
 
     accZ = readZ(); /* get z-axis acceleration */
-    
+
     if (abs(1 - accZ) > threshold) {
       i -= 1; /* for an erroneous reading, we should take the reading again to avoid skew */
     }
     else {
       /* Welford's algorithm for calculating standard deviation in real time
-       *  allows us to sidestep a large array of floats which would very quickly eat up memory & limit the samples we can test! 
-       */
+          allows us to sidestep a large array of floats which would very quickly eat up memory & limit the samples we can test!
+      */
       mean = mean + (accZ - mean) / i;
       sum = sum + (accZ - mean) * (accZ - prev_mean);
       prev_mean = mean;
