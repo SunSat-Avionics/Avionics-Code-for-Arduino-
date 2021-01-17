@@ -266,7 +266,7 @@ float IMUChild::measureNoiseZ() {
 
   float accZ = 0; /* the acceleration in the z-direction in m/s^2 */
 
-  float threshold = 0.3;  /* reject rubbish values that exceed a threshold of reasonable expectation */
+  float threshold = 0.3/GRAVITY_MAGNITUDE;  /* reject rubbish values that exceed a threshold of reasonable expectation */
 
   /* for the specified number of readings, measure the acceleration */
   for (uint8_t i = 1; i < numReadings; i++) {

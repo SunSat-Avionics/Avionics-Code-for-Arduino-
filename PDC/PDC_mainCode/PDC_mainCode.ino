@@ -42,6 +42,11 @@ PDC_254 microSD(microSD_SS, microSD_CD);  /* create a 254 breakout class for the
 const uint8_t RTC = 23;           /* the real-time clock (RTC) module is connected via I2C. the nano's data line for I2C (SDA) is at pin 23 */
 const uint8_t RTCaddress = 0x50;  /* to communicate with an I2C device, we have to know the device address, and for the RTC it is 0x50 */
 
+/* ---------- LINEAR PHOTODIODE ARRAY CONFIG ---------- */
+const uint8_t LPA_SI = 5;         /* the serial input pin that is used to trigger a new output from the LPAs */
+const uint8_t LPA_CLK = OC1A_PIN; /* the pin that will provide clock signal to the LPAs */
+const uint8_t LPA_AO = 19;        /* the analog output pin that the LPAs will send their values to */
+
 /* ---------- KALMAN FILTER CONFIG ---------- */
 /*
     we use a Kalman filter to estimate the point of apogee in flight
@@ -114,6 +119,7 @@ void setup() {
   pinMode(microSD_CD, INPUT);       /* set the card detect pin to be an input that we can measure to check for a card */
 
   // TODO: light sensor pin configuration (digital output to SI pin, analogue input(s) from AO pins, clock signal to CLK pins)
+  setCLK(1000000); /* use the ATMega328P counter1 to generate a clock signal on pin 9 (OC1A) at 1MHz */
 
   /* ---------- I2C Setup ---------- */
   Wire.begin(); /* initialise CPU to use I2C */
@@ -152,8 +158,9 @@ void setup() {
   // TODO reboot other peripherals
 
   uint8_t selfTest = IMU.selfTest();
-  Serial.print("selfTest: ");
-  Serial.println(selfTest);
+  if(selfTest != 0){
+    errCode |= imuErr;
+  }
   // TODO: decide if self test is actually sensible... what if vehicle isn't perfectly still?
 
   /**********************************************************************

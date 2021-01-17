@@ -1,6 +1,10 @@
 /*******************************************************************
    In this file we define some class structures for the LSM6DSO32
     IMU.
+   One reason for using a class structure for the component is that
+    in the future, more than one IMU may be used for redundancy, and
+    this will allow us to simply create new class objects for each
+    IMU, each with identical methods and easily assignable attributes
    A library for this component already exists via adafruit
     (see https://github.com/adafruit/Adafruit_LSM6DS), but we
     have built our own from scratch for a number of reasons
