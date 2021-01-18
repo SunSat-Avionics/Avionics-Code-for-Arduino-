@@ -226,6 +226,7 @@ void loop() {
   Serial.println(gyroY, 5);
 
   // parachute deployment tasks
+  // parachute detection? e.g. estimating speed & checking it's below a certain value? looking for an upward acceleration after apogee?
   // light sensor check (poll the sensor every x seconds to check ambient light levels. If new value much greater than old on all 4 sensors,
   // register apogee)
 
