@@ -1,6 +1,7 @@
 // Methods TODO:
 // read values (temp?)
 // measure offset
+// a 'read all' method? what if we want to read x, y, z all at once?
 
 /* for example usage, see PDC_LSM6DSO32.h */
 
@@ -13,14 +14,14 @@
 bool PDC_LSM6DSO32::isAlive() {
   bool isAlive = 0;                     /* signify result - 1 is success */
   uint8_t WHO_AM_I[1];                  /* internal variable to hold the output */
-  uint8_t WHO_AM_I_expect = 0b01101100; /* the output that we expect */
 
   readSPI(slaveSelect, WHO_AM_I_REG, 1, WHO_AM_I);  /* read the 'WHO_AM_I' register on the IMU */
 
   /* check that it's what we expect */
-  if (WHO_AM_I[0] == WHO_AM_I_expect) {
+  if (WHO_AM_I[0] == WHO_AM_I_VAL) {
     isAlive = 1;  /* if it is, set our success code to true */
   }
+  
   return (isAlive);
 }
 

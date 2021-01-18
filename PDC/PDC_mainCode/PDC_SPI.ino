@@ -43,7 +43,7 @@
 
  ***************************************************************************************************************************************************/
 
-const uint32_t CLOCK_RATE = 10000000; /* all devices on the bus are happy with 10MHz clock */
+const uint32_t CLOCK_RATE_10MHZ = 10000000; /* all devices on the bus are happy with 10MHz clock */
 
 /**************************************************************************
    @brief  Read register from device over SPI
@@ -56,29 +56,29 @@ void readSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t numBytes, uin
   // TODO: lookup 'shiftout()' - seen it mentioned as alternative(?) to SPI.Transfer?
 
   /* ---------- SETUP ---------- */
-  /* format address r/w bit (MSB). read = 1, write = 0 */
-  registerSelect = registerSelect | (1 << 7);
+  registerSelect = registerSelect | (1 << 7); /* format address r/w bit (MSB). read = 1, write = 0 */
 
   /* ---------- BEGIN TRANSACTION ---------- */
   /* begin a transaction over SPI using our params. this command also stops interrupts from preventing SPI comms */
-  SPI.beginTransaction(SPISettings(CLOCK_RATE, MSBFIRST, SPI_MODE0));
-  /* to communicate with the device, we take its slave select pin on the PDC low */
-  digitalWrite(deviceSelect, LOW);
+  SPI.beginTransaction(SPISettings(CLOCK_RATE_10MHZ, MSBFIRST, SPI_MODE0));
+  digitalWrite(deviceSelect, LOW);  /* to communicate with the device, we take its slave select pin on the PDC low */
 
   /* ---------- READ FROM REGISTER(S) ---------- */
   SPI.transfer(registerSelect);     /* send the register address (with read bit) so device knows what to send us next */
+  
   for (uint8_t i = 0; i < numBytes; i++) {
     result[i] = SPI.transfer(0x00); /* send nothing. this is us 'listening' to the bus for the values that we have requested */
-    /* if we have requested multiple bytes, the device will auto-increment the address and send values from the next register in sequence next time we 'listen' */
+    
+    /* if we have requested multiple bytes, the device will auto-increment 
+       the address and send values from the next register in sequence next time we 'listen' 
+    */
   }
 
   /* ---------- END TRANSACTION ---------- */
-  /* stop communications with device by setting the corresponding slave select on the PDC to high */
-  digitalWrite(deviceSelect, HIGH);
-  /* we're done now! restart interrupt mechanisms */
-  SPI.endTransaction();
+  digitalWrite(deviceSelect, HIGH); /* stop communications with device by setting the corresponding slave select on the PDC to high */
+  SPI.endTransaction();             /* we're done now! restart interrupt mechanisms */
 
-  /* *result is then modified, and caller can access it for the data */
+  /* *result is then modified, and caller can access it for the read data */
 }
 
 /**************************************************************************
@@ -95,9 +95,8 @@ void writeSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t data) {
 
   /* ---------- BEGIN TRANSACTION ---------- */
   /* begin a transaction over SPI using our params. this command also stops interrupts from preventing SPI comms */
-  SPI.beginTransaction(SPISettings(CLOCK_RATE, MSBFIRST, SPI_MODE0));
-  /* to communicate with the device, we take its slave select pin on the PDC low */
-  digitalWrite(deviceSelect, LOW);
+  SPI.beginTransaction(SPISettings(CLOCK_RATE_10MHZ, MSBFIRST, SPI_MODE0));
+  digitalWrite(deviceSelect, LOW);  /* to communicate with the device, we take its slave select pin on the PDC low */
 
   /* ---------- WRITE TO REGISTER ---------- */
   // TODO: is it possible or required to send more than one byte? if so, add support
@@ -105,8 +104,6 @@ void writeSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t data) {
   SPI.transfer(data);           /* send the data that we want to write to the selected register */
 
   /* ---------- END TRANSACTION ---------- */
-  /* stop communications with device by setting the corresponding slave select on the PDC to high */
-  digitalWrite(deviceSelect, HIGH);
-  /* we're done now! restart interrupt mechanisms */
-  SPI.endTransaction();
+  digitalWrite(deviceSelect, HIGH); /* stop communications with device by setting the corresponding slave select on the PDC to high */
+  SPI.endTransaction();             /* we're done now! restart interrupt mechanisms */
 }

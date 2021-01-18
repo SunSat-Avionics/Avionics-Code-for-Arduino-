@@ -18,6 +18,6 @@ extern const uint8_t LPA_CLK; /* the pin that will provide clock signal to the L
 const uint8_t OC1A_PIN = 9;   /* the ATMega OC1A pin for nano is pin 9. this pin can be used to generate a clock signal up to 8MHz */
 
 /* ---------- FUNCTION DECLARATIONS ---------- */
-void setClockOC1A(uint32_t clkFrq);
+void setClockOC1A(uint32_t clkFrq); /* a function that accesses the ATmega registers and sets the OC1A pin to provide a clock signal */
 
 #endif

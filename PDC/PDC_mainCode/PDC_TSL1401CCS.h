@@ -15,6 +15,9 @@
 
  *******************************************************************/
 
+#ifndef _PDC_TSL1401CCS
+#define _PDC_TSL1401CCS
+
 #include "headers.h"  /* for processor functions - particularly for starting the clock signal on OC1A pin */
 #include <Arduino.h>  /* bring some arduino syntax into the cpp files */
 #include <stdio.h>    /* std stuff for cpp */
@@ -53,11 +56,13 @@ class PDC_TSL1401CCS_GROUP {
   public:
     /* ---------- CONSTRUCTOR ---------- */
     PDC_TSL1401CCS_GROUP(uint8_t SI, uint8_t CLK, uint8_t AO){
-      serialIn = SI;  /* note the pins that are in control of this device */
-      clockPin = CLK;
-      analogOut = AO;
+      serialIn = SI;  /* internally set the pin we've connected to LPA SI */
+      clockPin = CLK; /* and the one we've connected to LPA CLK */
+      analogOut = AO; /* and the one we've connected to LPA AO */
     };
 
     /* ---------- METHODS ---------- */
     uint8_t startClockOC1A(uint32_t clockFrq);  /* generate a clock signal on the PDC OC1A pin */
 };
+
+#endif

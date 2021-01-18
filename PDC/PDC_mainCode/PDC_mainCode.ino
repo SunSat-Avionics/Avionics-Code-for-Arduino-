@@ -10,15 +10,15 @@
    The PDC is an Arduino Nano serving the dual purpose of parachute deployment activities (e.g. apogee detection), and attitude determination.
  ***********************************************************************************************************************************************/
 
-#include "headers.h"
+#include "headers.h"            /* contains a few specific parameter and function definitions */
 #include <SPI.h>                /* the IMU, barometer & micro-SD unit are on SPI. include library for SPI commands (https://www.arduino.cc/en/reference/SPI) */
 #include "PDC_SPI.h"            /* then included our own SPI functions */
 #include <Wire.h>               /* the RTC is on I2C, so include the library for I2C commands (https://www.arduino.cc/en/reference/wire) */
 #include "PDC_I2C.h"            /* then include our own I2C functions */
 #include "PDC_kalman.h"         /* include the functions for the kalman filter */
 #include "PDC_LSM6DSO32.h"      /* include our IMU class */
-#include "PDC_TSL1401CCS.h"     /* include our LPA class */
 #include "PDC_254.h"            /* include our micro-SD class */
+#include "PDC_TSL1401CCS.h"     /* include our LPA class */
 #include <BasicLinearAlgebra.h> /* for Matrix operations
                                      if this line throws an error, you probably don't have the Matrix Library locally.
                                      see: https://github.com/tomstewart89/BasicLinearAlgebra or search 'basic linear algebra' in the IDE library manager 
@@ -37,7 +37,7 @@ const uint8_t microSD_SS = 6;   /* the DIG pin connected to the micro-SD SS pin 
 PDC_LSM6DSO32 IMU(IMU_SS);                /* create an LSM6DSO32 object for our IMU. class defines are in 'PDC_LSM6DSO32.h' and 'PDC_LSM6DSO32.cpp' */
 
 const uint8_t microSD_CD = 7;             /* the microSD card module has a chip detect pin which shorts to ground if the card isn't inserted */
-PDC_254 microSD(microSD_SS, microSD_CD);  /* create a 254 breakout class for the microSD card module. class defines are in 'PDC_254.h' and 'PDC_254.cpp' */
+PDC_254 microSD(microSD_SS, microSD_CD);  /* create a 254 breakout class for the microSD card module. class defines are in PDC_254.h & .cpp */
 
 /* ---------- I2C CONFIG ---------- */
 const uint8_t RTC = 23;           /* the real-time clock (RTC) module is connected via I2C. the nano's data line for I2C (SDA) is at pin 23 */
@@ -47,7 +47,7 @@ const uint8_t RTCaddress = 0x50;  /* to communicate with an I2C device, we have 
 const uint8_t LPA_SI = 5;         /* the serial input pin that is used to trigger a new output from the LPAs */
 const uint8_t LPA_CLK = OC1A_PIN; /* DO NOT CHANGE!! the pin that will provide clock signal to the LPAs */
 const uint8_t LPA_AO = 19;        /* the analog output pin that the LPAs will send their values to */
-PDC_TSL1401CCS_GROUP LPA_group(LPA_SI, LPA_CLK, LPA_AO); /* create a class object for the group of LPAs */
+PDC_TSL1401CCS_GROUP LPA_group(LPA_SI, LPA_CLK, LPA_AO); /* create a class object for the group of LPAs. definitions in PDC_TSL1401CCS.h & .cpp */
 
 /* ---------- KALMAN FILTER CONFIG ---------- */
 /*
@@ -60,7 +60,6 @@ PDC_TSL1401CCS_GROUP LPA_group(LPA_SI, LPA_CLK, LPA_AO); /* create a class objec
     | displacement (z) |
 */
 
-// TODO: can some of these variables become a bit less global?
 // TODO: refine kalmanTime based on tests. how long does measurement take? calculation time?
 // TODO: then *consider* using this to set update frequency of sensors by rounding up (e.g. if kalman update freq is 10Hz, set accelerometer to 12.5Hz in setup)
 const float kalmanTime = 0.5;       /* time step (s) between Kalman iterations */
@@ -79,12 +78,13 @@ uint8_t errCode = 0;  /* value to be used whenever we want to detect some error 
 
 /* individual bit sets for an error at different components. will allow us to identify specific errors in an efficient way */
 // TODO: probably turn this into a 16 bit so we have better understanding of what actually caused the issue (isAlive, selfTest, etc)
-const uint8_t altErr = (1 << 0);  /* if the altimeter encounters an issue, set bit 0 */
-const uint8_t imuErr = (1 << 1);  /* if the IMU encounters an issue, set bit 1 */
-const uint8_t msdErr = (1 << 2);  /* if the micro-SD encounters an issue, set bit 2 */
-const uint8_t logErr = (1 << 3);  /* if the log file encounters an issue, set bit 3 */
-const uint8_t rtcErr = (1 << 4);  /* if the real-time clock encounters an issue, set bit 4 */
-const uint8_t lpaErr = (1 << 5);
+// TODO: once we better understand PDC <-> main OBC comms, work out if we can send this code to main OBC then route it to ground station for info
+const uint8_t altErr = (1 << 0);  /* altimeter issue, set bit 0 */
+const uint8_t imuErr = (1 << 1);  /* IMU encounters issue, set bit 1 */
+const uint8_t msdErr = (1 << 2);  /* micro-SD issue, set bit 2 */
+const uint8_t logErr = (1 << 3);  /* log file issue, set bit 3 */
+const uint8_t rtcErr = (1 << 4);  /* real-time clock issue, set bit 4 */
+const uint8_t lpaErr = (1 << 5);  /* linear photodiode array issue, set bit 5 */
 //const uint8_t TODO = (1 << 6);
 //const uint8_t TODO = (1 << 7);
 
@@ -92,17 +92,21 @@ bool apogee = 0;  /* flag that we can set when we think apogee has been reached 
 
 /* -------------------- SETUP -------------------- */
 void setup() {
+
   uint8_t altimeter_CHIP_ID[1]; /* for the return value of the altimeter 'CHIP_ID' identification register */
+
   bool errFlag = 0;             /* to flag errors when they're encountered */
 
-  /* ---------- Serial Setup ---------- */
-  /* open serial comms at 9600 baud to allow us to monitor the process
-       serial will become irrelevant - once the code is on the PDC we shouldn't need it but it's useful for ground testing.
-     NOTE: keep serial comms sparse and short! they take up significant memory if too verbose or unique!! */
-  Serial.begin(9600);
-  while (!Serial) {
-    /* wait for port to connect */
-  };
+  /* ------------- Serial Setup --------------
+     this will become irrelevant. once code
+     is on the PDC we shouldn't need it but
+     it's useful for ground testing.
+     NOTE: keep serial comms sparse and short!
+     they take up significant memory if too
+     verbose or unique!!
+    ------------------------------------------*/
+  Serial.begin(9600);                 /* open serial comms at 9600 baud to allow us to monitor the process */
+  while (!Serial) {};                 /* wait for port to connect */
   Serial.println("\n-\nSETUP\n-\n");  /* inform start of setup */
 
   /* ---------- SPI Setup ---------- */
@@ -117,13 +121,13 @@ void setup() {
 
   SPI.begin();  /* initialise all lines and CPU to use SPI */
 
-  /* ---------- PERIPHERAL SETUP ---------- */
+  /* ---------- Peripheral Setup ---------- */
   pinMode(microSD_CD, INPUT);       /* set the card detect pin to be an input that we can measure to check for a card */
 
   pinMode(LPA_AO, INPUT);                         /* set the pin connected to LPA AO as an input - this is where we read the LPA values */
   pinMode(LPA_SI, OUTPUT);                        /* set the pin connected to the LPA SI as an output - this is how we trigger a new LPA reading */
   errFlag = LPA_group.startClockOC1A(OC1A_1MHZ);  /* get the PDC to start a clock signal on its OC1A pin for the LPA group */
-  if(errFlag){
+  if (errFlag) {
     errCode |= lpaErr;  /* if the clock signal wasn't started, LPA error */
     errFlag = 0;        /* clear flag */
   }
@@ -132,11 +136,11 @@ void setup() {
   Wire.begin(); /* initialise CPU to use I2C */
 
   /* ---------- SPI Verification ---------- */
+  // TODO: maybe it'd be more consistent to create a BMP388 object like we have for the other components
   readSPI(altimeter_SS, 0x00, 1, altimeter_CHIP_ID);  /* communicate with altimeter: read the 'CHIP_ID' register. expect 0x50 */
-  // TODO: maybe it'd be more consistent to create a BMP388 object like we have for the LSM6DSO32
-  /* we have read the 'CHIP_ID' register and now should check that the value read is as we expect */
-  if (altimeter_CHIP_ID[0] != 0x50) {
-    errCode |= altErr;  /* if not alive, flag the altimeter error bit in our code */
+  /* now should check that the value read is as we expect */
+  if (altimeter_CHIP_ID[0] != 0x50) {              
+    errCode |= altErr;  /* indicate altimeter problem if not */
   }
 
   /* our LSM6DSO32 class has an 'isAlive()' method, which reads the 'WHO_AM_I' register to check our connection. returns true if connected & working! */
@@ -149,8 +153,7 @@ void setup() {
     errCode |= msdErr;  /* if not alive, flag the micro-SD error bit in our code */
   }
 
-  /* attempt to open a .csv file which we want to log data to
-     returns 0 if successful */
+  /* attempt to open a .csv file which we want to log data to */
   if (microSD.openFile() != 0) {
     errCode |= logErr;  /* if there was some problem creating the file, flag the log file error bit in our code */
   }
@@ -158,17 +161,19 @@ void setup() {
   // TODO write a note to the microSD to signify SD begin - maybe need a .writeNote() method which blanks everything but date, time and note
 
   // setup interrupt pin? TBD - can we simply configure one of the GPIO to go high and connect this to main OBC interrupt, and then execute
-  // the interrupt routine on OBC? or will we communicate with main OBC via I2C?
+  // the interrupt routine on OBC? or will we communicate with main OBC via I2C/SPI?
 
   /* ---------- PERIPHERAL CONFIGURATION ---------- */
   IMU.restart();        /* reboot & clear the IMU, giving it a bit of time to start back up */
+  
   // TODO reboot other peripherals
 
-  errFlag = IMU.selfTest();
-  if(errFlag != 0){
+  errFlag = IMU.selfTest(); /* run self-test routine on IMU to check accel & gyro are working */
+  if (errFlag) {
     errCode |= imuErr;  /* if self test failed, IMU error */
-    errFlag = 0;        /* clear flag */
+    errFlag = 0;        /* clear error flag */
   }
+  
   // TODO: decide if self test is actually sensible... what if vehicle isn't perfectly still?
 
   /**********************************************************************
@@ -187,9 +192,9 @@ void setup() {
       +  3330Hz                         |
       +  6660Hz                         |
    **********************************************************************/
-  // TODO: work out a sensible dps range
-  IMU.accel.init(ACC_ODR_3330, ACC_RNG_32); /*  set the accelerometer output update frequency and measurement range */
-  IMU.gyro.init(GYR_ODR_3330, GYR_RNG_250);  /*  set the gyroscope output update frequency and measurement range */
+  // TODO: work out a sensible gyro range for this operation
+  IMU.accel.init(ACC_ODR_3330, ACC_RNG_32); /* set the accelerometer output update frequency and measurement range */
+  IMU.gyro.init(GYR_ODR_3330, GYR_RNG_250); /* set the gyroscope output update frequency and measurement range */
 
   /* ---------- KALMAN FILTER SETUP ---------- */
   initKalman(); /* setup kalman filter for apogee detection (see PDC_kalman.ino) */

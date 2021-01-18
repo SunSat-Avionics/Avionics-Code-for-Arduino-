@@ -25,7 +25,7 @@ bool PDC_254::isAlive() {
    @retval 1 in case of success, 0 otherwise
  **********************************************/
 bool PDC_254::cardInserted() {
-  /* the card detect pin is high when a card is inserted into the module */
+  /* card detect shorts to ground when no card is inserted */
   if (cardDetect == LOW) {
     return (0);
   }

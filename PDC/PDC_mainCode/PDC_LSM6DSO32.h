@@ -68,6 +68,8 @@ const uint8_t ACC_CTRL_REG = 0x10;    /* the register address of the acceleromet
 const uint8_t GYR_CTRL_REG = 0x11;    /* the register address of the gyroscope control register */
 const uint8_t WHO_AM_I_REG = 0x0f;    /* the register address of the 'WHO_AM_I' (identification) register */
 
+const uint8_t WHO_AM_I_VAL = 0b01101100;  /* the (fixed) value stored in the 'WHO_AM_I' register */
+
 /************************************************************************
                    IMU CONFIG VALUES - WRITE TO CTRL_REG
     --------------------------------------------------------------------
