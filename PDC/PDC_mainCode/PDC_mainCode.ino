@@ -17,6 +17,7 @@
 #include "PDC_I2C.h"            /* then include our own I2C functions */
 #include "PDC_kalman.h"         /* include the functions for the kalman filter */
 #include "PDC_LSM6DSO32.h"      /* include our IMU class */
+#include "PDC_TSL1401CCS.h"     /* include our LPA class */
 #include "PDC_254.h"            /* include our micro-SD class */
 #include <BasicLinearAlgebra.h> /* for Matrix operations
                                      if this line throws an error, you probably don't have the Matrix Library locally.
@@ -44,8 +45,9 @@ const uint8_t RTCaddress = 0x50;  /* to communicate with an I2C device, we have 
 
 /* ---------- LINEAR PHOTODIODE ARRAY CONFIG ---------- */
 const uint8_t LPA_SI = 5;         /* the serial input pin that is used to trigger a new output from the LPAs */
-const uint8_t LPA_CLK = OC1A_PIN; /* the pin that will provide clock signal to the LPAs */
+const uint8_t LPA_CLK = OC1A_PIN; /* DO NOT CHANGE!! the pin that will provide clock signal to the LPAs */
 const uint8_t LPA_AO = 19;        /* the analog output pin that the LPAs will send their values to */
+PDC_TSL1401CCS_GROUP LPA_group(LPA_SI, LPA_CLK, LPA_AO); /* create a class object for the group of LPAs */
 
 /* ---------- KALMAN FILTER CONFIG ---------- */
 /*
@@ -82,7 +84,7 @@ const uint8_t imuErr = (1 << 1);  /* if the IMU encounters an issue, set bit 1 *
 const uint8_t msdErr = (1 << 2);  /* if the micro-SD encounters an issue, set bit 2 */
 const uint8_t logErr = (1 << 3);  /* if the log file encounters an issue, set bit 3 */
 const uint8_t rtcErr = (1 << 4);  /* if the real-time clock encounters an issue, set bit 4 */
-//const uint8_t TODO = (1 << 5);
+const uint8_t lpaErr = (1 << 5);
 //const uint8_t TODO = (1 << 6);
 //const uint8_t TODO = (1 << 7);
 
@@ -118,9 +120,13 @@ void setup() {
   /* ---------- PERIPHERAL SETUP ---------- */
   pinMode(microSD_CD, INPUT);       /* set the card detect pin to be an input that we can measure to check for a card */
 
-  pinMode(LPA_AO, INPUT);   /* set the pin connected to LPA AO as an input - this is where we read the LPA values */
-  pinMode(LPA_SI, OUTPUT);  /* set the pin connected to the LPA SI as an output - this is how we trigger a new LPA reading */
-  setClockOC1A(OC1A_1MHZ);  /* set up a clock signal on OC1A pin (pin 9 on nano) at selected frequency, used to control the LPAs */
+  pinMode(LPA_AO, INPUT);                         /* set the pin connected to LPA AO as an input - this is where we read the LPA values */
+  pinMode(LPA_SI, OUTPUT);                        /* set the pin connected to the LPA SI as an output - this is how we trigger a new LPA reading */
+  errFlag = LPA_group.startClockOC1A(OC1A_1MHZ);  /* get the PDC to start a clock signal on its OC1A pin for the LPA group */
+  if(errFlag){
+    errCode |= lpaErr;  /* if the clock signal wasn't started, LPA error */
+    errFlag = 0;        /* clear flag */
+  }
 
   /* ---------- I2C Setup ---------- */
   Wire.begin(); /* initialise CPU to use I2C */
@@ -158,9 +164,10 @@ void setup() {
   IMU.restart();        /* reboot & clear the IMU, giving it a bit of time to start back up */
   // TODO reboot other peripherals
 
-  uint8_t selfTest = IMU.selfTest();
-  if(selfTest != 0){
-    errCode |= imuErr;
+  errFlag = IMU.selfTest();
+  if(errFlag != 0){
+    errCode |= imuErr;  /* if self test failed, IMU error */
+    errFlag = 0;        /* clear flag */
   }
   // TODO: decide if self test is actually sensible... what if vehicle isn't perfectly still?
 

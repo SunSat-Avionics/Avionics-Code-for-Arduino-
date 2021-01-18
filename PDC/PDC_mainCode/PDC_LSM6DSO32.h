@@ -1,6 +1,10 @@
 /*******************************************************************
    In this file we define some class structures for the LSM6DSO32
     IMU.
+   The class represents the interface and communications with the
+    device. For example, the attributes are the pins on the PDC that
+    the device is connected to, and the methods are commands for the
+    PDC that trigger read/write events.
    One reason for using a class structure for the component is that
     in the future, more than one IMU may be used for redundancy, and
     this will allow us to simply create new class objects for each
