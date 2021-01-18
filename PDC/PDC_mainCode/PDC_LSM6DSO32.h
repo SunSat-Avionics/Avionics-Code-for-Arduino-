@@ -160,6 +160,7 @@ class IMUChild {
       z_address(0),
       CTRL_address(0)
     {};
+    
     /* ---------- METHODS ---------- */
     void addressSet(uint8_t x_add, uint8_t CTRL_add); /* remember the device data and control registers */
     void init(uint8_t f, uint8_t r);  /* configure the device over SPI - set the measurement range & output frequency */

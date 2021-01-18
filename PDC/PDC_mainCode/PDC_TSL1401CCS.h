@@ -47,6 +47,7 @@ class PDC_TSL1401CCS_GROUP {
     uint8_t analogOut;        /* the pin on the PDC connected to the analog out of the LPA group (multi-die continuous scan connection) */
     uint8_t serialIn;         /* the pin on the PDC connected to the serial input to the LPA group */
     uint8_t clockPin;         /* the pin on the PDC that generates the clock for the LPA group (should be the OC1A pin on PDC) */
+    
     uint32_t clockFrequency;  /* the frequency that the clock signal for the LPA group is running at */
 
   public:
@@ -58,5 +59,5 @@ class PDC_TSL1401CCS_GROUP {
     };
 
     /* ---------- METHODS ---------- */
-    uint8_t startClockOC1A(uint32_t clockFrq);
+    uint8_t startClockOC1A(uint32_t clockFrq);  /* generate a clock signal on the PDC OC1A pin */
 };
