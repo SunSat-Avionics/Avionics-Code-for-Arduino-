@@ -14,9 +14,8 @@ bool PDC_LSM6DSO32::isAlive() {
   bool isAlive = 0;                     /* signify result - 1 is success */
   uint8_t WHO_AM_I[1];                  /* internal variable to hold the output */
   uint8_t WHO_AM_I_expect = 0b01101100; /* the output that we expect */
-  uint8_t WHO_AM_I_address = 0x0f;      /* the address of the WHO_AM_I register */
 
-  readSPI(slaveSelect, WHO_AM_I_address, 1, WHO_AM_I);  /* read the 'WHO_AM_I' register on the IMU */
+  readSPI(slaveSelect, WHO_AM_I_REG, 1, WHO_AM_I);  /* read the 'WHO_AM_I' register on the IMU */
 
   /* check that it's what we expect */
   if (WHO_AM_I[0] == WHO_AM_I_expect) {

@@ -62,6 +62,7 @@ const uint8_t ACCX_L_DATA_REG = 0x28; /* the register address of the acceleromet
 const uint8_t GYRX_L_DATA_REG = 0x22; /* the register address of the gyroscope LSB X-axis data register */
 const uint8_t ACC_CTRL_REG = 0x10;    /* the register address of the accelerometer control register */
 const uint8_t GYR_CTRL_REG = 0x11;    /* the register address of the gyroscope control register */
+const uint8_t WHO_AM_I_REG = 0x0f;    /* the register address of the 'WHO_AM_I' (identification) register */
 
 /************************************************************************
                    IMU CONFIG VALUES - WRITE TO CTRL_REG

@@ -118,8 +118,9 @@ void setup() {
   /* ---------- PERIPHERAL SETUP ---------- */
   pinMode(microSD_CD, INPUT);       /* set the card detect pin to be an input that we can measure to check for a card */
 
-  // TODO: light sensor pin configuration (digital output to SI pin, analogue input(s) from AO pins, clock signal to CLK pins)
-  setCLK(OC1A_1MHZ); /* use the ATMega328P counter1 to generate a clock signal on pin 9 (OC1A) at 1MHz */
+  pinMode(LPA_AO, INPUT);   /* set the pin connected to LPA AO as an input - this is where we read the LPA values */
+  pinMode(LPA_SI, OUTPUT);  /* set the pin connected to the LPA SI as an output - this is how we trigger a new LPA reading */
+  setClockOC1A(OC1A_1MHZ);  /* set up a clock signal on OC1A pin (pin 9 on nano) at selected frequency, used to control the LPAs */
 
   /* ---------- I2C Setup ---------- */
   Wire.begin(); /* initialise CPU to use I2C */
