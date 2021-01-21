@@ -126,7 +126,7 @@ void setup() {
 
   pinMode(LPA_AO, INPUT);                         /* set the pin connected to LPA AO as an input - this is where we read the LPA values */
   pinMode(LPA_SI, OUTPUT);                        /* set the pin connected to the LPA SI as an output - this is how we trigger a new LPA reading */
-  errFlag = LPA_group.startClockOC1A(OC1A_1MHZ);  /* get the PDC to start a clock signal on its OC1A pin for the LPA group */
+  errFlag = LPA_group.startClockOC1A(OC1A_500KHZ);  /* get the PDC to start a clock signal on its OC1A pin for the LPA group */
   if (errFlag) {
     errCode |= lpaErr;  /* if the clock signal wasn't started, LPA error */
     errFlag = 0;        /* clear flag */

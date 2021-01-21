@@ -51,7 +51,8 @@ class PDC_TSL1401CCS_GROUP {
     uint8_t serialIn;         /* the pin on the PDC connected to the serial input to the LPA group */
     uint8_t clockPin;         /* the pin on the PDC that generates the clock for the LPA group (should be the OC1A pin on PDC) */
     
-    uint32_t clockFrequency;  /* the frequency that the clock signal for the LPA group is running at */
+    uint32_t clockFrequency;  /* the frequency that the clock signal for the LPA group is running at in Hz */
+    float clockPeriod;        /* the period of the clock in ms */
 
   public:
     /* ---------- CONSTRUCTOR ---------- */

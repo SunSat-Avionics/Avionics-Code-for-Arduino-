@@ -20,7 +20,12 @@ uint8_t PDC_TSL1401CCS_GROUP::startClockOC1A(uint32_t clockFreq){
   
   setClockOC1A(clockFreq);    /* set up a clock signal on OC1A pin (pin 9 on nano) at selected frequency, used to control the LPAs */
   clockFrequency = clockFreq; /* internally remember what frequency we have started the clock at */
-
+  clockPeriod = 1000.0 * (1.0 / (clockFrequency));  /* the period of the clock in ms */
+  Serial.print("Frequency: ");
+  Serial.println(clockFrequency);
+  Serial.print("Period: ");
+  Serial.println(clockPeriod, 10);
+  
   return(0);
 }
 
@@ -31,8 +36,8 @@ void PDC_TSL1401CCS_GROUP::readValues(){
   uint8_t pixel;  /* loop index variable */
 
   //TODO: how to store the values?
-  
-  float delayTime = 1000.0 * (1.0 / (2.0 * clockFrequency));  /* approximate half cycle delay in ms */
+
+  float delayTime = clockPeriod / 2;  /* time for half of clock period in ms */
   
   const uint8_t RISING_EDGE = 1;  /* alias for clock signal rising edge option */
   const uint8_t FALLING_EDGE = 0; /* alias for clock signal falling edge option */
