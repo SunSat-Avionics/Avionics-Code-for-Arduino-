@@ -63,6 +63,7 @@ class PDC_TSL1401CCS_GROUP {
 
     /* ---------- METHODS ---------- */
     uint8_t startClockOC1A(uint32_t clockFrq);  /* generate a clock signal on the PDC OC1A pin */
+    void readValues();                          /* read a new set of values from the group */
 };
 
 #endif

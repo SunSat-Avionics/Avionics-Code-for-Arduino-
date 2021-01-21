@@ -47,3 +47,29 @@ void setClockOC1A(uint32_t clkFrq) {
   /* set our output compare register ORC1A to define our maximum counter value, and thereby set the frequency on pin OC1A */
   OCR1A = uint16_t((16000000 / (2 * clkFrq)) - 1);  /* rearrange to work out what we need for the provided target frequency & make sure is integer */
 }
+
+
+/*********************************************************
+   @brief  Wait until an edge is detected on the specified clock signal
+   @param  the pin at which the clock signal exists
+   @param  the edge that we want to detect (1 = rise, 0 = fall)
+ *********************************************************/
+void detectClockEdge(uint8_t clockSignal, uint8_t edgeType){
+  uint8_t previousClock = 0;                       /* default the 'previous' state to 0 */
+  uint8_t currentClock = digitalRead(clockSignal); /* find the current state of the clock signal */
+  
+  if(edgeType == 1){
+    /* wait until a rising edge is detected */
+    while((currentClock - previousClock) != 1){
+      previousClock = currentClock;
+      currentClock = digitalRead(clockSignal);
+    }
+  }
+  else{
+    /* wait until a falling edge is detected */
+    while((previousClock - currentClock) != 1){
+      previousClock = currentClock;
+      currentClock = digitalRead(clockSignal);
+    } 
+  }
+}
