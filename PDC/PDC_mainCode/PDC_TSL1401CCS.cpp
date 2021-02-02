@@ -55,4 +55,5 @@ void PDC_TSL1401CCS_GROUP::readValues(){
   }
 
   //TODO: how return?
+  //TODO: maybe add a millis() call to make sure next SI pulse doesn't violate conditions on datasheet
 }
