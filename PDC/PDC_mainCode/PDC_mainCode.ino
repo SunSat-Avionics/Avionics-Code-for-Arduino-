@@ -176,6 +176,7 @@ void setup() {
 
   /**********************************************************************
                             IMU CONFIG VALUES
+      (aliases for each value are defined in PDC_LSM6DSO32.h)
       ------------------------------------------------------------------
       PARAM 1 (OUTPUT UPDATE FREQUENCY) |   PARAM 2 (MEASUREMENT RANGE)
       +  off                            |   + 4g  / 250dps
@@ -194,26 +195,27 @@ void setup() {
   IMU.accel.init(ACC_ODR_3330, ACC_RNG_32); /* set the accelerometer output update frequency and measurement range */
   IMU.gyro.init(GYR_ODR_3330, GYR_RNG_250); /* set the gyroscope output update frequency and measurement range */
 
-  /************************************************************************
-                          ALTIMETER CONFIG VALUES
-      --------------------------------------------------------------------
-      PARAM 1 (OUTPUT UPDATE FREQUENCY)
-      +  200Hz
-      +  100Hz
-      +  50Hz
-      +  25Hz
-      +  12.5Hz
-      +  6.25Hz
-      +  3.1Hz
-      +  0.78Hz
-      +  0.39Hz
-      +  0.2Hz
-      +  0.1Hz
-      +  0.05Hz
-      +  0.02Hz
-      +  0.01Hz
-   ************************************************************************/
-  altimeter.init(ALT_ODR_200); /* set the altimeter output data rate */
+  /************************************************************************************************************
+                                            ALTIMETER CONFIG VALUES
+      (aliases for each value are defined in PDC_BMP.h)
+      ---------------------------------------------------------------------------------------------------------
+      PARAM 1 (OUTPUT UPDATE FREQUENCY) | PARAM 2 (PRESSURE RESOLUTION)    | PARAM 3 (TEMPERATURE RESOLUTION)
+      +  200Hz                          | +  Ultra Low Power (2.64Pa)      | +  Ultra Low Power (0.005C)
+      +  100Hz                          | +  Low Power (1.32Pa)            | +  Low Power (0.0025C)
+      +  50Hz                           | +  Standard Resolution (0.66Pa)  | +  Standard Resolution (0.0012C)
+      +  25Hz                           | +  High Resolution (0.33Pa)      | +  High Resolution (0.0006C)
+      +  12.5Hz                         | +  Ultra High Resoluton (0.17Pa) | +  Ultra High Resolution (0.0003C)
+      +  6.25Hz                         | +  Highest Resolution (0.0085Pa) | +  Highest Resolution (0.00015C)
+      +  3.1Hz                          |                                  |
+      +  0.78Hz                         |                                  |
+      +  0.39Hz                         |                                  |
+      +  0.2Hz                          |                                  |
+      +  0.1Hz                          |                                  |
+      +  0.05Hz                         |                                  |
+      +  0.02Hz                         |                                  |
+      +  0.01Hz                         |                                  |
+   ************************************************************************************************************/
+  altimeter.init(ALT_ODR_200, ALT_OSR_PRESS_HIGH, ALT_OSR_TEMP_ULTRALOW); /* set the altimeter output data rate and resolutions */
   
   /* ---------- KALMAN FILTER SETUP ---------- */
   initKalman(); /* setup kalman filter for apogee detection (see PDC_kalman.ino) */

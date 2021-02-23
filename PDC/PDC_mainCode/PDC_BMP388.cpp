@@ -44,12 +44,24 @@ void PDC_BMP388::restart() {
 }
 
 /*********************************************************
+   @brief  Internally take note of important registers
+   @param  the address of the first data register
+   @param  the address of the ODR register
+   @param  the address of the OSR register
+ *********************************************************/
+void PDC_BMP388::addressSet(uint8_t data_0_add, uint8_t ODR_add, uint8_t OSR_add) {
+  pressureAddress_0 = data_0_add;         /* set pressure address 0 attribute as specified */
+  temperatureAddress_0 = data_0_add + 3;  /* the temperature address 0 is then past the three consecutive pressure addresses */
+  ODR_address = ODR_add;                  /* and then the address to configure the ODR */
+  OSR_address = OSR_add;                  /* and then the address to configure the OSR */
+}
+
+/*********************************************************
    @brief  Initialise the component
    @param  code for output update frequency
  *********************************************************/
-void PDC_BMP388::init(uint8_t frequency) {
+void PDC_BMP388::init(uint8_t frequency, uint8_t pressResolution, uint8_t tempResolution) {
   uint8_t data = 0;
-  
   data |= frequency;  /* set bits [4:0] to configure output frequency */
 
   /* set the internally stored output frequency */
@@ -72,31 +84,67 @@ void PDC_BMP388::init(uint8_t frequency) {
   }
 
   writeSPI(slaveSelect, ODR_REG, data);  /* write the data to the ODR register */
+
+  data = 0;
+  data = (tempResolution << 3) | pressResolution; /* set bits [5:3] for temperature and [2:0] for pressure */
+  
+  /* set the internally stored pressure oversampling */
+  switch (pressResolution) {
+    case (0):  pressureOversampling = 1;  break;
+    case (1):  pressureOversampling = 2;  break;
+    case (2):  pressureOversampling = 4;  break;
+    case (3):  pressureOversampling = 8;  break;
+    case (4):  pressureOversampling = 16; break;
+    case (5):  pressureOversampling = 32; break;
+    default:   pressureOversampling = 0;  break;
+  }
+
+  /* set the internally stored temperature oversampling */
+  switch (tempResolution) {
+    case (0):  temperatureOversampling = 1;  break;
+    case (1):  temperatureOversampling = 2;  break;
+    case (2):  temperatureOversampling = 4;  break;
+    case (3):  temperatureOversampling = 8;  break;
+    case (4):  temperatureOversampling = 16; break;
+    case (5):  temperatureOversampling = 32; break;
+    default:   temperatureOversampling = 0;  break;
+  }
+  
+  writeSPI(slaveSelect, OSR_REG, data);  /* write the data to the OSR register */
 }
 
 /*********************************************************
    @brief  Read a value from a specified register
-   @param  the address of the LSB data register
-   @retval the value 
+   @param  the address of the first of three data registers
+   @retval the raw measured value
  *********************************************************/
-float PDC_BMP388::readValue(uint8_t LSB_address) {
-  //uint8_t rawValue[2];        /* we will read two bytes from the device into here */
-  //int16_t rawValueConcat = 0; /* we will concatenate the two bytes into a single value here */
-  float measuredValue = 0;    /* and we will convert the concatenated value into a 'measured' value here */
+int32_t PDC_BMP388::readValue(uint8_t data_address0) {
+  /* the altimeter has three consecutive data registers for both the temp and pressure.
+      the first address is used to varying degrees based on the chosen resolution (oversampling) */
+      
+  uint8_t rawValue[3];        /* we will read three bytes from the device into here */
+  int32_t rawValueConcat = 0; /* we will concatenate the three bytes into a single value here. actually 24 bit but no such type! */
 
+  readSPI(slaveSelect, data_address0, 3, rawValue); /* read three bytes from the device.
+                                                        for the BMP388, the address will
+                                                        auto-increment and read the consecutive registers so we
+                                                        have the three bytes we need! */
 
-  //readSPI(slaveSelect, LSB_address, 2, rawValue); /* read two bytes from the device.
-                                                      //since CTRLC_3 'IF_INC' bit is enabled, the address will
-                                                      //auto-increment and read the LSB then MSB registers so we
-                                                      //have the two bytes we need!*/
+  rawValueConcat = (rawValue[2] << 16) | (rawValue[1] << 8) | rawValue[0];  /* concatenate the three bytes into a single val by shifting the array values up */
 
-  //rawValueConcat = (rawValue[1] << 8) | rawValue[0];  /* concatenate the two bytes into a single val by shifting the MSB up by one byte */
-
-  //measuredValue = (float(rawValueConcat) / 1000) * resolution;  /* use the sensor resolution to convert raw value into an actual measurement */
-
-  return (measuredValue);
+  return (rawValueConcat);
 }
 
-void PDC_BMP388::readPressure(){
-  
+void PDC_BMP388::readPress(){
+  int32_t rawPressure = 0;
+
+  rawPressure = readValue(pressureAddress_0);
+  // TODO: convert to 'real' pressure
+}
+
+void PDC_BMP388::readTemp(){
+  int32_t rawTemperature = 0;
+
+  rawTemperature = readValue(temperatureAddress_0);
+  // TODO: convert to 'real' temperature
 }
