@@ -154,7 +154,7 @@ void IMUChild::addressSet(uint8_t x_add, uint8_t CTRL_add) {
 /*********************************************************
    @brief  Initialise the component
    @param  code for output update frequency
-   @retval the measured X axis value in g [ac] or dps [gy]
+   @param  code for measurement range
  *********************************************************/
 void IMUChild::init(uint8_t frequency, uint8_t range) {
   uint8_t data = 0;

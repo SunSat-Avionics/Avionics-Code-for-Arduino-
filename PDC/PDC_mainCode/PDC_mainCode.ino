@@ -2,7 +2,7 @@
    SUNSAT Parachute Deployment and Attitude Determination Software
 
    Created 22 Nov 20
-   Contributors: Rory Haggart, Waleed Hamad
+   Contributors: Rory Haggart
 
    Description
    -----------
@@ -17,6 +17,7 @@
 #include "PDC_I2C.h"            /* then include our own I2C functions */
 #include "PDC_kalman.h"         /* include the functions for the kalman filter */
 #include "PDC_LSM6DSO32.h"      /* include our IMU class */
+#include "PDC_BMP388.h"         /* include our altimeter class */
 #include "PDC_254.h"            /* include our micro-SD class */
 #include "PDC_TSL1401CCS.h"     /* include our LPA class */
 #include <BasicLinearAlgebra.h> /* for Matrix operations
@@ -35,6 +36,7 @@ const uint8_t IMU_SS = 5;       /* the DIG pin connected to the IMU SS pin */
 const uint8_t microSD_SS = 6;   /* the DIG pin connected to the micro-SD SS pin */
 
 PDC_LSM6DSO32 IMU(IMU_SS);                /* create an LSM6DSO32 object for our IMU. class defines are in 'PDC_LSM6DSO32.h' and 'PDC_LSM6DSO32.cpp' */
+PDC_BMP388 altimeter(altimeter_SS);       /* create a BMP388 object for our altimeter. class defines are in 'PDC_BMP388.h' and 'PDC_BMP388.cpp' */
 
 const uint8_t microSD_CD = 7;             /* the microSD card module has a chip detect pin which shorts to ground if the card isn't inserted */
 PDC_254 microSD(microSD_SS, microSD_CD);  /* create a 254 breakout class for the microSD card module. class defines are in PDC_254.h & .cpp */
@@ -92,9 +94,6 @@ bool apogee = 0;  /* flag that we can set when we think apogee has been reached 
 
 /* -------------------- SETUP -------------------- */
 void setup() {
-
-  uint8_t altimeter_CHIP_ID[1]; /* for the return value of the altimeter 'CHIP_ID' identification register */
-
   bool errFlag = 0;             /* to flag errors when they're encountered */
 
   /* ------------- Serial Setup --------------
@@ -136,16 +135,14 @@ void setup() {
   Wire.begin(); /* initialise CPU to use I2C */
 
   /* ---------- SPI Verification ---------- */
-  // TODO: maybe it'd be more consistent to create a BMP388 object like we have for the other components
-  readSPI(altimeter_SS, 0x00, 1, altimeter_CHIP_ID);  /* communicate with altimeter: read the 'CHIP_ID' register. expect 0x50 */
-  /* now should check that the value read is as we expect */
-  if (altimeter_CHIP_ID[0] != 0x50) {              
-    errCode |= altErr;  /* indicate altimeter problem if not */
-  }
-
   /* our LSM6DSO32 class has an 'isAlive()' method, which reads the 'WHO_AM_I' register to check our connection. returns true if connected & working! */
   if (!IMU.isAlive()) {
     errCode |= imuErr;  /* if not alive, flag the IMU error bit in our code */
+  }
+
+  /* our BMP388 class has an 'isAlive()' method, which reads the 'CHIP_ID' register to check our connection. returns true if connected & working! */
+  if (!altimeter.isAlive()) {
+    errCode |= altErr;
   }
 
   /* check the card detect pin for a card, and try to initialise it */
@@ -165,6 +162,7 @@ void setup() {
 
   /* ---------- PERIPHERAL CONFIGURATION ---------- */
   IMU.restart();        /* reboot & clear the IMU, giving it a bit of time to start back up */
+  altimeter.restart();  /* soft reset the altimeter and enable the pressure and temperature measurements */
   
   // TODO reboot other peripherals
 
@@ -196,6 +194,27 @@ void setup() {
   IMU.accel.init(ACC_ODR_3330, ACC_RNG_32); /* set the accelerometer output update frequency and measurement range */
   IMU.gyro.init(GYR_ODR_3330, GYR_RNG_250); /* set the gyroscope output update frequency and measurement range */
 
+  /************************************************************************
+                          ALTIMETER CONFIG VALUES
+      --------------------------------------------------------------------
+      PARAM 1 (OUTPUT UPDATE FREQUENCY)
+      +  200Hz
+      +  100Hz
+      +  50Hz
+      +  25Hz
+      +  12.5Hz
+      +  6.25Hz
+      +  3.1Hz
+      +  0.78Hz
+      +  0.39Hz
+      +  0.2Hz
+      +  0.1Hz
+      +  0.05Hz
+      +  0.02Hz
+      +  0.01Hz
+   ************************************************************************/
+  altimeter.init(ALT_ODR_200); /* set the altimeter output data rate */
+  
   /* ---------- KALMAN FILTER SETUP ---------- */
   initKalman(); /* setup kalman filter for apogee detection (see PDC_kalman.ino) */
 

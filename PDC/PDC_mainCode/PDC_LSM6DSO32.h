@@ -40,7 +40,8 @@
    IMU.restart();
 
    --- CONFIGURE ACCELEROMETER TO UPDATE AT 3330Hz AND MEASURE ACROSS +/-32g ---
-   IMU.accel.init(9, 2);
+   IMU.accel.init(ACC_ODR_3330, ACC_RNG_32);
+    // note that this .h file includes aliases for each possible update rate
 
    --- READ Z AXIS ACCELERATION ---
    float accelZ = IMU.accel.readZ();
@@ -88,7 +89,7 @@ const uint8_t WHO_AM_I_VAL = 0b01101100;  /* the (fixed) value stored in the 'WH
  ************************************************************************/
 /* ACCELEROMETER OUTPUT DATA REGISTER UPDATE FREQUENCY (Hz) */
 const uint8_t ACC_ODR_0    = 0;
-const uint8_t ACC_ODR_12   = 1;
+const uint8_t ACC_ODR_12p5 = 1;
 const uint8_t ACC_ODR_26   = 2;
 const uint8_t ACC_ODR_52   = 3;
 const uint8_t ACC_ODR_104  = 4;
@@ -101,7 +102,7 @@ const uint8_t ACC_ODR_6660 = 10;
 
 /* GYROSCOPE OUTPUT DATA REGISTER UPDATE FREQUENCY (Hz) */
 const uint8_t GYR_ODR_0    = 0;
-const uint8_t GYR_ODR_12   = 1;
+const uint8_t GYR_ODR_12p5 = 1;
 const uint8_t GYR_ODR_26   = 2;
 const uint8_t GYR_ODR_52   = 3;
 const uint8_t GYR_ODR_104  = 4;
