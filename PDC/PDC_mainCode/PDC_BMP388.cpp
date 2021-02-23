@@ -1,6 +1,7 @@
 // Methods TODO:
 // read values
 // measure offset
+// measure noise (for kalman)
 // a 'read all' method?
 // compensate for supersonic 
 

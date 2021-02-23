@@ -173,6 +173,7 @@ void setup() {
   }
   
   // TODO: decide if self test is actually sensible... what if vehicle isn't perfectly still?
+  // TODO: some sort of altimeter testing - if we know where we're launching we can estimate expected pressure
 
   /**********************************************************************
                             IMU CONFIG VALUES
@@ -241,6 +242,9 @@ void setup() {
 
 /* -------------------- LOOP -------------------- */
 void loop() {
+
+  // TODO: split into subroutines: wait, launch, (ejection?), descent, landing
+  
   // filler code to keep us entertained during testing
   float gyroY = IMU.gyro.readY();
   Serial.print("Y: ");
@@ -278,7 +282,7 @@ void loop() {
   // write any other data (e.g. raw readings, notes) to SD card (line format with timestamped measurements)
 
 
-  // attitude determination tasks
+  // attitude determination tasks in a second subroutine
   // quaternion conversion from gyro Euler output
   // kalman filter likely wont work for attitude det after all - too non-linear. some other filtering necessary
   // try coarse sun sensing to determine relative pose of sun
