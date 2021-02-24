@@ -1,5 +1,7 @@
 // Methods TODO:
-// read values
+// read values (e.g. a 'readAltitude' method that auto accounts for mach, temp, etc)
+// internal SPI setup/enable?
+// consider (research) IIR filter
 // measure offset
 // measure noise (for kalman)
 // a 'read all' method?
@@ -60,6 +62,8 @@ void PDC_BMP388::addressSet(uint8_t data_0_add, uint8_t ODR_add, uint8_t OSR_add
 /*********************************************************
    @brief  Initialise the component
    @param  code for output update frequency
+   @param  code for the pressure resolution (oversampling)
+   @param  code for the temperature resolution (oversampling)
  *********************************************************/
 void PDC_BMP388::init(uint8_t frequency, uint8_t pressResolution, uint8_t tempResolution) {
   uint8_t data = 0;
@@ -115,37 +119,191 @@ void PDC_BMP388::init(uint8_t frequency, uint8_t pressResolution, uint8_t tempRe
 }
 
 /*********************************************************
+   @brief  get the device specific compensation parameters
+ *********************************************************/
+void PDC_BMP388::getCompensationParams() {
+  /* arrays to store the various parameters
+  uint8_t NVM_PAR_T1[2];
+  uint8_t NVM_PAR_T2[2];
+  uint8_t NVM_PAR_T3[1];
+
+  uint8_t NVM_PAR_P1[2];
+  uint8_t NVM_PAR_P2[2];
+  uint8_t NVM_PAR_P3[1];
+  uint8_t NVM_PAR_P4[1];
+  uint8_t NVM_PAR_P5[2];
+  uint8_t NVM_PAR_P6[2];
+  uint8_t NVM_PAR_P7[1];
+  uint8_t NVM_PAR_P8[1];
+  uint8_t NVM_PAR_P9[2];
+  uint8_t NVM_PAR_P10[1];
+  uint8_t NVM_PAR_P11[1];
+  */
+
+  /*
+  uint8_t tempParamLengths[3] = {2, 2, 1};
+  uint8_t tempParamSigns[3] = {0, 0, 1}; 
+  int8_t tempParamScalingIndex[3] = {-8, 30, 48};
+  */
+
+
+  /*
+  uint8_t pressParamLengths[11] = {2, 2, 1, 1, 2, 2, 1, 1, 2, 1, 1};
+  uint8_t pressParamSigns[11] = {1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1};
+  int8_t pressParamScalingIndex[11] = {20, 29, 32, 37, -3, 6, 8, 15, 48, 48, 65};
+  */
+
+  /* there are certainly more elegant solutions to reading each of these params from the device and
+      writing them to our class, but they typically involve lots of arrays to hold datatypes and 
+      conversion factors. this way is likely more memory friendly */
+  uint8_t rawValue[2];      /* an array for the output bytes (no parameter is longer than two bytes) */  
+
+
+  // TODO: define aliases for the powers for each of these? or number of bytes for each of these?
+  readSPI(slaveSelect, NVM_PAR_T1_REG_1, 2, rawValue);
+  uint16_t PAR_T1 = (rawValue[1] << 8) | rawValue[0];
+  temperatureCompensationArray[0] = PAR_T1 / pow(2, -8);
+  rawValue[0] = 0;
+  rawValue[1] = 0;
+
+  readSPI(slaveSelect, NVM_PAR_T2_REG_1, 2, rawValue);
+  uint16_t PAR_T2 = (rawValue[1] << 8) | rawValue[0];
+  temperatureCompensationArray[1] = PAR_T2 / pow(2, 30);
+  rawValue[0] = 0;
+  rawValue[1] = 0;
+
+  readSPI(slaveSelect, NVM_PAR_T3_REG_1, 1, rawValue);
+  int8_t PAR_T3 = rawValue[0];
+  temperatureCompensationArray[2] = PAR_T3 / pow(2, 48);
+  rawValue[0] = 0;
+  rawValue[1] = 0;
+
+
+  // TODO: pressure values
+  readSPI(slaveSelect, NVM_PAR_P1_REG_1, 2, rawValue);
+  int16_t PAR_P1 = (rawValue[1] << 8) | rawValue[0];
+  pressureCompensationArray[0] = (PAR_P1 - pow(2, 14)) / pow(2, 20);
+  rawValue[0] = 0;
+  rawValue[1] = 0;
+
+  readSPI(slaveSelect, NVM_PAR_P2_REG_1, 2, rawValue);
+  int16_t PAR_P2 = (rawValue[1] << 8) | rawValue[0];
+  pressureCompensationArray[1] = (PAR_P2 - pow(2, 14)) / pow(2, 29);
+  rawValue[0] = 0;
+  rawValue[1] = 0;
+
+  readSPI(slaveSelect, NVM_PAR_P3_REG_1, 1, rawValue);
+  int8_t PAR_P3 = rawValue[0];
+  pressureCompensationArray[2] = PAR_P3 / pow(2, 32);
+  rawValue[0] = 0;
+  rawValue[1] = 0;
+
+  readSPI(slaveSelect, NVM_PAR_P4_REG_1, 1, rawValue);
+  int8_t PAR_P4 = rawValue[0];
+  pressureCompensationArray[3] = PAR_P4 / pow(2, 37);
+  rawValue[0] = 0;
+  rawValue[1] = 0;
+
+  readSPI(slaveSelect, NVM_PAR_P5_REG_1, 2, rawValue);
+  uint16_t PAR_P5 = (rawValue[1] << 8) | rawValue[0];
+  pressureCompensationArray[4] = PAR_P5 / pow(2, -3);
+  rawValue[0] = 0;
+  rawValue[1] = 0;
+  
+  readSPI(slaveSelect, NVM_PAR_P6_REG_1, 2, rawValue);
+  uint16_t PAR_P6 = (rawValue[1] << 8) | rawValue[0];
+  pressureCompensationArray[5] = PAR_P6 / pow(2, 6);
+  rawValue[0] = 0;
+  rawValue[1] = 0;
+  
+  readSPI(slaveSelect, NVM_PAR_P7_REG_1, 1, rawValue);
+  int8_t PAR_P7 = rawValue[0];
+  pressureCompensationArray[6] = PAR_P7 / pow(2, 8);
+  rawValue[0] = 0;
+  rawValue[1] = 0;
+  
+  readSPI(slaveSelect, NVM_PAR_P8_REG_1, 1, rawValue);
+  int8_t PAR_P8 = rawValue[0];
+  pressureCompensationArray[7] = PAR_P8 / pow(2, 15);
+  rawValue[0] = 0;
+  rawValue[1] = 0;
+
+  readSPI(slaveSelect, NVM_PAR_P9_REG_1, 2, rawValue);
+  int16_t PAR_P9 = (rawValue[1] << 8) | rawValue[0];
+  pressureCompensationArray[8] = PAR_P9 / pow(2, 48);
+  rawValue[0] = 0;
+  rawValue[1] = 0;
+
+  readSPI(slaveSelect, NVM_PAR_P10_REG_1, 1, rawValue);
+  int8_t PAR_P10 = rawValue[0];
+  pressureCompensationArray[9] = PAR_P10 / pow(2, 48);
+  rawValue[0] = 0;
+  rawValue[1] = 0;
+
+  readSPI(slaveSelect, NVM_PAR_P11_REG_1, 1, rawValue);
+  int8_t PAR_P11 = rawValue[0];
+  pressureCompensationArray[10] = PAR_P11 / pow(2, 65);
+  rawValue[0] = 0;
+  rawValue[1] = 0;
+  
+  /*
+  for(i=0; i<sizeof(tempParamLengths); i++){
+    bytesToRead = tempParamLengths[i];   get length in bytes of this parameter 
+    readSPI(slaveSelect, addressToRead, numBytesToRead, rawValue);   read the parameter over SPI 
+
+     declare a parameter variable with the appropriate signing 
+    if(tempParamSigns[i] == 0){
+        uint16_t parameter;
+    } else if(tempParamSigns[i] == 1){
+        int16_t parameter;
+    }
+
+    parameter = (rawValue[1] << 8) | rawValue[0]; /* concatenate the read value into the parameter variable 
+
+    
+
+     address = ;
+     temperatureCompensationArray[i] = ;
+
+    rawValue[0] = 0;
+    rawValue[1] = 0;
+  }
+  */
+}
+
+/*********************************************************
    @brief  Read a value from a specified register
    @param  the address of the first of three data registers
    @retval the raw measured value
  *********************************************************/
-int32_t PDC_BMP388::readValue(uint8_t data_address0) {
+uint32_t PDC_BMP388::readValue(uint8_t data_address0) {
   /* the altimeter has three consecutive data registers for both the temp and pressure.
       the first address is used to varying degrees based on the chosen resolution (oversampling) */
-      
   uint8_t rawValue[3];        /* we will read three bytes from the device into here */
   int32_t rawValueConcat = 0; /* we will concatenate the three bytes into a single value here. actually 24 bit but no such type! */
-
-  readSPI(slaveSelect, data_address0, 3, rawValue); /* read three bytes from the device.
-                                                        for the BMP388, the address will
-                                                        auto-increment and read the consecutive registers so we
-                                                        have the three bytes we need! */
-
+  readSPI(slaveSelect, data_address0, 3, rawValue); /* read three bytes from the device. BMP388 auto-increments address on SPI read */
   rawValueConcat = (rawValue[2] << 16) | (rawValue[1] << 8) | rawValue[0];  /* concatenate the three bytes into a single val by shifting the array values up */
-
   return (rawValueConcat);
 }
 
 void PDC_BMP388::readPress(){
-  int32_t rawPressure = 0;
-
-  rawPressure = readValue(pressureAddress_0);
+  uint32_t uncompensatedPressure = 0;
+  
+  /* pass the first pressure data address (data_0) to read the 3 consecutive pressure addresses */
+  uncompensatedPressure = readValue(pressureAddress_0); 
+  
+  
+  
   // TODO: convert to 'real' pressure
 }
 
 void PDC_BMP388::readTemp(){
-  int32_t rawTemperature = 0;
+  uint32_t uncompensatedTemperature = 0;
 
-  rawTemperature = readValue(temperatureAddress_0);
+  /* pass the first temperature data address (data_0) to read the 3 consecutive temperature addresses */
+  uncompensatedTemperature = readValue(temperatureAddress_0); 
+
+
+  
   // TODO: convert to 'real' temperature
 }

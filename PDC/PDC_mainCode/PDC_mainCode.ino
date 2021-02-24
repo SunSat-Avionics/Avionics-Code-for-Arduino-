@@ -217,6 +217,7 @@ void setup() {
       +  0.01Hz                         |                                  |
    ************************************************************************************************************/
   altimeter.init(ALT_ODR_200, ALT_OSR_PRESS_HIGH, ALT_OSR_TEMP_ULTRALOW); /* set the altimeter output data rate and resolutions */
+  altimeter.getCompensationParams();
   
   /* ---------- KALMAN FILTER SETUP ---------- */
   initKalman(); /* setup kalman filter for apogee detection (see PDC_kalman.ino) */

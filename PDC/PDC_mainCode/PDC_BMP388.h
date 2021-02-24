@@ -120,12 +120,36 @@ const uint8_t ALT_OSR_TEMP_HIGH      = 3;
 const uint8_t ALT_OSR_TEMP_ULTRAHIGH = 4; 
 const uint8_t ALT_OSR_TEMP_HIGHEST   = 5;
 
+
+const uint8_t NVM_PAR_T1_REG_1 = 0x31;
+const uint8_t NVM_PAR_T1_REG_2 = 0x32;
+const uint8_t NVM_PAR_T2_REG_1 = 0x33;
+const uint8_t NVM_PAR_T2_REG_2 = 0x34;
+const uint8_t NVM_PAR_T3_REG_1 = 0x35;
+
+const uint8_t NVM_PAR_P1_REG_1  = 0x36;
+const uint8_t NVM_PAR_P1_REG_2  = 0x37;
+const uint8_t NVM_PAR_P2_REG_1  = 0x38;
+const uint8_t NVM_PAR_P2_REG_2  = 0x39;
+const uint8_t NVM_PAR_P3_REG_1  = 0x3A;
+const uint8_t NVM_PAR_P4_REG_1  = 0x3B;
+const uint8_t NVM_PAR_P5_REG_1  = 0x3C;
+const uint8_t NVM_PAR_P5_REG_2  = 0x3D;
+const uint8_t NVM_PAR_P6_REG_1  = 0x3E;
+const uint8_t NVM_PAR_P6_REG_2  = 0x3F;
+const uint8_t NVM_PAR_P7_REG_1  = 0x40;
+const uint8_t NVM_PAR_P8_REG_1  = 0x41;
+const uint8_t NVM_PAR_P9_REG_1  = 0x42;
+const uint8_t NVM_PAR_P9_REG_2  = 0x43;
+const uint8_t NVM_PAR_P10_REG_1 = 0x44;
+const uint8_t NVM_PAR_P11_REG_1 = 0x45;
+
 /**************************************************************************
     a class for the BMP388 altimeter
  **************************************************************************/
 class PDC_BMP388 {
   private:
-    int32_t readValue(uint8_t data_address0); /* a private method to read a value at the provided address */
+    uint32_t readValue(uint8_t data_address0); /* a private method to read a value at the provided address */
     
     /* ---------- ATTRIBUTES ---------- */
     uint8_t slaveSelect;  /* the pin on the PDC that the altimeter CS pin connects to. is set on contruction */
@@ -138,6 +162,9 @@ class PDC_BMP388 {
     uint8_t ODR_address;              /* the address of the ODR register (for output frequency) */
     uint8_t OSR_address;              /* the address of the OSR register (for oversampling config) */
 
+    float temperatureCompensationArray[3];
+    float pressureCompensationArray[11];
+
   public:
     /* ---------- CONSTRUCTOR ---------- */
     PDC_BMP388(uint8_t CS) {
@@ -147,10 +174,11 @@ class PDC_BMP388 {
     };
 
     /* ---------- METHODS --------- */
-    bool isAlive();       /* check if connected and responsive */
-    void restart();       /* soft reset the device and enable temp/press measurement */
+    bool isAlive();               /* check if connected and responsive */
+    void restart();               /* soft reset the device and enable temp/press measurement */
+    void getCompensationParams(); /* get the pressure and temperature compensation parameters */
     void addressSet(uint8_t data_0_add, uint8_t ODR_add, uint8_t OSR_add); /* remember the device data and control registers */
     void init(uint8_t f, uint8_t r_p, uint8_t r_t); /* configure the device over SPI - set the output frequency and resolution */
-    void readPress();     /* read the raw pressure measurement and convert to 'actual' value */
-    void readTemp();      /* read the raw temperature measurement and convert to 'actual' value */
+    void readPress();             /* read the raw pressure measurement and convert to 'actual' value */
+    void readTemp();              /* read the raw temperature measurement and convert to 'actual' value */
 };
