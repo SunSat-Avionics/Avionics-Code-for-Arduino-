@@ -153,13 +153,18 @@ void PDC_BMP388::getCompensationParams() {
   int8_t pressParamScalingIndex[11] = {20, 29, 32, 37, -3, 6, 8, 15, 48, 48, 65};
   */
 
+  /* to convert from raw pressure/temperature measurements to something meaningful, the BMP388
+       requires us to compensate for the specific sensor characteristics using internally stored
+       (non-volatile) parameters, which we can read as below */
+  
   /* there are certainly more elegant solutions to reading each of these params from the device and
       writing them to our class, but they typically involve lots of arrays to hold datatypes and 
       conversion factors. this way is likely more memory friendly */
+      
   uint8_t rawValue[2];      /* an array for the output bytes (no parameter is longer than two bytes) */  
 
-
   // TODO: define aliases for the powers for each of these? or number of bytes for each of these?
+  /* get the device specific temperature compensation parameters */
   readSPI(slaveSelect, NVM_PAR_T1_REG_1, 2, rawValue);
   uint16_t PAR_T1 = (rawValue[1] << 8) | rawValue[0];
   temperatureCompensationArray[0] = PAR_T1 / pow(2, -8);
@@ -179,7 +184,7 @@ void PDC_BMP388::getCompensationParams() {
   rawValue[1] = 0;
 
 
-  // TODO: pressure values
+  /* get the device specific pressure compensation parameters */
   readSPI(slaveSelect, NVM_PAR_P1_REG_1, 2, rawValue);
   int16_t PAR_P1 = (rawValue[1] << 8) | rawValue[0];
   pressureCompensationArray[0] = (PAR_P1 - pow(2, 14)) / pow(2, 20);
@@ -297,13 +302,26 @@ void PDC_BMP388::readPress(){
   // TODO: convert to 'real' pressure
 }
 
-void PDC_BMP388::readTemp(){
-  uint32_t uncompensatedTemperature = 0;
 
+/*********************************************************
+   @brief  read device temperature and compensate w/ params
+   @retval the compensated temperature measurement
+ *********************************************************/
+float PDC_BMP388::readTemp(){
+  uint32_t uncompensatedTemperature = 0;  /* the raw temperature data from the device */
+  float compensatedTemperature = 0;       /* the temperature as compensated for with parameters */
+  float interim1 = 0;                     /* interim registers to store data */
+  float interim2 = 0;
+  
   /* pass the first temperature data address (data_0) to read the 3 consecutive temperature addresses */
   uncompensatedTemperature = readValue(temperatureAddress_0); 
 
+  /* uncomp - PAR_T1 */
+  interim1 = uncompensatedTemperature - temperatureCompensationArray[0];
+  /* (uncomp - PAR_T1) * PAR_T2 */
+  interim2 = interim1 * temperatureCompensationArray[1];
+  /* [(uncomp - PAR_T1) * PAR_T2] + (uncomp - PAR_T1)^2 * PAR_T3 */
+  compensatedTemperature = interim2 + (interim1 * interim1) * temperatureCompensationArray[2];
 
-  
-  // TODO: convert to 'real' temperature
+  return(compensatedTemperature);
 }
