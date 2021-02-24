@@ -81,6 +81,8 @@ uint8_t errCode = 0;  /* value to be used whenever we want to detect some error 
 /* individual bit sets for an error at different components. will allow us to identify specific errors in an efficient way */
 // TODO: probably turn this into a 16 bit so we have better understanding of what actually caused the issue (isAlive, selfTest, etc)
 // TODO: once we better understand PDC <-> main OBC comms, work out if we can send this code to main OBC then route it to ground station for info
+// TODO: maybe reserve a couple of bits to identify this message as the 'PDC startup' so ground station knows how to interpret it? or get OBC to
+  // append some identifying header tag
 const uint8_t altErr = (1 << 0);  /* altimeter issue, set bit 0 */
 const uint8_t imuErr = (1 << 1);  /* IMU encounters issue, set bit 1 */
 const uint8_t msdErr = (1 << 2);  /* micro-SD issue, set bit 2 */
@@ -217,7 +219,6 @@ void setup() {
       +  0.01Hz                         |                                  |
    ************************************************************************************************************/
   altimeter.init(ALT_ODR_200, ALT_OSR_PRESS_HIGH, ALT_OSR_TEMP_ULTRALOW); /* set the altimeter output data rate and resolutions */
-  altimeter.getCompensationParams();
   
   /* ---------- KALMAN FILTER SETUP ---------- */
   initKalman(); /* setup kalman filter for apogee detection (see PDC_kalman.ino) */
@@ -247,9 +248,9 @@ void loop() {
   // TODO: split into subroutines: wait, launch, (ejection?), descent, landing
   
   // filler code to keep us entertained during testing
-  float gyroY = IMU.gyro.readY();
-  Serial.print("Y: ");
-  Serial.println(gyroY, 5);
+  float altitude = altimeter.readAltitude();
+  Serial.print("alt: ");
+  Serial.println(altitude, 5);
 
   // parachute deployment tasks
   // parachute detection? e.g. estimating speed & checking it's below a certain value? looking for an upward acceleration after apogee?

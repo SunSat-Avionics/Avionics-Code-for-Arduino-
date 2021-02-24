@@ -1,6 +1,6 @@
 // Methods TODO:
 // read values (e.g. a 'readAltitude' method that auto accounts for mach, temp, etc)
-// move compensation calculations into an attribute (i.e. PAR_P1 * PAR_P2 ... or whatever, is a new constant calculated at startup)
+// decide on appropriate units for pressure (bar/pa/kpa...)
 // internal SPI setup/enable?
 // consider (research) IIR filter
 // measure offset
@@ -117,6 +117,8 @@ void PDC_BMP388::init(uint8_t frequency, uint8_t pressResolution, uint8_t tempRe
   }
   
   writeSPI(slaveSelect, OSR_REG, data);  /* write the data to the OSR register */
+
+  getCompensationParams();  /* get the internal device specific temperature and pressure compensation parameters */
 }
 
 /*********************************************************
@@ -295,7 +297,7 @@ uint32_t PDC_BMP388::readValue(uint8_t data_address0) {
 
 /*********************************************************
    @brief  read device pressure and compensate w/ params
-   @retval the compensated pressure measurement
+   @retval the compensated pressure measurement [Pa]
  *********************************************************/
 float PDC_BMP388::readPress(){
   uint32_t uncompensatedPressure = 0;   /* the raw pressure data from the device */
@@ -332,7 +334,7 @@ float PDC_BMP388::readPress(){
 
 /*********************************************************
    @brief  read device temperature and compensate w/ params
-   @retval the compensated temperature measurement
+   @retval the compensated temperature measurement [degC]
  *********************************************************/
 float PDC_BMP388::readTemp(){
   uint32_t uncompensatedTemperature = 0;  /* the raw temperature data from the device */
@@ -351,4 +353,20 @@ float PDC_BMP388::readTemp(){
   compensatedTemperature = interim2 + (interim1 * interim1) * temperatureCompensationArray[2];
 
   return(compensatedTemperature);
+}
+
+/*********************************************************
+   @brief  measure the altitude using compensated pressure
+   @retval the absolute altitude [m]
+ *********************************************************/
+float PDC_BMP388::readAltitude(){
+  float atmosphericPressure;
+  float altitude;
+
+  /* the BMP180 datasheet (https://cdn-shop.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf) gives the equation for pressure -> altitude */
+  
+  atmosphericPressure = readPress() / 100.0;  /* read the compensated atmospheric pressure and convert from Pa to hPa */
+  altitude = 44330 * (1 - pow(atmosphericPressure/SEA_LEVEL_PRESSURE, 0.190295)); /* use the equation from link above to claculate absolute altitude [m] */
+
+  return(altitude);
 }

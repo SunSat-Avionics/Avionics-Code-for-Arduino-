@@ -39,8 +39,8 @@
    --- RESTART ALTIMETER ---
    altimeter.restart();
 
-   --- CONFIGURE ALTIMETER TO UPDATE AT 200Hz ---
-   altimeter.init(ALT_ODR_200);
+   --- CONFIGURE ALTIMETER TO UPDATE AT AND SET MEASUREMENT RESOLUTIONS ---
+   altimeter.init(ALT_ODR_200, ALT_OSR_PRESS_HIGH, ALT_OSR_TEMP_ULTRALOW);
     // note that this .h file includes aliases for each possible update rate
     
    --- READ Z AXIS ACCELERATION ---
@@ -60,13 +60,40 @@
 #include <stdio.h>    /* std stuff for cpp */
 #include "headers.h"
 
-/* DEVICE REGISTER ADDRESSES */
-const uint8_t DATA_0_REG = 0x04;  /* the register address of the first data register. (pressure is at DATA_0,1,2 and temperature is at DATA_3,4,5) */
-const uint8_t ODR_REG = 0x1D;     /* the register address of the 'ODR' (output data rates) register */
-const uint8_t OSR_REG = 0x1C;     /* the register address of the 'OSR' (oversampling settings) register */
-const uint8_t CHIP_ID_REG = 0x00; /* the register address of the 'CHIP_ID' (identification) register */
+const float SEA_LEVEL_PRESSURE = 1013.25; /* the pressure at sea level in hPa, for calculations of altitude */
 
+/* DEVICE REGISTER ADDRESSES */
+const uint8_t CHIP_ID_REG = 0x00; /* the register address of the 'CHIP_ID' (identification) register */
 const uint8_t CHIP_ID_VAL = 0X50; /* the (fixed) value stored in the 'CHIP_ID' register */
+
+const uint8_t DATA_0_REG = 0x04;  /* the register address of the first data register. (pressure is at DATA_0,1,2 and temperature is at DATA_3,4,5) */
+
+const uint8_t OSR_REG = 0x1C;     /* the register address of the 'OSR' (oversampling settings) register */
+const uint8_t ODR_REG = 0x1D;     /* the register address of the 'ODR' (output data rates) register */
+
+/* non-volatile memory (NVM) device specific pressure and temperature compensation parameter register addresses */
+const uint8_t NVM_PAR_T1_REG_1 = 0x31;
+const uint8_t NVM_PAR_T1_REG_2 = 0x32;
+const uint8_t NVM_PAR_T2_REG_1 = 0x33;
+const uint8_t NVM_PAR_T2_REG_2 = 0x34;
+const uint8_t NVM_PAR_T3_REG_1 = 0x35;
+
+const uint8_t NVM_PAR_P1_REG_1  = 0x36;
+const uint8_t NVM_PAR_P1_REG_2  = 0x37;
+const uint8_t NVM_PAR_P2_REG_1  = 0x38;
+const uint8_t NVM_PAR_P2_REG_2  = 0x39;
+const uint8_t NVM_PAR_P3_REG_1  = 0x3A;
+const uint8_t NVM_PAR_P4_REG_1  = 0x3B;
+const uint8_t NVM_PAR_P5_REG_1  = 0x3C;
+const uint8_t NVM_PAR_P5_REG_2  = 0x3D;
+const uint8_t NVM_PAR_P6_REG_1  = 0x3E;
+const uint8_t NVM_PAR_P6_REG_2  = 0x3F;
+const uint8_t NVM_PAR_P7_REG_1  = 0x40;
+const uint8_t NVM_PAR_P8_REG_1  = 0x41;
+const uint8_t NVM_PAR_P9_REG_1  = 0x42;
+const uint8_t NVM_PAR_P9_REG_2  = 0x43;
+const uint8_t NVM_PAR_P10_REG_1 = 0x44;
+const uint8_t NVM_PAR_P11_REG_1 = 0x45;
 
 /************************************************************************************************************
                                           ALTIMETER CONFIG VALUES
@@ -120,36 +147,14 @@ const uint8_t ALT_OSR_TEMP_HIGH      = 3;
 const uint8_t ALT_OSR_TEMP_ULTRAHIGH = 4; 
 const uint8_t ALT_OSR_TEMP_HIGHEST   = 5;
 
-
-const uint8_t NVM_PAR_T1_REG_1 = 0x31;
-const uint8_t NVM_PAR_T1_REG_2 = 0x32;
-const uint8_t NVM_PAR_T2_REG_1 = 0x33;
-const uint8_t NVM_PAR_T2_REG_2 = 0x34;
-const uint8_t NVM_PAR_T3_REG_1 = 0x35;
-
-const uint8_t NVM_PAR_P1_REG_1  = 0x36;
-const uint8_t NVM_PAR_P1_REG_2  = 0x37;
-const uint8_t NVM_PAR_P2_REG_1  = 0x38;
-const uint8_t NVM_PAR_P2_REG_2  = 0x39;
-const uint8_t NVM_PAR_P3_REG_1  = 0x3A;
-const uint8_t NVM_PAR_P4_REG_1  = 0x3B;
-const uint8_t NVM_PAR_P5_REG_1  = 0x3C;
-const uint8_t NVM_PAR_P5_REG_2  = 0x3D;
-const uint8_t NVM_PAR_P6_REG_1  = 0x3E;
-const uint8_t NVM_PAR_P6_REG_2  = 0x3F;
-const uint8_t NVM_PAR_P7_REG_1  = 0x40;
-const uint8_t NVM_PAR_P8_REG_1  = 0x41;
-const uint8_t NVM_PAR_P9_REG_1  = 0x42;
-const uint8_t NVM_PAR_P9_REG_2  = 0x43;
-const uint8_t NVM_PAR_P10_REG_1 = 0x44;
-const uint8_t NVM_PAR_P11_REG_1 = 0x45;
-
 /**************************************************************************
     a class for the BMP388 altimeter
  **************************************************************************/
 class PDC_BMP388 {
   private:
-    uint32_t readValue(uint8_t data_address0); /* a private method to read a value at the provided address */
+    uint32_t readValue(uint8_t data_address0);  /* a private method to read a value at the provided address */
+    void getCompensationParams();               /* get the pressure and temperature compensation parameters */
+    void addressSet(uint8_t data_0_add, uint8_t ODR_add, uint8_t OSR_add); /* remember the device data and control registers */
     
     /* ---------- ATTRIBUTES ---------- */
     uint8_t slaveSelect;  /* the pin on the PDC that the altimeter CS pin connects to. is set on contruction */
@@ -162,8 +167,8 @@ class PDC_BMP388 {
     uint8_t ODR_address;              /* the address of the ODR register (for output frequency) */
     uint8_t OSR_address;              /* the address of the OSR register (for oversampling config) */
 
-    float temperatureCompensationArray[3];
-    float pressureCompensationArray[11];
+    float temperatureCompensationArray[3];  /* array for the device specific temperature compensation parameters */
+    float pressureCompensationArray[11];    /* array for the device specific pressure compensation parameters */
 
   public:
     /* ---------- CONSTRUCTOR ---------- */
@@ -171,14 +176,15 @@ class PDC_BMP388 {
       slaveSelect = CS;                         /* set slaveSelect to the specified SS pin */
       addressSet(DATA_0_REG, ODR_REG, OSR_REG); /* tell the altimeter where to find its registers */
       outputFrequency = 0;                      /* initialise the class output frequency attribute as 0 */
+      pressureOversampling = 0;
+      temperatureOversampling = 0;
     };
 
     /* ---------- METHODS --------- */
     bool isAlive();               /* check if connected and responsive */
     void restart();               /* soft reset the device and enable temp/press measurement */
-    void getCompensationParams(); /* get the pressure and temperature compensation parameters */
-    void addressSet(uint8_t data_0_add, uint8_t ODR_add, uint8_t OSR_add); /* remember the device data and control registers */
     void init(uint8_t f, uint8_t r_p, uint8_t r_t); /* configure the device over SPI - set the output frequency and resolution */
-    float readPress();            /* read the raw pressure measurement and convert to 'actual' value */
-    float readTemp();             /* read the raw temperature measurement and convert to 'actual' value */
+    float readPress();            /* read the raw pressure measurement and convert to 'actual' value [degC] */
+    float readTemp();             /* read the raw temperature measurement and convert to 'actual' value [Pa] */
+    float readAltitude();         /* use the compensated pressure to calculate absolute altitude [m] */
 };
