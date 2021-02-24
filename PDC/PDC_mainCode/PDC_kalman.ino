@@ -95,7 +95,6 @@ void kalmanPredict() {
 void kalmanUpdate() {
   float accelerationZ = IMU.accel.readZ();
   float altitude = altimeter.readAltitude();
-  // TODO: take altitude measurement from altimeter
   // TODO: create measurement vector from the readings
 
   /* x_k = x_k-1 + K*[z_k - H*x_k-1] */

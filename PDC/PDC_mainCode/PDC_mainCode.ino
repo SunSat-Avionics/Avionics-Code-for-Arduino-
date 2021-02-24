@@ -125,6 +125,8 @@ void setup() {
   /* ---------- Peripheral Setup ---------- */
   pinMode(microSD_CD, INPUT);       /* set the card detect pin to be an input that we can measure to check for a card */
 
+  // TODO: consider replacing the LPA with a simpler single sensor w/ intensity. LPA too small & complex really.
+  // TODO: look into a magnetometer to help with attitude determination & decide on a filter (not EKF) to process this & gyro
   pinMode(LPA_AO, INPUT);                         /* set the pin connected to LPA AO as an input - this is where we read the LPA values */
   pinMode(LPA_SI, OUTPUT);                        /* set the pin connected to the LPA SI as an output - this is how we trigger a new LPA reading */
   errFlag = LPA_group.startClockOC1A(OC1A_500KHZ);  /* get the PDC to start a clock signal on its OC1A pin for the LPA group */
