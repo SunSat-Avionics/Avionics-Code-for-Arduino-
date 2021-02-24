@@ -179,6 +179,6 @@ class PDC_BMP388 {
     void getCompensationParams(); /* get the pressure and temperature compensation parameters */
     void addressSet(uint8_t data_0_add, uint8_t ODR_add, uint8_t OSR_add); /* remember the device data and control registers */
     void init(uint8_t f, uint8_t r_p, uint8_t r_t); /* configure the device over SPI - set the output frequency and resolution */
-    void readPress();             /* read the raw pressure measurement and convert to 'actual' value */
-    void readTemp();              /* read the raw temperature measurement and convert to 'actual' value */
+    float readPress();            /* read the raw pressure measurement and convert to 'actual' value */
+    float readTemp();             /* read the raw temperature measurement and convert to 'actual' value */
 };

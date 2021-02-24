@@ -1,5 +1,6 @@
 // Methods TODO:
 // read values (e.g. a 'readAltitude' method that auto accounts for mach, temp, etc)
+// move compensation calculations into an attribute (i.e. PAR_P1 * PAR_P2 ... or whatever, is a new constant calculated at startup)
 // internal SPI setup/enable?
 // consider (research) IIR filter
 // measure offset
@@ -155,7 +156,8 @@ void PDC_BMP388::getCompensationParams() {
 
   /* to convert from raw pressure/temperature measurements to something meaningful, the BMP388
        requires us to compensate for the specific sensor characteristics using internally stored
-       (non-volatile) parameters, which we can read as below */
+       (non-volatile) parameters, which we can read as below. these values are stored as different
+       data types (unsigned/signed, 8/16bit), and also need some conversion to floating point */
   
   /* there are certainly more elegant solutions to reading each of these params from the device and
       writing them to our class, but they typically involve lots of arrays to hold datatypes and 
@@ -167,19 +169,19 @@ void PDC_BMP388::getCompensationParams() {
   /* get the device specific temperature compensation parameters */
   readSPI(slaveSelect, NVM_PAR_T1_REG_1, 2, rawValue);
   uint16_t PAR_T1 = (rawValue[1] << 8) | rawValue[0];
-  temperatureCompensationArray[0] = PAR_T1 / pow(2, -8);
+  temperatureCompensationArray[0] = float(PAR_T1) / pow(2, -8);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
   readSPI(slaveSelect, NVM_PAR_T2_REG_1, 2, rawValue);
   uint16_t PAR_T2 = (rawValue[1] << 8) | rawValue[0];
-  temperatureCompensationArray[1] = PAR_T2 / pow(2, 30);
+  temperatureCompensationArray[1] = float(PAR_T2) / pow(2, 30);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
   readSPI(slaveSelect, NVM_PAR_T3_REG_1, 1, rawValue);
   int8_t PAR_T3 = rawValue[0];
-  temperatureCompensationArray[2] = PAR_T3 / pow(2, 48);
+  temperatureCompensationArray[2] = float(PAR_T3) / pow(2, 48);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
@@ -187,67 +189,67 @@ void PDC_BMP388::getCompensationParams() {
   /* get the device specific pressure compensation parameters */
   readSPI(slaveSelect, NVM_PAR_P1_REG_1, 2, rawValue);
   int16_t PAR_P1 = (rawValue[1] << 8) | rawValue[0];
-  pressureCompensationArray[0] = (PAR_P1 - pow(2, 14)) / pow(2, 20);
+  pressureCompensationArray[0] = (float(PAR_P1) - pow(2, 14)) / pow(2, 20);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
   readSPI(slaveSelect, NVM_PAR_P2_REG_1, 2, rawValue);
   int16_t PAR_P2 = (rawValue[1] << 8) | rawValue[0];
-  pressureCompensationArray[1] = (PAR_P2 - pow(2, 14)) / pow(2, 29);
+  pressureCompensationArray[1] = (float(PAR_P2) - pow(2, 14)) / pow(2, 29);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
   readSPI(slaveSelect, NVM_PAR_P3_REG_1, 1, rawValue);
   int8_t PAR_P3 = rawValue[0];
-  pressureCompensationArray[2] = PAR_P3 / pow(2, 32);
+  pressureCompensationArray[2] = float(PAR_P3) / pow(2, 32);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
   readSPI(slaveSelect, NVM_PAR_P4_REG_1, 1, rawValue);
   int8_t PAR_P4 = rawValue[0];
-  pressureCompensationArray[3] = PAR_P4 / pow(2, 37);
+  pressureCompensationArray[3] = float(PAR_P4) / pow(2, 37);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
   readSPI(slaveSelect, NVM_PAR_P5_REG_1, 2, rawValue);
   uint16_t PAR_P5 = (rawValue[1] << 8) | rawValue[0];
-  pressureCompensationArray[4] = PAR_P5 / pow(2, -3);
+  pressureCompensationArray[4] = float(PAR_P5) / pow(2, -3);
   rawValue[0] = 0;
   rawValue[1] = 0;
   
   readSPI(slaveSelect, NVM_PAR_P6_REG_1, 2, rawValue);
   uint16_t PAR_P6 = (rawValue[1] << 8) | rawValue[0];
-  pressureCompensationArray[5] = PAR_P6 / pow(2, 6);
+  pressureCompensationArray[5] = float(PAR_P6) / pow(2, 6);
   rawValue[0] = 0;
   rawValue[1] = 0;
   
   readSPI(slaveSelect, NVM_PAR_P7_REG_1, 1, rawValue);
   int8_t PAR_P7 = rawValue[0];
-  pressureCompensationArray[6] = PAR_P7 / pow(2, 8);
+  pressureCompensationArray[6] = float(PAR_P7) / pow(2, 8);
   rawValue[0] = 0;
   rawValue[1] = 0;
   
   readSPI(slaveSelect, NVM_PAR_P8_REG_1, 1, rawValue);
   int8_t PAR_P8 = rawValue[0];
-  pressureCompensationArray[7] = PAR_P8 / pow(2, 15);
+  pressureCompensationArray[7] = float(PAR_P8) / pow(2, 15);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
   readSPI(slaveSelect, NVM_PAR_P9_REG_1, 2, rawValue);
   int16_t PAR_P9 = (rawValue[1] << 8) | rawValue[0];
-  pressureCompensationArray[8] = PAR_P9 / pow(2, 48);
+  pressureCompensationArray[8] = float(PAR_P9) / pow(2, 48);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
   readSPI(slaveSelect, NVM_PAR_P10_REG_1, 1, rawValue);
   int8_t PAR_P10 = rawValue[0];
-  pressureCompensationArray[9] = PAR_P10 / pow(2, 48);
+  pressureCompensationArray[9] = float(PAR_P10) / pow(2, 48);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
   readSPI(slaveSelect, NVM_PAR_P11_REG_1, 1, rawValue);
   int8_t PAR_P11 = rawValue[0];
-  pressureCompensationArray[10] = PAR_P11 / pow(2, 65);
+  pressureCompensationArray[10] = float(PAR_P11) / pow(2, 65);
   rawValue[0] = 0;
   rawValue[1] = 0;
   
@@ -291,17 +293,42 @@ uint32_t PDC_BMP388::readValue(uint8_t data_address0) {
   return (rawValueConcat);
 }
 
-void PDC_BMP388::readPress(){
-  uint32_t uncompensatedPressure = 0;
+/*********************************************************
+   @brief  read device pressure and compensate w/ params
+   @retval the compensated pressure measurement
+ *********************************************************/
+float PDC_BMP388::readPress(){
+  uint32_t uncompensatedPressure = 0;   /* the raw pressure data from the device */
+  float compensatedPressure = 0;        /* the pressure as compensated for with parameters */
+  float compensatedTemperature = 0;     /* the temperature as compensated for with parameters */
+  float interim1 = 0;                   /* interim registers to store data */
+  float interim2 = 0;
+  float interim3 = 0;
   
+  compensatedTemperature = readTemp();  /* get the compensated temperature reading */
+
   /* pass the first pressure data address (data_0) to read the 3 consecutive pressure addresses */
   uncompensatedPressure = readValue(pressureAddress_0); 
-  
-  
-  
-  // TODO: convert to 'real' pressure
-}
 
+  /* PAR_P8 * compTemp^3 + PAR_P7 * compTemp^2 + PAR_P6 * compTemp + PAR_P5 */
+  interim1 = pressureCompensationArray[7] * pow(compensatedTemperature, 3) 
+             + pressureCompensationArray[6] * pow(compensatedTemperature, 2) 
+             + pressureCompensationArray[5] * compensatedTemperature
+             + pressureCompensationArray[4];  
+  /* uncompPress * (PAR_P4 * compTemp^3 + PAR_P3 * compTemp^2 + PAR_P2 * compTemp + PAR_P1) */
+  interim2 = float(uncompensatedPressure) * 
+              (pressureCompensationArray[3] * pow(compensatedTemperature, 3) 
+             + pressureCompensationArray[2] * pow(compensatedTemperature, 2) 
+             + pressureCompensationArray[1] * compensatedTemperature
+             + pressureCompensationArray[0]);  
+  /* PAR_P11 * uncompPress^3 + (PAR_P9 + PAR_P10 * compTemp) * uncompPress^2 */
+  interim3 = pow(float(uncompensatedPressure), 3) * pressureCompensationArray[10]
+             + pow(float(uncompensatedPressure), 2) * (pressureCompensationArray[8] + pressureCompensationArray[9] * compensatedTemperature);
+
+  compensatedPressure = interim1 + interim2 + interim3;
+
+  return(compensatedPressure);
+}
 
 /*********************************************************
    @brief  read device temperature and compensate w/ params
@@ -317,7 +344,7 @@ float PDC_BMP388::readTemp(){
   uncompensatedTemperature = readValue(temperatureAddress_0); 
 
   /* uncomp - PAR_T1 */
-  interim1 = uncompensatedTemperature - temperatureCompensationArray[0];
+  interim1 = float(uncompensatedTemperature) - temperatureCompensationArray[0];
   /* (uncomp - PAR_T1) * PAR_T2 */
   interim2 = interim1 * temperatureCompensationArray[1];
   /* [(uncomp - PAR_T1) * PAR_T2] + (uncomp - PAR_T1)^2 * PAR_T3 */
