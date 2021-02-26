@@ -26,8 +26,8 @@
 */
 using namespace BLA;            /* use the basic linear algebra namespace */
 
-// TODO consider the below library for faster read/write/mode if timings become an issue. requires us to know the pin at compile time, so won't help in the SPI
-// might help in I2C where RTC is the only (currently) device  https://github.com/NicksonYap/digitalWriteFast
+/* ---------- GENERAL PARAMETERS ---------- */
+const uint8_t ACC_LIFTOFF_THRESHOLD = 1;  /* [m/s^2] the threshold value that tells us we have liftoff. this triggers the move from 'wait' mode to 'flight' mode */
 
 /* ---------- SPI CONFIG ---------- */
 const uint8_t PDC_SS = 10;      /* the arduino nano has an 'SS' pin (10) which helps us choose if we want to be master or slave. pin 10 as output = PDC as master */
@@ -126,7 +126,6 @@ void setup() {
   pinMode(microSD_CD, INPUT);       /* set the card detect pin to be an input that we can measure to check for a card */
 
   // TODO: consider replacing the LPA with a simpler single sensor w/ intensity. LPA too small & complex really.
-  // TODO: look into a magnetometer to help with attitude determination & decide on a filter (not EKF) to process this & gyro
   pinMode(LPA_AO, INPUT);                         /* set the pin connected to LPA AO as an input - this is where we read the LPA values */
   pinMode(LPA_SI, OUTPUT);                        /* set the pin connected to the LPA SI as an output - this is how we trigger a new LPA reading */
   errFlag = LPA_group.startClockOC1A(OC1A_500KHZ);  /* get the PDC to start a clock signal on its OC1A pin for the LPA group */
@@ -160,9 +159,6 @@ void setup() {
   }
 
   // TODO write a note to the microSD to signify SD begin - maybe need a .writeNote() method which blanks everything but date, time and note
-
-  // setup interrupt pin? TBD - can we simply configure one of the GPIO to go high and connect this to main OBC interrupt, and then execute
-  // the interrupt routine on OBC? or will we communicate with main OBC via I2C/SPI?
 
   /* ---------- PERIPHERAL CONFIGURATION ---------- */
   IMU.restart();        /* reboot & clear the IMU, giving it a bit of time to start back up */
@@ -240,20 +236,24 @@ void setup() {
 
   // TODO: take measurements in the ground state (e.g. temp and pressure). write them to SD with a note of 'ground conditions' or similar.
   // also worth storing them in variables to use to calculate local mach etc.
-
-  // TODO write a note to the microSD to signify end of setup - maybe need a .writeNote() method which blanks everything but date, time and note
+  // TODO: define a global 'measurement array' that allows us to plug various components into it at every measurement (e.g. when 'resdAltitude' is called, the temp & pressure
+    // functions can access the array and auto plug these values into it
+  // TODO: write a note to the microSD to signify end of setup - maybe need a .writeNote() method which blanks everything but date, time and note
 }
 
 /* -------------------- LOOP -------------------- */
 void loop() {
-
-  // TODO: split into subroutines: wait, launch, (ejection?), descent, landing
   
+  // TODO: split into subroutines: wait, launch, (ejection?), descent, landing
+  // TODO: is it sensible to use the 'loop' as a single execution? instead of waiting in wait for launch, could we have some codes (wait=0, launch=1, apogee=2, ...) and 
+    // use these (if(code==1)then(launchRoutine))?
+  waitForLaunch();
+
   // filler code to keep us entertained during testing
   float altitude = altimeter.readAltitude();
   Serial.print("alt: ");
   Serial.println(altitude, 5);
-
+  
   // parachute deployment tasks
   // parachute detection? e.g. estimating speed & checking it's below a certain value? looking for an upward acceleration after apogee?
   // light sensor check (poll the sensor every x seconds to check ambient light levels. If new value much greater than old on all 4 sensors,
@@ -290,4 +290,12 @@ void loop() {
   // quaternion conversion from gyro Euler output
   // kalman filter likely wont work for attitude det after all - too non-linear. some other filtering necessary
   // try coarse sun sensing to determine relative pose of sun
+}
+
+
+void waitForLaunch(){
+  /* stay in wait mode until we exceed a pre-defined upwards acceleration */
+  while(IMU.accel.readZ() < ACC_LIFTOFF_THRESHOLD){
+    // TODO: fill with some 'wait' routine like measuring conditions for e.g.
+  }
 }
