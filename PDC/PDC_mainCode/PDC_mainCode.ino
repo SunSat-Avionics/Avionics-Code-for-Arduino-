@@ -92,7 +92,14 @@ const uint8_t lpaErr = (1 << 5);  /* linear photodiode array issue, set bit 5 */
 //const uint8_t TODO = (1 << 6);
 //const uint8_t TODO = (1 << 7);
 
-bool apogee = 0;  /* flag that we can set when we think apogee has been reached */
+
+const uint8_t WAIT_FOR_LAUNCH = 0;
+const uint8_t LAUNCH = 1;
+const uint8_t APOGEE = 2;
+const uint8_t DESCENT = 3;
+const uint8_t LANDING = 4;
+uint8_t subRoutine = WAIT_FOR_LAUNCH; /* 0=waitForLaunch; 1=launch; 2=apogee; 3=descent; 4=landing (TO BE REVIEWED) */
+bool apogee = 0;        /* flag that we can set when we think apogee has been reached */
 
 /* -------------------- SETUP -------------------- */
 void setup() {
@@ -247,12 +254,28 @@ void loop() {
   // TODO: split into subroutines: wait, launch, (ejection?), descent, landing
   // TODO: is it sensible to use the 'loop' as a single execution? instead of waiting in wait for launch, could we have some codes (wait=0, launch=1, apogee=2, ...) and 
     // use these (if(code==1)then(launchRoutine))?
-  waitForLaunch();
+  
+  if(subRoutine==WAIT_FOR_LAUNCH){
+    waitForLaunch();
 
-  // filler code to keep us entertained during testing
-  float altitude = altimeter.readAltitude();
-  Serial.print("alt: ");
-  Serial.println(altitude, 5);
+    // filler code to keep us entertained during testing
+    float altitude = altimeter.readAltitude();
+    Serial.print("alt: ");
+    Serial.println(altitude, 5);
+    
+  }
+  else if(subRoutine==LAUNCH){
+    // TODO
+  }
+  else if(subRoutine==APOGEE){
+    // TODO
+  }
+  else if(subRoutine==DESCENT){
+    // TODO
+  }
+  else if(subRoutine==LANDING){
+    // TODO
+  }
   
   // parachute deployment tasks
   // parachute detection? e.g. estimating speed & checking it's below a certain value? looking for an upward acceleration after apogee?
@@ -295,7 +318,9 @@ void loop() {
 
 void waitForLaunch(){
   /* stay in wait mode until we exceed a pre-defined upwards acceleration */
-  while(IMU.accel.readZ() < ACC_LIFTOFF_THRESHOLD){
+  
+  if(IMU.accel.readZ() > ACC_LIFTOFF_THRESHOLD){
+    subRoutine = LAUNCH;
     // TODO: fill with some 'wait' routine like measuring conditions for e.g.
   }
 }
