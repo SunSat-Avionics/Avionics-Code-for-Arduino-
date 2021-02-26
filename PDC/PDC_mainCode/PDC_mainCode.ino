@@ -92,14 +92,13 @@ const uint8_t lpaErr = (1 << 5);  /* linear photodiode array issue, set bit 5 */
 //const uint8_t TODO = (1 << 6);
 //const uint8_t TODO = (1 << 7);
 
-
+/* ---------- SUBROUTINE CONTROL ---------- */
 const uint8_t WAIT_FOR_LAUNCH = 0;
 const uint8_t LAUNCH = 1;
 const uint8_t APOGEE = 2;
 const uint8_t DESCENT = 3;
 const uint8_t LANDING = 4;
 uint8_t subRoutine = WAIT_FOR_LAUNCH; /* 0=waitForLaunch; 1=launch; 2=apogee; 3=descent; 4=landing (TO BE REVIEWED) */
-bool apogee = 0;        /* flag that we can set when we think apogee has been reached */
 
 /* -------------------- SETUP -------------------- */
 void setup() {
@@ -250,11 +249,6 @@ void setup() {
 
 /* -------------------- LOOP -------------------- */
 void loop() {
-  
-  // TODO: split into subroutines: wait, launch, (ejection?), descent, landing
-  // TODO: is it sensible to use the 'loop' as a single execution? instead of waiting in wait for launch, could we have some codes (wait=0, launch=1, apogee=2, ...) and 
-    // use these (if(code==1)then(launchRoutine))?
-  
   if(subRoutine==WAIT_FOR_LAUNCH){
     waitForLaunch();
 
@@ -265,31 +259,37 @@ void loop() {
     
   }
   else if(subRoutine==LAUNCH){
-    // TODO
+    launch();
   }
   else if(subRoutine==APOGEE){
-    // TODO
+    apogee();
   }
   else if(subRoutine==DESCENT){
-    // TODO
+    descent();
   }
   else if(subRoutine==LANDING){
-    // TODO
+    landing();
   }
-  
-  // parachute deployment tasks
-  // parachute detection? e.g. estimating speed & checking it's below a certain value? looking for an upward acceleration after apogee?
-  // light sensor check (poll the sensor every x seconds to check ambient light levels. If new value much greater than old on all 4 sensors,
-  // register apogee)
+}
 
-  /* tasks to perform before we have detected apogee */
-  if (!apogee) {
+
+void waitForLaunch(){
+  /* stay in wait mode until we exceed a pre-defined upwards acceleration */
+  if(IMU.accel.readZ() > ACC_LIFTOFF_THRESHOLD){
+    subRoutine = LAUNCH;
+    // TODO: fill with some 'wait' routine like measuring conditions for e.g.
+  }
+}
+
+void launch(){
     // while(current time step - previous timestep < kalman time), do nothing (or something like check light sensor))
     // could also do lots of prediction steps before one update step?
+    
     /* use the underlying dynamical model to predict the current state of the system */
     kalmanPredict();
     /* update the prediction by taking measurements */
     kalmanUpdate();
+    
     // write measurements and states to micro-SD
 
     /* get the velocity from our state vector */
@@ -297,30 +297,27 @@ void loop() {
     /* once the velocity is negative, we have crossed the point of zero-velocity in the z-direction and so apogee is reached  */
     // TODO maybe change the 0 to some threshold so that we start taking more frequent data below 10m/s for example
     if (velocity < 0) {
-      /* flag that apogee has been detected, and allow us to move on */
-      apogee = 1;
-      // write a note with data to inform apogee
+      subRoutine = APOGEE;
     }
-  }
-
-  // TODO: write state vector to file
-
-
-  // write any other data (e.g. raw readings, notes) to SD card (line format with timestamped measurements)
-
-
-  // attitude determination tasks in a second subroutine
-  // quaternion conversion from gyro Euler output
-  // kalman filter likely wont work for attitude det after all - too non-linear. some other filtering necessary
-  // try coarse sun sensing to determine relative pose of sun
 }
 
+void apogee(){
+  // see if we can detect parachute deploy? 
+  // continue checking light sensor incase launch phase predicted apogee too early
+    // parachute deployment tasks
+  // parachute detection? e.g. estimating speed & checking it's below a certain value? looking for an upward acceleration after apogee?
+  // light sensor check (poll the sensor every x seconds to check ambient light levels. If new value much greater than old on all 4 sensors,
+  // register apogee)
+}
 
-void waitForLaunch(){
-  /* stay in wait mode until we exceed a pre-defined upwards acceleration */
-  
-  if(IMU.accel.readZ() > ACC_LIFTOFF_THRESHOLD){
-    subRoutine = LAUNCH;
-    // TODO: fill with some 'wait' routine like measuring conditions for e.g.
-  }
+void descent(){
+  // attitude determination tasks in a second subroutine
+  // quaternion conversion from gyro Euler output
+  // consider distance of gyro from CoM and if this needs compensating for
+  // kalman filter likely wont work for attitude det after all - too non-linear. some other filtering necessary
+  // is it possible to use kalman filter again for altitude and speed estimation during descent? potentially much less linear process on descent
+}
+
+void landing(){
+  // final logs, control LEDs if necessary??
 }
