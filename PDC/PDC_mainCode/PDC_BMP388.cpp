@@ -1,11 +1,7 @@
 // Methods TODO:
-// read values (e.g. a 'readAltitude' method that auto accounts for mach, temp, etc)
 // decide on appropriate units for pressure (bar/pa/kpa...)
-// internal SPI setup/enable?
 // consider (research) IIR filter
-// measure offset
-// measure noise (for kalman)
-// a 'read all' method?
+// measure altitude noise (for kalman)
 // compensate for supersonic 
 
 /* for example usage, see PDC_BMP388.h */

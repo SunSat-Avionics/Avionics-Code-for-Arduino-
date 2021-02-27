@@ -51,9 +51,7 @@
 
  *******************************************************************/
 
-//TODO maybe add a method which measures *all* values in one go for some reason
-
-/* for detailed function information, see PDC_LSM6DSO32.h */
+/* for detailed function information, see PDC_LSM6DSO32.cpp */
 
 #include <Arduino.h>  /* bring some arduino syntax into the cpp files */
 #include "PDC_SPI.h"  /* grab our SPI functions */

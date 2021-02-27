@@ -1,5 +1,5 @@
 // Methods TODO:
-// read values (temp?)
+// read temp?
 // measure offset
 // a 'read all' method? what if we want to read x, y, z all at once?
 

@@ -249,6 +249,9 @@ void setup() {
 
 /* -------------------- LOOP -------------------- */
 void loop() {
+  // TODO: maybe disable interrupts (i2c requests) until the bottom of this loop so that we can collect all data at this timestep
+    // before servicing the I2C request
+  
   if(subRoutine==WAIT_FOR_LAUNCH){
     waitForLaunch();
 

@@ -39,15 +39,12 @@
    --- RESTART ALTIMETER ---
    altimeter.restart();
 
-   --- CONFIGURE ALTIMETER TO UPDATE AT AND SET MEASUREMENT RESOLUTIONS ---
+   --- CONFIGURE ALTIMETER UPDATE FREQUENCY AND SET MEASUREMENT RESOLUTIONS ---
    altimeter.init(ALT_ODR_200, ALT_OSR_PRESS_HIGH, ALT_OSR_TEMP_ULTRALOW);
     // note that this .h file includes aliases for each possible update rate
     
-   --- READ Z AXIS ACCELERATION ---
-   float accelZ = IMU.accel.readZ();
-
-   --- READ Y AXIS ANGULAR RATE ---
-   float rateY = IMU.gyro.readY();
+   --- READ ALTITUDE ---
+   float altitude = altimeter.readAltitude();
 
  *******************************************************************/
 

@@ -60,7 +60,7 @@ bool PDC_254::openFile() {
    @retval 0 in case of success, 1 otherwise
  *****************************************************/
 /* data format:
-    Date, Time, acc_x, acc_y, acc_z, Note"
+    Time, phase of flight, acc_x (measured), acc_y (measured), acc_z (measured), temp, pressure, altitude (altimeter), light sensor 1, 2, 3, 4, acc_z (estimate), vel_z (estimate), altitude (estimate), Note"
 */
 // TODO: populate this more fully - what are the raw measurements from BMP, GYRO, light sensors, etc? Make a .txt with headers and units
 // TODO: name value pairs? leaves us better equipped for changing headers and incomplete data
