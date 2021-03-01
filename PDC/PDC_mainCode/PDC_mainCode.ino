@@ -19,7 +19,7 @@
 #include "PDC_LSM6DSO32.h"      /* include our IMU class */
 #include "PDC_BMP388.h"         /* include our altimeter class */
 #include "PDC_254.h"            /* include our micro-SD class */
-#include "PDC_TSL1401CCS.h"     /* include our LPA class */
+//#include "PDC_TSL1401CCS.h"     /* include our LPA class */
 #include <BasicLinearAlgebra.h> /* for Matrix operations
                                      if this line throws an error, you probably don't have the Matrix Library locally.
                                      see: https://github.com/tomstewart89/BasicLinearAlgebra or search 'basic linear algebra' in the IDE library manager 
@@ -49,7 +49,7 @@ const uint8_t RTCaddress = 0x50;  /* to communicate with an I2C device, we have 
 const uint8_t LPA_SI = 5;         /* the serial input pin that is used to trigger a new output from the LPAs */
 const uint8_t LPA_CLK = OC1A_PIN; /* DO NOT CHANGE!! the pin that will provide clock signal to the LPAs */
 const uint8_t LPA_AO = 19;        /* the analog output pin that the LPAs will send their values to */
-PDC_TSL1401CCS_GROUP LPA_group(LPA_SI, LPA_CLK, LPA_AO); /* create a class object for the group of LPAs. definitions in PDC_TSL1401CCS.h & .cpp */
+//PDC_TSL1401CCS_GROUP LPA_group(LPA_SI, LPA_CLK, LPA_AO); /* create a class object for the group of LPAs. definitions in PDC_TSL1401CCS.h & .cpp */
 
 /* ---------- KALMAN FILTER CONFIG ---------- */
 /*
@@ -132,13 +132,13 @@ void setup() {
   pinMode(microSD_CD, INPUT);       /* set the card detect pin to be an input that we can measure to check for a card */
 
   // TODO: consider replacing the LPA with a simpler single sensor w/ intensity. LPA too small & complex really.
-  pinMode(LPA_AO, INPUT);                         /* set the pin connected to LPA AO as an input - this is where we read the LPA values */
-  pinMode(LPA_SI, OUTPUT);                        /* set the pin connected to the LPA SI as an output - this is how we trigger a new LPA reading */
-  errFlag = LPA_group.startClockOC1A(OC1A_500KHZ);  /* get the PDC to start a clock signal on its OC1A pin for the LPA group */
-  if (errFlag) {
-    errCode |= lpaErr;  /* if the clock signal wasn't started, LPA error */
-    errFlag = 0;        /* clear flag */
-  }
+  //pinMode(LPA_AO, INPUT);                         /* set the pin connected to LPA AO as an input - this is where we read the LPA values */
+  //pinMode(LPA_SI, OUTPUT);                        /* set the pin connected to the LPA SI as an output - this is how we trigger a new LPA reading */
+  //errFlag = LPA_group.startClockOC1A(OC1A_500KHZ);  /* get the PDC to start a clock signal on its OC1A pin for the LPA group */
+  //if (errFlag) {
+  //  errCode |= lpaErr;  /* if the clock signal wasn't started, LPA error */
+  //  errFlag = 0;        /* clear flag */
+  //}
 
   /* ---------- I2C Setup ---------- */
   Wire.begin(); /* initialise CPU to use I2C */
@@ -148,7 +148,7 @@ void setup() {
   if (!IMU.isAlive()) {
     errCode |= imuErr;  /* if not alive, flag the IMU error bit in our code */
   }
-
+  
   /* our BMP388 class has an 'isAlive()' method, which reads the 'CHIP_ID' register to check our connection. returns true if connected & working! */
   if (!altimeter.isAlive()) {
     errCode |= altErr;
@@ -222,7 +222,18 @@ void setup() {
       +  0.02Hz                         |                                  |
       +  0.01Hz                         |                                  |
    ************************************************************************************************************/
-  altimeter.init(ALT_ODR_200, ALT_OSR_PRESS_HIGH, ALT_OSR_TEMP_ULTRALOW); /* set the altimeter output data rate and resolutions */
+
+   /************************************************************************************************************
+                                            ALTIMETER CONFIG VALUES
+      (aliases for each value are defined in PDC_BMP.h)
+      ---------------------------------------------------------------------------------------------------------
+      + MODE 1: Low Power (pressure resolution = 1.32Pa, temperature resolution = 0.005C, update frequency = 100Hz)
+      + MODE 2:
+      + MODE 3:
+      + MODE 4:
+      + MODE 5: Ultra High Resolution (pressure resolution = 0.17Pa, temperature resolution = 0.0025C, update frequency = 25Hz)
+  */   
+  altimeter.init(ALT_MEASUREMENT_MODE_5); /* set the altimeter output data rate and resolutions */
   
   /* ---------- KALMAN FILTER SETUP ---------- */
   initKalman(); /* setup kalman filter for apogee detection (see PDC_kalman.ino) */

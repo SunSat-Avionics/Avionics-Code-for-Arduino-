@@ -3,6 +3,7 @@
 // consider (research) IIR filter
 // measure altitude noise (for kalman)
 // compensate for supersonic 
+// change from separate press/temp and burst through all data registers instead 
 
 /* for example usage, see PDC_BMP388.h */
 
@@ -16,13 +17,14 @@ bool PDC_BMP388::isAlive() {
   bool isAlive = 0;       /* signify result - 1 is success */
   uint8_t CHIP_ID[1];     /* internal variable to hold the output */
 
-  readSPI(slaveSelect, CHIP_ID_REG, 1, CHIP_ID);  /* read the 'CHIP_ID' register on the altimeter */
-
+  /* read the 'CHIP_ID' register on the altimeter, accounting for the fact the BMP388 returns a dummy byte before useful data */
+  readSPIwithDummy(slaveSelect, CHIP_ID_REG, 1, CHIP_ID);  
+  
   /* check that it's what we expect */
   if (CHIP_ID[0] == CHIP_ID_VAL) {
     isAlive = 1;  /* if it is, set our success code to true */
   }
-  
+
   return (isAlive);
 }
 
@@ -58,12 +60,18 @@ void PDC_BMP388::addressSet(uint8_t data_0_add, uint8_t ODR_add, uint8_t OSR_add
 
 /*********************************************************
    @brief  Initialise the component
-   @param  code for output update frequency
-   @param  code for the pressure resolution (oversampling)
-   @param  code for the temperature resolution (oversampling)
+   @param  32 bits describing the ODR and OSR configs
+            (aliases in PDC_BMP388.h)
  *********************************************************/
-void PDC_BMP388::init(uint8_t frequency, uint8_t pressResolution, uint8_t tempResolution) {
+void PDC_BMP388::init(uint32_t configurationSettings) {
   uint8_t data = 0;
+
+  uint8_t frequency = (configurationSettings >> 16) & 255; /* mask the input to get the frequency */
+
+  /* mask the input to get sensor resolutions */
+  uint8_t pressResolution = (configurationSettings >> 8) & 255;
+  uint8_t tempResolution = configurationSettings & 255;
+
   data |= frequency;  /* set bits [4:0] to configure output frequency */
 
   /* set the internally stored output frequency */
@@ -84,12 +92,12 @@ void PDC_BMP388::init(uint8_t frequency, uint8_t pressResolution, uint8_t tempRe
     case (13): outputFrequency = 0.01;  break;
     default:  outputFrequency = 0;      break;
   }
-
+  
   writeSPI(slaveSelect, ODR_REG, data);  /* write the data to the ODR register */
 
   data = 0;
   data = (tempResolution << 3) | pressResolution; /* set bits [5:3] for temperature and [2:0] for pressure */
-  
+
   /* set the internally stored pressure oversampling */
   switch (pressResolution) {
     case (0):  pressureOversampling = 1;  break;
@@ -111,10 +119,15 @@ void PDC_BMP388::init(uint8_t frequency, uint8_t pressResolution, uint8_t tempRe
     case (5):  temperatureOversampling = 32; break;
     default:   temperatureOversampling = 0;  break;
   }
-  
+
   writeSPI(slaveSelect, OSR_REG, data);  /* write the data to the OSR register */
 
   getCompensationParams();  /* get the internal device specific temperature and pressure compensation parameters */
+  /*for(uint8_t i=0; i<3; i++){
+    Serial.println("T, P: ");
+    Serial.println(temperatureCompensationArray[i], 20);
+    Serial.println(pressureCompensationArray[i], 20);
+  }*/
 }
 
 /*********************************************************
@@ -165,88 +178,88 @@ void PDC_BMP388::getCompensationParams() {
 
   // TODO: define aliases for the powers for each of these? or number of bytes for each of these?
   /* get the device specific temperature compensation parameters */
-  readSPI(slaveSelect, NVM_PAR_T1_REG_1, 2, rawValue);
-  uint16_t PAR_T1 = (rawValue[1] << 8) | rawValue[0];
+  readSPIwithDummy(slaveSelect, NVM_PAR_T1_REG_1, 2, rawValue);
+  uint16_t PAR_T1 = uint16_t((rawValue[1] << 8) | rawValue[0]);
   temperatureCompensationArray[0] = float(PAR_T1) / pow(2, -8);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
-  readSPI(slaveSelect, NVM_PAR_T2_REG_1, 2, rawValue);
-  uint16_t PAR_T2 = (rawValue[1] << 8) | rawValue[0];
+  readSPIwithDummy(slaveSelect, NVM_PAR_T2_REG_1, 2, rawValue);
+  uint16_t PAR_T2 = uint16_t((rawValue[1] << 8) | rawValue[0]);
   temperatureCompensationArray[1] = float(PAR_T2) / pow(2, 30);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
-  readSPI(slaveSelect, NVM_PAR_T3_REG_1, 1, rawValue);
-  int8_t PAR_T3 = rawValue[0];
+  readSPIwithDummy(slaveSelect, NVM_PAR_T3_REG_1, 1, rawValue);
+  int8_t PAR_T3 = int8_t(rawValue[0]);
   temperatureCompensationArray[2] = float(PAR_T3) / pow(2, 48);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
 
   /* get the device specific pressure compensation parameters */
-  readSPI(slaveSelect, NVM_PAR_P1_REG_1, 2, rawValue);
-  int16_t PAR_P1 = (rawValue[1] << 8) | rawValue[0];
+  readSPIwithDummy(slaveSelect, NVM_PAR_P1_REG_1, 2, rawValue);
+  int16_t PAR_P1 = int16_t((rawValue[1] << 8) | rawValue[0]);
   pressureCompensationArray[0] = (float(PAR_P1) - pow(2, 14)) / pow(2, 20);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
-  readSPI(slaveSelect, NVM_PAR_P2_REG_1, 2, rawValue);
-  int16_t PAR_P2 = (rawValue[1] << 8) | rawValue[0];
+  readSPIwithDummy(slaveSelect, NVM_PAR_P2_REG_1, 2, rawValue);
+  int16_t PAR_P2 = int16_t((rawValue[1] << 8) | rawValue[0]);
   pressureCompensationArray[1] = (float(PAR_P2) - pow(2, 14)) / pow(2, 29);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
-  readSPI(slaveSelect, NVM_PAR_P3_REG_1, 1, rawValue);
-  int8_t PAR_P3 = rawValue[0];
+  readSPIwithDummy(slaveSelect, NVM_PAR_P3_REG_1, 1, rawValue);
+  int8_t PAR_P3 = int8_t(rawValue[0]);
   pressureCompensationArray[2] = float(PAR_P3) / pow(2, 32);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
-  readSPI(slaveSelect, NVM_PAR_P4_REG_1, 1, rawValue);
-  int8_t PAR_P4 = rawValue[0];
+  readSPIwithDummy(slaveSelect, NVM_PAR_P4_REG_1, 1, rawValue);
+  int8_t PAR_P4 = int8_t(rawValue[0]);
   pressureCompensationArray[3] = float(PAR_P4) / pow(2, 37);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
-  readSPI(slaveSelect, NVM_PAR_P5_REG_1, 2, rawValue);
-  uint16_t PAR_P5 = (rawValue[1] << 8) | rawValue[0];
+  readSPIwithDummy(slaveSelect, NVM_PAR_P5_REG_1, 2, rawValue);
+  uint16_t PAR_P5 = uint16_t((rawValue[1] << 8) | rawValue[0]);
   pressureCompensationArray[4] = float(PAR_P5) / pow(2, -3);
   rawValue[0] = 0;
   rawValue[1] = 0;
   
-  readSPI(slaveSelect, NVM_PAR_P6_REG_1, 2, rawValue);
-  uint16_t PAR_P6 = (rawValue[1] << 8) | rawValue[0];
+  readSPIwithDummy(slaveSelect, NVM_PAR_P6_REG_1, 2, rawValue);
+  uint16_t PAR_P6 = uint16_t((rawValue[1] << 8) | rawValue[0]);
   pressureCompensationArray[5] = float(PAR_P6) / pow(2, 6);
   rawValue[0] = 0;
   rawValue[1] = 0;
   
-  readSPI(slaveSelect, NVM_PAR_P7_REG_1, 1, rawValue);
-  int8_t PAR_P7 = rawValue[0];
+  readSPIwithDummy(slaveSelect, NVM_PAR_P7_REG_1, 1, rawValue);
+  int8_t PAR_P7 = int8_t(rawValue[0]);
   pressureCompensationArray[6] = float(PAR_P7) / pow(2, 8);
   rawValue[0] = 0;
   rawValue[1] = 0;
   
-  readSPI(slaveSelect, NVM_PAR_P8_REG_1, 1, rawValue);
-  int8_t PAR_P8 = rawValue[0];
+  readSPIwithDummy(slaveSelect, NVM_PAR_P8_REG_1, 1, rawValue);
+  int8_t PAR_P8 = int8_t(rawValue[0]);
   pressureCompensationArray[7] = float(PAR_P8) / pow(2, 15);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
-  readSPI(slaveSelect, NVM_PAR_P9_REG_1, 2, rawValue);
-  int16_t PAR_P9 = (rawValue[1] << 8) | rawValue[0];
+  readSPIwithDummy(slaveSelect, NVM_PAR_P9_REG_1, 2, rawValue);
+  int16_t PAR_P9 = int16_t((rawValue[1] << 8) | rawValue[0]);
   pressureCompensationArray[8] = float(PAR_P9) / pow(2, 48);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
-  readSPI(slaveSelect, NVM_PAR_P10_REG_1, 1, rawValue);
-  int8_t PAR_P10 = rawValue[0];
+  readSPIwithDummy(slaveSelect, NVM_PAR_P10_REG_1, 1, rawValue);
+  int8_t PAR_P10 = int8_t(rawValue[0]);
   pressureCompensationArray[9] = float(PAR_P10) / pow(2, 48);
   rawValue[0] = 0;
   rawValue[1] = 0;
 
-  readSPI(slaveSelect, NVM_PAR_P11_REG_1, 1, rawValue);
-  int8_t PAR_P11 = rawValue[0];
+  readSPIwithDummy(slaveSelect, NVM_PAR_P11_REG_1, 1, rawValue);
+  int8_t PAR_P11 = int8_t(rawValue[0]);
   pressureCompensationArray[10] = float(PAR_P11) / pow(2, 65);
   rawValue[0] = 0;
   rawValue[1] = 0;
@@ -284,10 +297,11 @@ void PDC_BMP388::getCompensationParams() {
 uint32_t PDC_BMP388::readValue(uint8_t data_address0) {
   /* the altimeter has three consecutive data registers for both the temp and pressure.
       the first address is used to varying degrees based on the chosen resolution (oversampling) */
-  uint8_t rawValue[3];        /* we will read three bytes from the device into here */
-  int32_t rawValueConcat = 0; /* we will concatenate the three bytes into a single value here. actually 24 bit but no such type! */
-  readSPI(slaveSelect, data_address0, 3, rawValue); /* read three bytes from the device. BMP388 auto-increments address on SPI read */
+  uint8_t rawValue[3];         /* we will read three bytes from the device into here */
+  uint32_t rawValueConcat = 0; /* we will concatenate the three bytes into a single value here. actually 24 bit but no such type! */
+  readSPIwithDummy(slaveSelect, data_address0, 3, rawValue);                /* read three bytes from the device. BMP388 auto-increments address on SPI read */
   rawValueConcat = (rawValue[2] << 16) | (rawValue[1] << 8) | rawValue[0];  /* concatenate the three bytes into a single val by shifting the array values up */
+  Serial.println(rawValueConcat);
   return (rawValueConcat);
 }
 
@@ -304,7 +318,7 @@ float PDC_BMP388::readPress(){
   float interim3 = 0;
   
   compensatedTemperature = readTemp();  /* get the compensated temperature reading */
-
+  
   /* pass the first pressure data address (data_0) to read the 3 consecutive pressure addresses */
   uncompensatedPressure = readValue(pressureAddress_0); 
 
@@ -337,7 +351,6 @@ float PDC_BMP388::readTemp(){
   float compensatedTemperature = 0;       /* the temperature as compensated for with parameters */
   float interim1 = 0;                     /* interim registers to store data */
   float interim2 = 0;
-  
   /* pass the first temperature data address (data_0) to read the 3 consecutive temperature addresses */
   uncompensatedTemperature = readValue(temperatureAddress_0); 
 
@@ -347,7 +360,7 @@ float PDC_BMP388::readTemp(){
   interim2 = interim1 * temperatureCompensationArray[1];
   /* [(uncomp - PAR_T1) * PAR_T2] + (uncomp - PAR_T1)^2 * PAR_T3 */
   compensatedTemperature = interim2 + (interim1 * interim1) * temperatureCompensationArray[2];
-
+  Serial.println(compensatedTemperature);
   return(compensatedTemperature);
 }
 

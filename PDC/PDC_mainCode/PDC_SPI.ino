@@ -65,7 +65,7 @@ void readSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t numBytes, uin
 
   /* ---------- READ FROM REGISTER(S) ---------- */
   SPI.transfer(registerSelect);     /* send the register address (with read bit) so device knows what to send us next */
-  
+
   for (uint8_t i = 0; i < numBytes; i++) {
     result[i] = SPI.transfer(0x00); /* send nothing. this is us 'listening' to the bus for the values that we have requested */
     
@@ -82,13 +82,35 @@ void readSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t numBytes, uin
 }
 
 /**************************************************************************
+   @brief  Read register from device over SPI and account for a dummy return
+            (i.e. as is the case with BMP388 altimeter)
+   @param  the pin on the PDC that connects to the device slave select pin
+   @param  the address of the register to read
+   @param  the number of bytes that we want to read in this transaction 
+            (useful bytes, not including dummy)
+   @param  pointer to an array that we store the result in 
+            (size of array is number of useful bytes)
+ **************************************************************************/
+void readSPIwithDummy(uint8_t deviceSelect, uint8_t registerSelect, uint8_t numBytes, uint8_t *result){
+  uint8_t numBytesWithDummy = numBytes + 1; /* the dummy means we need to read an additional byte */
+  uint8_t dummyBuffer[numBytesWithDummy];   /* this buffer will store our dummy byte and actual data */
+
+  /* read the data into the widened buffer */
+  readSPI(deviceSelect, registerSelect, numBytesWithDummy, dummyBuffer);
+  
+  /* transfer the requested data into the supplied buffer */
+  for(uint8_t i = 0; i < numBytes; i++){
+    result[i] = dummyBuffer[i + 1];
+  }
+}
+
+/**************************************************************************
    @brief  Write data to a register on device over SPI
    @param  the pin on the PDC that connects to the device slave select pin
    @param  the address of the register to write to
    @param  the data that we want to write to the address
  **************************************************************************/
 void writeSPI(uint8_t deviceSelect, uint8_t registerSelect, uint8_t data) {
-
   /* ---------- SETUP ---------- */
   /* format address r/w bit (MSB). read = 1, write = 0 */
   registerSelect = registerSelect | (0 << 7);

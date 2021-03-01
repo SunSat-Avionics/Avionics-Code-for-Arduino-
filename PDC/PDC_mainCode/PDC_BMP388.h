@@ -144,6 +144,14 @@ const uint8_t ALT_OSR_TEMP_HIGH      = 3;
 const uint8_t ALT_OSR_TEMP_ULTRAHIGH = 4; 
 const uint8_t ALT_OSR_TEMP_HIGHEST   = 5;
 
+/* PREDEFINED MEASUREMENT MODES TO FIT DEVICE CONSTRAINTS */
+/* shift each setting into a distinct byte which can be unpackaged later */
+const uint32_t ALT_MEASUREMENT_MODE_1 = (uint32_t(ALT_ODR_100) << 16) | (uint32_t(ALT_OSR_PRESS_LOW) << 8) | uint32_t(ALT_OSR_TEMP_ULTRALOW);
+const uint32_t ALT_MEASUREMENT_MODE_2 = 1;
+const uint32_t ALT_MEASUREMENT_MODE_3 = 1;
+const uint32_t ALT_MEASUREMENT_MODE_4 = 1;
+const uint32_t ALT_MEASUREMENT_MODE_5 = (uint32_t(ALT_ODR_25) << 16) | (uint32_t(ALT_OSR_PRESS_ULTRAHIGH) << 8) | uint32_t(ALT_OSR_TEMP_LOW);
+
 /**************************************************************************
     a class for the BMP388 altimeter
  **************************************************************************/
@@ -180,7 +188,7 @@ class PDC_BMP388 {
     /* ---------- METHODS --------- */
     bool isAlive();               /* check if connected and responsive */
     void restart();               /* soft reset the device and enable temp/press measurement */
-    void init(uint8_t f, uint8_t r_p, uint8_t r_t); /* configure the device over SPI - set the output frequency and resolution */
+    void init(uint32_t input); /* configure the device over SPI - set the output frequency and resolution */
     float readPress();            /* read the raw pressure measurement and convert to 'actual' value [degC] */
     float readTemp();             /* read the raw temperature measurement and convert to 'actual' value [Pa] */
     float readAltitude();         /* use the compensated pressure to calculate absolute altitude [m] */

@@ -2,6 +2,7 @@
 // read temp?
 // measure offset
 // a 'read all' method? what if we want to read x, y, z all at once?
+// add a timeout (and auto-set) for the std dev measurement
 
 /* for example usage, see PDC_LSM6DSO32.h */
 
@@ -268,6 +269,8 @@ float IMUChild::measureNoiseZ() {
 
   float threshold = 0.3/GRAVITY_MAGNITUDE;  /* reject rubbish values that exceed a threshold of reasonable expectation */
 
+  uint32_t startTime = millis();
+  
   /* for the specified number of readings, measure the acceleration */
   for (uint8_t i = 1; i < numReadings; i++) {
     // TODO: consider replacing with a non-blocking function?
@@ -285,6 +288,9 @@ float IMUChild::measureNoiseZ() {
       mean = mean + (accZ - mean) / i;
       sum = sum + (accZ - mean) * (accZ - prev_mean);
       prev_mean = mean;
+    }
+    if((millis() - startTime) > 10000){
+      break; 
     }
   }
 
