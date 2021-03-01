@@ -1,9 +1,10 @@
 // Methods TODO:
-// decide on appropriate units for pressure (bar/pa/kpa...)
 // consider (research) IIR filter
 // measure altitude noise (for kalman)
 // compensate for supersonic 
 // change from separate press/temp and burst through all data registers instead 
+// instead of sea level comparison, get a pressure right at the start and compare??
+// verify that temperature/pressure/altitude is correct
 
 /* for example usage, see PDC_BMP388.h */
 
@@ -48,14 +49,10 @@ void PDC_BMP388::restart() {
 /*********************************************************
    @brief  Internally take note of important registers
    @param  the address of the first data register
-   @param  the address of the ODR register
-   @param  the address of the OSR register
  *********************************************************/
-void PDC_BMP388::addressSet(uint8_t data_0_add, uint8_t ODR_add, uint8_t OSR_add) {
+void PDC_BMP388::addressSet(uint8_t data_0_add) {
   pressureAddress_0 = data_0_add;         /* set pressure address 0 attribute as specified */
   temperatureAddress_0 = data_0_add + 3;  /* the temperature address 0 is then past the three consecutive pressure addresses */
-  ODR_address = ODR_add;                  /* and then the address to configure the ODR */
-  OSR_address = OSR_add;                  /* and then the address to configure the OSR */
 }
 
 /*********************************************************
@@ -64,17 +61,12 @@ void PDC_BMP388::addressSet(uint8_t data_0_add, uint8_t ODR_add, uint8_t OSR_add
             (aliases in PDC_BMP388.h)
  *********************************************************/
 void PDC_BMP388::init(uint32_t configurationSettings) {
-  uint8_t data = 0;
+  uint8_t data = 0; /* temp variable for the data to write to the registers */
 
-  uint8_t frequency = (configurationSettings >> 16) & 255; /* mask the input to get the frequency */
+  uint8_t frequency = (configurationSettings >> 16) & 255; /* mask the input to get the selected frequency */
+  data |= frequency;  /* set bits [4:0] to configure output frequency as per datasheet */
 
-  /* mask the input to get sensor resolutions */
-  uint8_t pressResolution = (configurationSettings >> 8) & 255;
-  uint8_t tempResolution = configurationSettings & 255;
-
-  data |= frequency;  /* set bits [4:0] to configure output frequency */
-
-  /* set the internally stored output frequency */
+  /* set the internally stored output frequency in case we need to check it later */
   switch (frequency) {
     case (0):  outputFrequency = 200;   break;
     case (1):  outputFrequency = 100;   break;
@@ -95,10 +87,14 @@ void PDC_BMP388::init(uint32_t configurationSettings) {
   
   writeSPI(slaveSelect, ODR_REG, data);  /* write the data to the ODR register */
 
-  data = 0;
-  data = (tempResolution << 3) | pressResolution; /* set bits [5:3] for temperature and [2:0] for pressure */
+  data = 0; /* reset ready for new data */
 
-  /* set the internally stored pressure oversampling */
+  /* mask the input to get sensor resolutions */
+  uint8_t pressResolution = (configurationSettings >> 8) & 255;
+  uint8_t tempResolution = configurationSettings & 255;
+  data = (tempResolution << 3) | pressResolution; /* set bits [5:3] for temperature and [2:0] for pressure as per datasheet */
+
+  /* set the internally stored pressure oversampling incase we need to check it later */
   switch (pressResolution) {
     case (0):  pressureOversampling = 1;  break;
     case (1):  pressureOversampling = 2;  break;
@@ -109,7 +105,7 @@ void PDC_BMP388::init(uint32_t configurationSettings) {
     default:   pressureOversampling = 0;  break;
   }
 
-  /* set the internally stored temperature oversampling */
+  /* set the internally stored temperature oversampling in case we need to check it later */
   switch (tempResolution) {
     case (0):  temperatureOversampling = 1;  break;
     case (1):  temperatureOversampling = 2;  break;
@@ -123,65 +119,27 @@ void PDC_BMP388::init(uint32_t configurationSettings) {
   writeSPI(slaveSelect, OSR_REG, data);  /* write the data to the OSR register */
 
   getCompensationParams();  /* get the internal device specific temperature and pressure compensation parameters */
-  /*for(uint8_t i=0; i<3; i++){
-    Serial.println("T, P: ");
-    Serial.println(temperatureCompensationArray[i], 20);
-    Serial.println(pressureCompensationArray[i], 20);
-  }*/
 }
 
 /*********************************************************
    @brief  get the device specific compensation parameters
  *********************************************************/
 void PDC_BMP388::getCompensationParams() {
-  /* arrays to store the various parameters
-  uint8_t NVM_PAR_T1[2];
-  uint8_t NVM_PAR_T2[2];
-  uint8_t NVM_PAR_T3[1];
-
-  uint8_t NVM_PAR_P1[2];
-  uint8_t NVM_PAR_P2[2];
-  uint8_t NVM_PAR_P3[1];
-  uint8_t NVM_PAR_P4[1];
-  uint8_t NVM_PAR_P5[2];
-  uint8_t NVM_PAR_P6[2];
-  uint8_t NVM_PAR_P7[1];
-  uint8_t NVM_PAR_P8[1];
-  uint8_t NVM_PAR_P9[2];
-  uint8_t NVM_PAR_P10[1];
-  uint8_t NVM_PAR_P11[1];
-  */
-
-  /*
-  uint8_t tempParamLengths[3] = {2, 2, 1};
-  uint8_t tempParamSigns[3] = {0, 0, 1}; 
-  int8_t tempParamScalingIndex[3] = {-8, 30, 48};
-  */
-
-
-  /*
-  uint8_t pressParamLengths[11] = {2, 2, 1, 1, 2, 2, 1, 1, 2, 1, 1};
-  uint8_t pressParamSigns[11] = {1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1};
-  int8_t pressParamScalingIndex[11] = {20, 29, 32, 37, -3, 6, 8, 15, 48, 48, 65};
-  */
-
   /* to convert from raw pressure/temperature measurements to something meaningful, the BMP388
        requires us to compensate for the specific sensor characteristics using internally stored
        (non-volatile) parameters, which we can read as below. these values are stored as different
-       data types (unsigned/signed, 8/16bit), and also need some conversion to floating point */
-  
-  /* there are certainly more elegant solutions to reading each of these params from the device and
-      writing them to our class, but they typically involve lots of arrays to hold datatypes and 
-      conversion factors. this way is likely more memory friendly */
+       data types (unsigned/signed, 8/16bit), and also need some conversion to floating point 
+     there are certainly more elegant solutions to reading each of these params from the device and
+       writing them to our class, but they typically involve lots of arrays to hold datatypes and 
+       conversion factors. this way is likely more memory friendly */
       
   uint8_t rawValue[2];      /* an array for the output bytes (no parameter is longer than two bytes) */  
 
-  // TODO: define aliases for the powers for each of these? or number of bytes for each of these?
   /* get the device specific temperature compensation parameters */
-  readSPIwithDummy(slaveSelect, NVM_PAR_T1_REG_1, 2, rawValue);
-  uint16_t PAR_T1 = uint16_t((rawValue[1] << 8) | rawValue[0]);
-  temperatureCompensationArray[0] = float(PAR_T1) / pow(2, -8);
-  rawValue[0] = 0;
+  readSPIwithDummy(slaveSelect, NVM_PAR_T1_REG_1, 2, rawValue); /* read the T1 parameter (accounting for dummy return byte) */
+  uint16_t PAR_T1 = uint16_t((rawValue[1] << 8) | rawValue[0]); /* concatenate the two read bytes and make sure it is cast into the correct type */
+  temperatureCompensationArray[0] = float(PAR_T1) / pow(2, -8); /* apply the floating point conversion as detailed in the datasheet, and store in this class */
+  rawValue[0] = 0;                                              /* clear the rawValue buffer ready for the next read */
   rawValue[1] = 0;
 
   readSPIwithDummy(slaveSelect, NVM_PAR_T2_REG_1, 2, rawValue);
@@ -263,30 +221,6 @@ void PDC_BMP388::getCompensationParams() {
   pressureCompensationArray[10] = float(PAR_P11) / pow(2, 65);
   rawValue[0] = 0;
   rawValue[1] = 0;
-  
-  /*
-  for(i=0; i<sizeof(tempParamLengths); i++){
-    bytesToRead = tempParamLengths[i];   get length in bytes of this parameter 
-    readSPI(slaveSelect, addressToRead, numBytesToRead, rawValue);   read the parameter over SPI 
-
-     declare a parameter variable with the appropriate signing 
-    if(tempParamSigns[i] == 0){
-        uint16_t parameter;
-    } else if(tempParamSigns[i] == 1){
-        int16_t parameter;
-    }
-
-    parameter = (rawValue[1] << 8) | rawValue[0]; /* concatenate the read value into the parameter variable 
-
-    
-
-     address = ;
-     temperatureCompensationArray[i] = ;
-
-    rawValue[0] = 0;
-    rawValue[1] = 0;
-  }
-  */
 }
 
 /*********************************************************
@@ -295,13 +229,17 @@ void PDC_BMP388::getCompensationParams() {
    @retval the raw measured value
  *********************************************************/
 uint32_t PDC_BMP388::readValue(uint8_t data_address0) {
-  /* the altimeter has three consecutive data registers for both the temp and pressure.
-      the first address is used to varying degrees based on the chosen resolution (oversampling) */
+  /* the altimeter has three consecutive data registers for each of the temp and pressure.
+     the first address is used to varying degrees based on the chosen resolution (oversampling) */
+      
   uint8_t rawValue[3];         /* we will read three bytes from the device into here */
-  uint32_t rawValueConcat = 0; /* we will concatenate the three bytes into a single value here. actually 24 bit but no such type! */
-  readSPIwithDummy(slaveSelect, data_address0, 3, rawValue);                /* read three bytes from the device. BMP388 auto-increments address on SPI read */
-  rawValueConcat = (rawValue[2] << 16) | (rawValue[1] << 8) | rawValue[0];  /* concatenate the three bytes into a single val by shifting the array values up */
-  Serial.println(rawValueConcat);
+  uint32_t rawValueConcat = 0; /* we will concatenate the three bytes into a single value here (actually 24 bit but no such type!) */
+  readSPIwithDummy(slaveSelect, data_address0, 3, rawValue);  /* read three bytes from the device. BMP388 auto-increments address on SPI read */
+  
+  /* concatenate the three bytes into a single val by shifting the array values up 
+     need to cast each array element into a 32bit register otherwise overflow occurs on shifting */
+  rawValueConcat = (uint32_t(rawValue[2]) << 16) | (uint32_t(rawValue[1]) << 8) | rawValue[0];  
+  
   return (rawValueConcat);
 }
 
@@ -321,6 +259,8 @@ float PDC_BMP388::readPress(){
   
   /* pass the first pressure data address (data_0) to read the 3 consecutive pressure addresses */
   uncompensatedPressure = readValue(pressureAddress_0); 
+
+  /* below compensation calculations are as specified in the datasheet */
 
   /* PAR_P8 * compTemp^3 + PAR_P7 * compTemp^2 + PAR_P6 * compTemp + PAR_P5 */
   interim1 = pressureCompensationArray[7] * pow(compensatedTemperature, 3) 
@@ -351,21 +291,24 @@ float PDC_BMP388::readTemp(){
   float compensatedTemperature = 0;       /* the temperature as compensated for with parameters */
   float interim1 = 0;                     /* interim registers to store data */
   float interim2 = 0;
+  
   /* pass the first temperature data address (data_0) to read the 3 consecutive temperature addresses */
   uncompensatedTemperature = readValue(temperatureAddress_0); 
 
+  /* below compensation calculations are as per the datasheet */
+  
   /* uncomp - PAR_T1 */
   interim1 = float(uncompensatedTemperature) - temperatureCompensationArray[0];
   /* (uncomp - PAR_T1) * PAR_T2 */
   interim2 = interim1 * temperatureCompensationArray[1];
   /* [(uncomp - PAR_T1) * PAR_T2] + (uncomp - PAR_T1)^2 * PAR_T3 */
   compensatedTemperature = interim2 + (interim1 * interim1) * temperatureCompensationArray[2];
-  Serial.println(compensatedTemperature);
+
   return(compensatedTemperature);
 }
 
 /*********************************************************
-   @brief  measure the altitude using compensated pressure
+   @brief  measure the altitude using compensated values
    @retval the absolute altitude [m]
  *********************************************************/
 float PDC_BMP388::readAltitude(){

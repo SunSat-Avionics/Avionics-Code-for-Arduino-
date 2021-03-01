@@ -206,33 +206,12 @@ void setup() {
                                             ALTIMETER CONFIG VALUES
       (aliases for each value are defined in PDC_BMP.h)
       ---------------------------------------------------------------------------------------------------------
-      PARAM 1 (OUTPUT UPDATE FREQUENCY) | PARAM 2 (PRESSURE RESOLUTION)    | PARAM 3 (TEMPERATURE RESOLUTION)
-      +  200Hz                          | +  Ultra Low Power (2.64Pa)      | +  Ultra Low Power (0.005C)
-      +  100Hz                          | +  Low Power (1.32Pa)            | +  Low Power (0.0025C)
-      +  50Hz                           | +  Standard Resolution (0.66Pa)  | +  Standard Resolution (0.0012C)
-      +  25Hz                           | +  High Resolution (0.33Pa)      | +  High Resolution (0.0006C)
-      +  12.5Hz                         | +  Ultra High Resoluton (0.17Pa) | +  Ultra High Resolution (0.0003C)
-      +  6.25Hz                         | +  Highest Resolution (0.0085Pa) | +  Highest Resolution (0.00015C)
-      +  3.1Hz                          |                                  |
-      +  0.78Hz                         |                                  |
-      +  0.39Hz                         |                                  |
-      +  0.2Hz                          |                                  |
-      +  0.1Hz                          |                                  |
-      +  0.05Hz                         |                                  |
-      +  0.02Hz                         |                                  |
-      +  0.01Hz                         |                                  |
-   ************************************************************************************************************/
-
-   /************************************************************************************************************
-                                            ALTIMETER CONFIG VALUES
-      (aliases for each value are defined in PDC_BMP.h)
-      ---------------------------------------------------------------------------------------------------------
       + MODE 1: Low Power (pressure resolution = 1.32Pa, temperature resolution = 0.005C, update frequency = 100Hz)
-      + MODE 2:
-      + MODE 3:
-      + MODE 4:
+      + MODE 2: TODO
+      + MODE 3: TODO
+      + MODE 4: TODO
       + MODE 5: Ultra High Resolution (pressure resolution = 0.17Pa, temperature resolution = 0.0025C, update frequency = 25Hz)
-  */   
+   ************************************************************************************************************/  
   altimeter.init(ALT_MEASUREMENT_MODE_5); /* set the altimeter output data rate and resolutions */
   
   /* ---------- KALMAN FILTER SETUP ---------- */

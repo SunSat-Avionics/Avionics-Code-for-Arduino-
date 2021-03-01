@@ -40,8 +40,8 @@
    altimeter.restart();
 
    --- CONFIGURE ALTIMETER UPDATE FREQUENCY AND SET MEASUREMENT RESOLUTIONS ---
-   altimeter.init(ALT_ODR_200, ALT_OSR_PRESS_HIGH, ALT_OSR_TEMP_ULTRALOW);
-    // note that this .h file includes aliases for each possible update rate
+   altimeter.init(ALT_MEASUREMENT_MODE_5);
+    // note that this .h file includes aliases for each possible mode
     
    --- READ ALTITUDE ---
    float altitude = altimeter.readAltitude();
@@ -144,8 +144,15 @@ const uint8_t ALT_OSR_TEMP_HIGH      = 3;
 const uint8_t ALT_OSR_TEMP_ULTRAHIGH = 4; 
 const uint8_t ALT_OSR_TEMP_HIGHEST   = 5;
 
-/* PREDEFINED MEASUREMENT MODES TO FIT DEVICE CONSTRAINTS */
-/* shift each setting into a distinct byte which can be unpackaged later */
+/************************************************************************************************************
+                                          PREDEFINED ALTIMETER MODES
+    ---------------------------------------------------------------------------------------------------------
+    + MODE 1: Low Power (pressure resolution = 1.32Pa, temperature resolution = 0.005C, update frequency = 100Hz)
+    + MODE 2: TODO
+    + MODE 3: TODO
+    + MODE 4: TODO
+    + MODE 5: Ultra High Resolution (pressure resolution = 0.17Pa, temperature resolution = 0.0025C, update frequency = 25Hz)
+ ************************************************************************************************************/  
 const uint32_t ALT_MEASUREMENT_MODE_1 = (uint32_t(ALT_ODR_100) << 16) | (uint32_t(ALT_OSR_PRESS_LOW) << 8) | uint32_t(ALT_OSR_TEMP_ULTRALOW);
 const uint32_t ALT_MEASUREMENT_MODE_2 = 1;
 const uint32_t ALT_MEASUREMENT_MODE_3 = 1;
@@ -159,7 +166,7 @@ class PDC_BMP388 {
   private:
     uint32_t readValue(uint8_t data_address0);  /* a private method to read a value at the provided address */
     void getCompensationParams();               /* get the pressure and temperature compensation parameters */
-    void addressSet(uint8_t data_0_add, uint8_t ODR_add, uint8_t OSR_add); /* remember the device data and control registers */
+    void addressSet(uint8_t data_0_add);        /* remember the device data and control registers */
     
     /* ---------- ATTRIBUTES ---------- */
     uint8_t slaveSelect;  /* the pin on the PDC that the altimeter CS pin connects to. is set on contruction */
@@ -178,18 +185,18 @@ class PDC_BMP388 {
   public:
     /* ---------- CONSTRUCTOR ---------- */
     PDC_BMP388(uint8_t CS) {
-      slaveSelect = CS;                         /* set slaveSelect to the specified SS pin */
-      addressSet(DATA_0_REG, ODR_REG, OSR_REG); /* tell the altimeter where to find its registers */
-      outputFrequency = 0;                      /* initialise the class output frequency attribute as 0 */
+      slaveSelect = CS;       /* set slaveSelect to the specified SS pin */
+      addressSet(DATA_0_REG); /* tell the altimeter where to find its registers */
+      outputFrequency = 0;    /* initialise the class output frequency attribute as 0 */
       pressureOversampling = 0;
       temperatureOversampling = 0;
     };
 
     /* ---------- METHODS --------- */
-    bool isAlive();               /* check if connected and responsive */
-    void restart();               /* soft reset the device and enable temp/press measurement */
-    void init(uint32_t input); /* configure the device over SPI - set the output frequency and resolution */
-    float readPress();            /* read the raw pressure measurement and convert to 'actual' value [degC] */
-    float readTemp();             /* read the raw temperature measurement and convert to 'actual' value [Pa] */
-    float readAltitude();         /* use the compensated pressure to calculate absolute altitude [m] */
+    bool isAlive();             /* check if connected and responsive */
+    void restart();             /* soft reset the device and enable temp/press measurement */
+    void init(uint32_t input);  /* configure the device over SPI - set the output frequency and resolution */
+    float readPress();          /* read the raw pressure measurement and convert to 'actual' value [degC] */
+    float readTemp();           /* read the raw temperature measurement and convert to 'actual' value [Pa] */
+    float readAltitude();       /* use the compensated pressure to calculate absolute altitude [m] */
 };
