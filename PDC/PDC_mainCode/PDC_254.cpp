@@ -64,6 +64,7 @@ bool PDC_254::openFile() {
 */
 // TODO: populate this more fully - what are the raw measurements from BMP, GYRO, light sensors, etc? Make a .txt with headers and units
 // TODO: name value pairs? leaves us better equipped for changing headers and incomplete data
+// TODO: create some structure of data that we can update as we collect new info at each time step
 bool PDC_254::writeData(char *data) {
   bool err = 0;
 

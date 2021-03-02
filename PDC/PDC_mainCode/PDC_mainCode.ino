@@ -39,16 +39,18 @@ PDC_LSM6DSO32 IMU(IMU_SS);                /* create an LSM6DSO32 object for our 
 PDC_BMP388 altimeter(altimeter_SS);       /* create a BMP388 object for our altimeter. class defines are in 'PDC_BMP388.h' and 'PDC_BMP388.cpp' */
 
 const uint8_t microSD_CD = 7;             /* the microSD card module has a chip detect pin which shorts to ground if the card isn't inserted */
-PDC_254 microSD(microSD_SS, microSD_CD);  /* create a 254 breakout class for the microSD card module. class defines are in PDC_254.h & .cpp */
+PDC_254 microSD(microSD_SS, microSD_CD);  /* create a 254 breakout class for the microSD card module. class defines are in 'PDC_254.h' & 'PDC_254.cpp' */
 
 /* ---------- I2C CONFIG ---------- */
 const uint8_t RTC = 23;           /* the real-time clock (RTC) module is connected via I2C. the nano's data line for I2C (SDA) is at pin 23 */
 const uint8_t RTCaddress = 0x50;  /* to communicate with an I2C device, we have to know the device address, and for the RTC it is 0x50 */
+// TODO: config for comms with main OBC
 
 /* ---------- LINEAR PHOTODIODE ARRAY CONFIG ---------- */
-const uint8_t LPA_SI = 5;         /* the serial input pin that is used to trigger a new output from the LPAs */
-const uint8_t LPA_CLK = OC1A_PIN; /* DO NOT CHANGE!! the pin that will provide clock signal to the LPAs */
-const uint8_t LPA_AO = 19;        /* the analog output pin that the LPAs will send their values to */
+// TODO: replace all this with the new light sensor stuff
+//const uint8_t LPA_SI = 5;         /* the serial input pin that is used to trigger a new output from the LPAs */
+//const uint8_t LPA_CLK = OC1A_PIN; /* DO NOT CHANGE!! the pin that will provide clock signal to the LPAs */
+//const uint8_t LPA_AO = 19;        /* the analog output pin that the LPAs will send their values to */
 //PDC_TSL1401CCS_GROUP LPA_group(LPA_SI, LPA_CLK, LPA_AO); /* create a class object for the group of LPAs. definitions in PDC_TSL1401CCS.h & .cpp */
 
 /* ---------- KALMAN FILTER CONFIG ---------- */
@@ -69,14 +71,13 @@ const uint8_t numStates = 3;        /* number of states that we're interested in
 const uint8_t numMeasurements = 2;  /* number of measurements that we're taking */
 
 /* P, Q and R matrices are only needed in setup, so they aren't needed globally */
-
 Matrix<numStates, 1> stateMatrix;             /* matrix that contains the current system state */
 Matrix<numStates, 1> previousStateMatrix;     /* matrix that contains the previous system state */
 Matrix<numStates, 1> predictedStateMatrix;    /* matrix that contains the prediction of the next system state */
 Matrix<numMeasurements, 1> measurementMatrix; /* matrix that contains the most recent measurements */
 
 /* -------------------- ERRORS -------------------- */
-uint8_t errCode = 0;  /* value to be used whenever we want to detect some error */
+uint8_t errCode = 0;  /* to store component errors in setup */
 
 /* individual bit sets for an error at different components. will allow us to identify specific errors in an efficient way */
 // TODO: probably turn this into a 16 bit so we have better understanding of what actually caused the issue (isAlive, selfTest, etc)
@@ -88,17 +89,18 @@ const uint8_t imuErr = (1 << 1);  /* IMU encounters issue, set bit 1 */
 const uint8_t msdErr = (1 << 2);  /* micro-SD issue, set bit 2 */
 const uint8_t logErr = (1 << 3);  /* log file issue, set bit 3 */
 const uint8_t rtcErr = (1 << 4);  /* real-time clock issue, set bit 4 */
-const uint8_t lpaErr = (1 << 5);  /* linear photodiode array issue, set bit 5 */
-//const uint8_t TODO = (1 << 6);
+const uint8_t obcErr = (1 << 5);  /* main obc issue, set bit 5 */
+const uint8_t lpaErr = (1 << 6);  /* linear photodiode array issue, set bit 5 */
 //const uint8_t TODO = (1 << 7);
 
 /* ---------- SUBROUTINE CONTROL ---------- */
-const uint8_t WAIT_FOR_LAUNCH = 0;
-const uint8_t LAUNCH = 1;
-const uint8_t APOGEE = 2;
-const uint8_t DESCENT = 3;
-const uint8_t LANDING = 4;
-uint8_t subRoutine = WAIT_FOR_LAUNCH; /* 0=waitForLaunch; 1=launch; 2=apogee; 3=descent; 4=landing (TO BE REVIEWED) */
+const uint8_t WAIT_FOR_LAUNCH = 0;  /* on the pad, waiting for launch */
+const uint8_t LAUNCH = 1;           /* in the ascent phase, waiting for apogee */
+const uint8_t APOGEE = 2;           /* apogee reached, waiting for deployment */
+const uint8_t DESCENT = 3;          /* deployed and descending */
+const uint8_t LANDING = 4;          /* back on Earth */
+
+uint8_t subRoutine = WAIT_FOR_LAUNCH; /* initialise our current phase as waiting for launch */
 
 /* -------------------- SETUP -------------------- */
 void setup() {
@@ -142,6 +144,7 @@ void setup() {
 
   /* ---------- I2C Setup ---------- */
   Wire.begin(); /* initialise CPU to use I2C */
+  // TODO: setup RTC and OBC on I2C
 
   /* ---------- SPI Verification ---------- */
   /* our LSM6DSO32 class has an 'isAlive()' method, which reads the 'WHO_AM_I' register to check our connection. returns true if connected & working! */
@@ -164,7 +167,7 @@ void setup() {
     errCode |= logErr;  /* if there was some problem creating the file, flag the log file error bit in our code */
   }
 
-  // TODO write a note to the microSD to signify SD begin - maybe need a .writeNote() method which blanks everything but date, time and note
+  // TODO write a note (status code) to the microSD to signify SD begin - maybe need a .writeNote() method which blanks everything but date, time and note
 
   /* ---------- PERIPHERAL CONFIGURATION ---------- */
   IMU.restart();        /* reboot & clear the IMU, giving it a bit of time to start back up */
@@ -179,7 +182,7 @@ void setup() {
   }
   
   // TODO: decide if self test is actually sensible... what if vehicle isn't perfectly still?
-  // TODO: some sort of altimeter testing - if we know where we're launching we can estimate expected pressure
+  // TODO: some sort of altimeter testing - if we know where we're launching we can estimate expected pressure (or we measure at alt=0 and work from there)
 
   /**********************************************************************
                             IMU CONFIG VALUES
@@ -265,6 +268,8 @@ void loop() {
   }
 }
 
+// TODO: if we can detect a component failure in flight, write a note to SD card
+// this and other things should probably be prompts for error/status code development as strings are expensive
 
 void waitForLaunch(){
   /* stay in wait mode until we exceed a pre-defined upwards acceleration */
@@ -275,23 +280,26 @@ void waitForLaunch(){
 }
 
 void launch(){
-    // while(current time step - previous timestep < kalman time), do nothing (or something like check light sensor))
-    // could also do lots of prediction steps before one update step?
+  // TODO: what if a sensor fails? need to add a fallback mode where kalman stops and we just LPF (or similar) instead
+  // TODO: is z acceleration sufficient? what if some pitch angle means the x/y axes are accelerating upward?
     
-    /* use the underlying dynamical model to predict the current state of the system */
-    kalmanPredict();
-    /* update the prediction by taking measurements */
-    kalmanUpdate();
-    
-    // write measurements and states to micro-SD
+  // while(current time step - previous timestep < kalman time), do nothing (or something like check light sensor))
+  // could also do lots of prediction steps before one update step?
+  
+  /* use the underlying dynamical model to predict the current state of the system */
+  kalmanPredict();
+  /* update the prediction by taking measurements */
+  kalmanUpdate();
+  
+  // write measurements and states to micro-SD
 
-    /* get the velocity from our state vector */
-    float velocity = stateMatrix(1, 0);
-    /* once the velocity is negative, we have crossed the point of zero-velocity in the z-direction and so apogee is reached  */
-    // TODO maybe change the 0 to some threshold so that we start taking more frequent data below 10m/s for example
-    if (velocity < 0) {
-      subRoutine = APOGEE;
-    }
+  /* get the velocity from our state vector */
+  float velocity = stateMatrix(1, 0);
+  /* once the velocity is negative, we have crossed the point of zero-velocity in the z-direction and so apogee is reached  */
+  // TODO maybe change the 0 to some threshold so that we start taking more frequent data below 10m/s for example
+  if (velocity < 0) {
+    subRoutine = APOGEE;
+  }
 }
 
 void apogee(){

@@ -93,9 +93,9 @@ void kalmanPredict() {
    @brief  Kalman update the current state of the system
  **************************************************************************/
 void kalmanUpdate() {
-  float accelerationZ = IMU.accel.readZ();
-  float altitude = altimeter.readAltitude();
-  // TODO: create measurement vector from the readings
+  /* take measurements of the Z acceleration (IMU) and the altitude (altimeter) and modify the measurement matrix */
+  measurementMatrix(0,0) = IMU.accel.readZ();
+  measurementMatrix(1,0) = altimeter.readAltitude();
 
   /* x_k = x_k-1 + K*[z_k - H*x_k-1] */
   stateMatrix = predictedStateMatrix + K_matrix * (measurementMatrix - H_matrix * predictedStateMatrix);

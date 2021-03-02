@@ -61,11 +61,13 @@
 const float GRAVITY_MAGNITUDE = 9.80665;    /* set the magnitude of the gravity vector */
 
 /* DEVICE REGISTER ADDRESSES */
-const uint8_t ACCX_L_DATA_REG = 0x28; /* the register address of the accelerometer LSB X-axis data register */
-const uint8_t GYRX_L_DATA_REG = 0x22; /* the register address of the gyroscope LSB X-axis data register */
-const uint8_t ACC_CTRL_REG = 0x10;    /* the register address of the accelerometer control register */
-const uint8_t GYR_CTRL_REG = 0x11;    /* the register address of the gyroscope control register */
-const uint8_t WHO_AM_I_REG = 0x0f;    /* the register address of the 'WHO_AM_I' (identification) register */
+const uint8_t ACCX_L_DATA_REG = 0x28; /* the address of the accelerometer LSB X-axis data register */
+const uint8_t GYRX_L_DATA_REG = 0x22; /* the address of the gyroscope LSB X-axis data register */
+const uint8_t ACC_CTRL_REG    = 0x10; /* the address of the accelerometer control register */
+const uint8_t GYR_CTRL_REG    = 0x11; /* the address of the gyroscope control register */
+const uint8_t CTRL3_C_REG     = 0x12; /* the address of the register to reboot memory */
+const uint8_t CTRL5_C_REG     = 0x14; /* the address of the register to turn self-test on/off */
+const uint8_t WHO_AM_I_REG    = 0x0f; /* the address of the 'WHO_AM_I' (identification) register */
 
 const uint8_t WHO_AM_I_VAL = 0b01101100;  /* the (fixed) value stored in the 'WHO_AM_I' register */
 

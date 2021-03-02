@@ -60,13 +60,16 @@
 const float SEA_LEVEL_PRESSURE = 1013.25; /* the pressure at sea level in hPa, for calculations of altitude */
 
 /* DEVICE REGISTER ADDRESSES */
-const uint8_t CHIP_ID_REG = 0x00; /* the register address of the 'CHIP_ID' (identification) register */
-const uint8_t CHIP_ID_VAL = 0X50; /* the (fixed) value stored in the 'CHIP_ID' register */
+const uint8_t CHIP_ID_REG = 0x00;   /* the address of the 'CHIP_ID' (identification) register */
+const uint8_t CHIP_ID_VAL = 0X50;   /* the (fixed) value stored in the 'CHIP_ID' register */
 
-const uint8_t DATA_0_REG = 0x04;  /* the register address of the first data register. (pressure is at DATA_0,1,2 and temperature is at DATA_3,4,5) */
+const uint8_t DATA_0_REG = 0x04;    /* the address of the first data register. (pressure is at DATA_0,1,2 and temperature is at DATA_3,4,5) */
 
-const uint8_t OSR_REG = 0x1C;     /* the register address of the 'OSR' (oversampling settings) register */
-const uint8_t ODR_REG = 0x1D;     /* the register address of the 'ODR' (output data rates) register */
+const uint8_t OSR_REG = 0x1C;       /* the address of the 'OSR' (oversampling settings) register */
+const uint8_t ODR_REG = 0x1D;       /* the address of the 'ODR' (output data rates) register */
+
+const uint8_t CMD_REG = 0x7E;       /* the address of the 'CMD' (soft reset) register */
+const uint8_t PWR_CTRL_REG = 0x1B;  /* the address of the 'PWR_CTRL' (sensor enable & power mode) register,  */
 
 /* non-volatile memory (NVM) device specific pressure and temperature compensation parameter register addresses */
 const uint8_t NVM_PAR_T1_REG_1 = 0x31;
@@ -187,7 +190,7 @@ class PDC_BMP388 {
     PDC_BMP388(uint8_t CS) {
       slaveSelect = CS;       /* set slaveSelect to the specified SS pin */
       addressSet(DATA_0_REG); /* tell the altimeter where to find its registers */
-      outputFrequency = 0;    /* initialise the class output frequency attribute as 0 */
+      outputFrequency = 0;    /* initialise the device configurations as 0 */
       pressureOversampling = 0;
       temperatureOversampling = 0;
     };

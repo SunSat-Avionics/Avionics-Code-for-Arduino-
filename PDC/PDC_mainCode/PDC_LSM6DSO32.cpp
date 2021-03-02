@@ -2,7 +2,7 @@
 // read temp?
 // measure offset
 // a 'read all' method? what if we want to read x, y, z all at once?
-// add a timeout (and auto-set) for the std dev measurement
+// add an auto-set for the std dev measurement
 
 /* for example usage, see PDC_LSM6DSO32.h */
 
@@ -13,8 +13,8 @@
    @retval 1 in case of success, 0 otherwise
  *********************************************************/
 bool PDC_LSM6DSO32::isAlive() {
-  bool isAlive = 0;                     /* signify result - 1 is success */
-  uint8_t WHO_AM_I[1];                  /* internal variable to hold the output */
+  bool isAlive = 0;     /* signify result. 1 is success */
+  uint8_t WHO_AM_I[1];  /* internal variable to hold the output */
 
   readSPI(slaveSelect, WHO_AM_I_REG, 1, WHO_AM_I);  /* read the 'WHO_AM_I' register on the IMU */
 
@@ -30,10 +30,9 @@ bool PDC_LSM6DSO32::isAlive() {
    @brief  Restart IMU
  *********************************************************/
 void PDC_LSM6DSO32::restart() {
-  uint8_t CTRL3_C_address = 0x12;     /* address of the CTRL3_C register on the device which allows us to reboot memory */
   uint8_t dataToWrite = 1 || 1 << 7;  /* set bits 7 and 0 to high which reboots memory and resets software */
 
-  writeSPI(slaveSelect, CTRL3_C_address, dataToWrite); /* write the command to the device */
+  writeSPI(slaveSelect, CTRL3_C_REG, dataToWrite);  /* write the command to the CTRL3_C register */
   delay(2000); /* wait for it to properly start up again */
 }
 
@@ -57,15 +56,14 @@ uint8_t PDC_LSM6DSO32::selfTest() {
   uint8_t flag = 0;   /* flag to return. 0 if successful */
 
   /* ---------- EXPECTED RANGE DEFINITIONS ---------- */
-  float accMin = 50.0 / 1000.0; /* the datasheet-specified minimum self-test change (converted to g) */
+  float accMin = 50.0 / 1000.0;   /* the datasheet-specified minimum self-test change (converted to g) */
   float accMax = 1700.0 / 1000.0; /* the datasheet-specified maximum self-test change (converted to g) */
-  float gyrMin = 150;           /* the datasheet-specified minimum self-test change (at 2000dps range) */
-  float gyrMax = 700;           /* the datasheet-specified maximum self-test change (at 2000dps range) */
+  float gyrMin = 150.0;           /* the datasheet-specified minimum self-test change (at 2000dps range) */
+  float gyrMax = 700.0;           /* the datasheet-specified maximum self-test change (at 2000dps range) */
 
-  uint8_t CTRL5_C_address = 0x14; /* address of the register to turn self-test on/off */
   uint8_t selfTestAccel = 1;      /* data to write to CTRL5_C to turn accelerometer self test on */
   uint8_t selfTestGyro = 1 << 2;  /* data to write to CTRL5_C to turn gyroscope self test on */
-  accel.init(ACC_ODR_3330, ACC_RNG_4);    /*  set accel measurement range to 4g to match datasheet test conditions */
+  accel.init(ACC_ODR_3330, ACC_RNG_4);    /* set accel measurement range to 4g to match datasheet test conditions */
   gyro.init(GYR_ODR_3330, GYR_RNG_2000);  /* set gyro measurement range to 2000dps to match datasheet test conditions */
 
   /* ---------- ACCELEROMETER SELF TEST ---------- */
@@ -74,8 +72,8 @@ uint8_t PDC_LSM6DSO32::selfTest() {
   selfTestOff[1] = accel.readY();
   selfTestOff[2] = accel.readZ();
 
-  /* turn on accelerometer self test */
-  writeSPI(slaveSelect, CTRL5_C_address, selfTestAccel);
+  /* turn on accelerometer self test and wait */
+  writeSPI(slaveSelect, CTRL5_C_REG, selfTestAccel);
   delay(dly);
 
   /* read all 3 accelerometer axes with self-test on */
@@ -83,11 +81,11 @@ uint8_t PDC_LSM6DSO32::selfTest() {
   selfTestOn[1] = accel.readY();
   selfTestOn[2] = accel.readZ();
 
-  /* turn off accelerometer self test */
-  writeSPI(slaveSelect, CTRL5_C_address, 0);
+  /* turn off accelerometer self test and wait */
+  writeSPI(slaveSelect, CTRL5_C_REG, 0);
   delay(dly);
 
-  /* calculate the difference */
+  /* calculate the difference for each axis and check that it is within the expected range specified on the datasheet */
   for (j = 0; j < 3; j++) {
     difference = selfTestOn[j] - selfTestOff[j];
     if ((difference < accMin) || (difference > accMax)) {
@@ -103,8 +101,8 @@ uint8_t PDC_LSM6DSO32::selfTest() {
   selfTestOff[1] = gyro.readY();
   selfTestOff[2] = gyro.readZ();
 
-  /* turn on gyroscope self test */
-  writeSPI(slaveSelect, CTRL5_C_address, selfTestGyro);
+  /* turn on gyroscope self test and wait */
+  writeSPI(slaveSelect, CTRL5_C_REG, selfTestGyro);
   delay(dly);
 
   /* read all 3 gyroscope axes with self-test on */
@@ -112,11 +110,11 @@ uint8_t PDC_LSM6DSO32::selfTest() {
   selfTestOn[1] = gyro.readY();
   selfTestOn[2] = gyro.readZ();
 
-  /* turn off gyroscope self test */
-  writeSPI(slaveSelect, CTRL5_C_address, 0);
+  /* turn off gyroscope self test and wait */
+  writeSPI(slaveSelect, CTRL5_C_REG, 0);
   delay(dly);
 
-  /* calculate the differences and check they are as expected */
+  /* calculate the difference for each axis and check that it is within the expected range specified on the datasheet */
   for (j = 0; j < 3; j++) {
     difference = selfTestOn[j] - selfTestOff[j];
     if ((difference < gyrMin) || (difference > gyrMax)) {
@@ -158,10 +156,10 @@ void IMUChild::addressSet(uint8_t x_add, uint8_t CTRL_add) {
    @param  code for measurement range
  *********************************************************/
 void IMUChild::init(uint8_t frequency, uint8_t range) {
-  uint8_t data = 0;
+  uint8_t dataToWrite = 0;
 
-  data |= range << 1;     /* set bits [3:1] to configure range. note accel only uses [3:2] so have padded with bit 1 to make equivalent */
-  data |= frequency << 4; /* set bits [7:4] to configure output frequency */
+  dataToWrite |= range << 1;     /* set bits [3:1] to configure range. note accel config actually only uses [3:2] so have padded with bit 1 to make equivalent between devices */
+  dataToWrite |= frequency << 4; /* set bits [7:4] to configure output frequency */
 
   /* set the internally stored output frequency */
   switch (frequency) {
@@ -214,12 +212,10 @@ float IMUChild::readValue(uint8_t LSB_address) {
   int16_t rawValueConcat = 0; /* we will concatenate the two bytes into a single value here */
   float measuredValue = 0;    /* and we will convert the concatenated value into a 'measured' value here */
 
-
   readSPI(slaveSelect, LSB_address, 2, rawValue); /* read two bytes from the device.
                                                       since CTRLC_3 'IF_INC' bit is enabled, the address will
                                                       auto-increment and read the LSB then MSB registers so we
-                                                      have the two bytes we need!
-*/
+                                                      have the two bytes we need! */
 
   rawValueConcat = (rawValue[1] << 8) | rawValue[0];  /* concatenate the two bytes into a single val by shifting the MSB up by one byte */
 
@@ -298,8 +294,7 @@ float IMUChild::measureNoiseZ() {
   stdDev = pow(sum / float(numReadings), 0.5);
 
   // TODO: consider putting a cap on stdDev incase of disturbance during setup
-  // TODO: worth considering replacement or supplementation with a lookup table - if we want to change mode when switching to attitude determination, we can't measure the noise
-  //       or maybe we should go between the measurement modes on the ground and measure stddev in each of them??
+  // TODO: maybe we should go between the measurement modes on the ground and measure stddev in each of them and store results internally??
 
   return (stdDev);
 }

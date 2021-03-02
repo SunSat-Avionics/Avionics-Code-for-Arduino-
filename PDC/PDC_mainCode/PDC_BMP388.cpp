@@ -33,16 +33,14 @@ bool PDC_BMP388::isAlive() {
    @brief  Restart altimeter
  *********************************************************/
 void PDC_BMP388::restart() {
-  uint8_t CMD_address = 0x7E;       /* address of the CMD register on the device which allows us to soft reset the device */
-  uint8_t PWR_CTRL_address = 0x1B;  /* address of the PWR_CTRL register on the device which allows us to enable measurement and enter 'normal mode' */
-  uint8_t dataToWrite = 0xB6;       /* value to soft reset the device */
+  uint8_t dataToWrite = 0xB6; /* command to soft reset the device */
 
-  writeSPI(slaveSelect, CMD_address, dataToWrite);      /* write the command to the device */
+  writeSPI(slaveSelect, CMD_REG, dataToWrite);      /* write the command to the CMD register */
   delay(1000);  /* wait for it to properly reset */
 
-  dataToWrite = 0b00110011;         /* set relevant bits to enter 'normal' mode and to enable the pressure and temperature measurement */
+  dataToWrite = 0b00110011;   /* set relevant bits to enter 'normal' mode and to enable the pressure and temperature measurement */
   
-  writeSPI(slaveSelect, PWR_CTRL_address, dataToWrite); /* write the command to the device */
+  writeSPI(slaveSelect, PWR_CTRL_REG, dataToWrite); /* write the command to the PWR_CTRL register */
   delay(1000);  /* more waiting to give it time to sort itself out */
 }
 
@@ -59,12 +57,16 @@ void PDC_BMP388::addressSet(uint8_t data_0_add) {
    @brief  Initialise the component
    @param  32 bits describing the ODR and OSR configs
             (aliases in PDC_BMP388.h)
+           format: [0:7]   temperature oversampling (resolution)
+                   [8:15]  pressure oversampling (resolution)
+                   [16:23] sensor output update frequency
+                   [24:32] UNUSED
  *********************************************************/
 void PDC_BMP388::init(uint32_t configurationSettings) {
-  uint8_t data = 0; /* temp variable for the data to write to the registers */
+  uint8_t dataToWrite = 0;  /* temporary variable for the data to write to the registers */
 
-  uint8_t frequency = (configurationSettings >> 16) & 255; /* mask the input to get the selected frequency */
-  data |= frequency;  /* set bits [4:0] to configure output frequency as per datasheet */
+  uint8_t frequency = (configurationSettings >> 16) & 255; /* shift the frequency byte down into 0:7 and mask out any additional info */
+  dataToWrite |= frequency;  /* set bits [4:0] to configure output frequency as per datasheet */
 
   /* set the internally stored output frequency in case we need to check it later */
   switch (frequency) {
@@ -85,14 +87,14 @@ void PDC_BMP388::init(uint32_t configurationSettings) {
     default:  outputFrequency = 0;      break;
   }
   
-  writeSPI(slaveSelect, ODR_REG, data);  /* write the data to the ODR register */
+  writeSPI(slaveSelect, ODR_REG, dataToWrite);  /* write the frequency configuration to the ODR register */
 
-  data = 0; /* reset ready for new data */
+  dataToWrite = 0; /* reset ready for new data */
 
   /* mask the input to get sensor resolutions */
-  uint8_t pressResolution = (configurationSettings >> 8) & 255;
-  uint8_t tempResolution = configurationSettings & 255;
-  data = (tempResolution << 3) | pressResolution; /* set bits [5:3] for temperature and [2:0] for pressure as per datasheet */
+  uint8_t pressResolution = (configurationSettings >> 8) & 255; /* shift the pressure resolution byte down to 0:7 and mask out any additional info */
+  uint8_t tempResolution = configurationSettings & 255;         /* and mask out any remaining info on the configuration to get the temperature resolution */
+  dataToWrite = (tempResolution << 3) | pressResolution;        /* set bits [5:3] for temperature and [2:0] for pressure as per datasheet */
 
   /* set the internally stored pressure oversampling incase we need to check it later */
   switch (pressResolution) {
@@ -116,9 +118,9 @@ void PDC_BMP388::init(uint32_t configurationSettings) {
     default:   temperatureOversampling = 0;  break;
   }
 
-  writeSPI(slaveSelect, OSR_REG, data);  /* write the data to the OSR register */
+  writeSPI(slaveSelect, OSR_REG, dataToWrite);  /* write the resolution data to the OSR register */
 
-  getCompensationParams();  /* get the internal device specific temperature and pressure compensation parameters */
+  getCompensationParams();  /* get the device specific temperature and pressure compensation parameters and store internally */
 }
 
 /*********************************************************
@@ -138,7 +140,7 @@ void PDC_BMP388::getCompensationParams() {
   /* get the device specific temperature compensation parameters */
   readSPIwithDummy(slaveSelect, NVM_PAR_T1_REG_1, 2, rawValue); /* read the T1 parameter (accounting for dummy return byte) */
   uint16_t PAR_T1 = uint16_t((rawValue[1] << 8) | rawValue[0]); /* concatenate the two read bytes and make sure it is cast into the correct type */
-  temperatureCompensationArray[0] = float(PAR_T1) / pow(2, -8); /* apply the floating point conversion as detailed in the datasheet, and store in this class */
+  temperatureCompensationArray[0] = float(PAR_T1) / pow(2, -8); /* apply the floating point conversion as detailed in the datasheet, and store as part of the class attribute */
   rawValue[0] = 0;                                              /* clear the rawValue buffer ready for the next read */
   rawValue[1] = 0;
 
@@ -224,7 +226,7 @@ void PDC_BMP388::getCompensationParams() {
 }
 
 /*********************************************************
-   @brief  Read a value from a specified register
+   @brief  Read a value from the temp/press data registers
    @param  the address of the first of three data registers
    @retval the raw measured value
  *********************************************************/
@@ -249,8 +251,8 @@ uint32_t PDC_BMP388::readValue(uint8_t data_address0) {
  *********************************************************/
 float PDC_BMP388::readPress(){
   uint32_t uncompensatedPressure = 0;   /* the raw pressure data from the device */
-  float compensatedPressure = 0;        /* the pressure as compensated for with parameters */
-  float compensatedTemperature = 0;     /* the temperature as compensated for with parameters */
+  float compensatedPressure = 0;        /* the pressure as compensated for using parameters */
+  float compensatedTemperature = 0;     /* the temperature as compensated for using parameters */
   float interim1 = 0;                   /* interim registers to store data */
   float interim2 = 0;
   float interim3 = 0;
@@ -277,7 +279,7 @@ float PDC_BMP388::readPress(){
   interim3 = pow(float(uncompensatedPressure), 3) * pressureCompensationArray[10]
              + pow(float(uncompensatedPressure), 2) * (pressureCompensationArray[8] + pressureCompensationArray[9] * compensatedTemperature);
 
-  compensatedPressure = interim1 + interim2 + interim3;
+  compensatedPressure = interim1 + interim2 + interim3; /* calculate the compensated pressure [Pa] */
 
   return(compensatedPressure);
 }
@@ -288,7 +290,7 @@ float PDC_BMP388::readPress(){
  *********************************************************/
 float PDC_BMP388::readTemp(){
   uint32_t uncompensatedTemperature = 0;  /* the raw temperature data from the device */
-  float compensatedTemperature = 0;       /* the temperature as compensated for with parameters */
+  float compensatedTemperature = 0;       /* the temperature as compensated for using parameters */
   float interim1 = 0;                     /* interim registers to store data */
   float interim2 = 0;
   
@@ -312,8 +314,8 @@ float PDC_BMP388::readTemp(){
    @retval the absolute altitude [m]
  *********************************************************/
 float PDC_BMP388::readAltitude(){
-  float atmosphericPressure;
-  float altitude;
+  float atmosphericPressure;  /* measured (compensated) pressure */
+  float altitude;             /* calculated altitude based on pressure */
 
   /* the BMP180 datasheet (https://cdn-shop.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf) gives the equation for pressure -> altitude */
   
