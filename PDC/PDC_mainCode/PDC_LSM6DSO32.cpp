@@ -197,7 +197,7 @@ void IMUChild::init(uint8_t frequency, uint8_t range) {
     }
   }
 
-  writeSPI(slaveSelect, CTRL_address, data);  /* write the data to the control register */
+  writeSPI(slaveSelect, CTRL_address, dataToWrite);  /* write the data to the control register */
 
   resolution = (measurementRange * 2.0 * 1000.0) / 65536.0; /* calculate the device resolution per bit (milli-g or milli-dps) */
 }

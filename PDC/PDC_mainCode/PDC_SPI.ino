@@ -28,7 +28,9 @@
    readSPI(device_SS, registerAddress, numBytes, returnValue);
 
    --- READ MORE THAN ONE BYTE FROM SEQUENTIAL REGISTERS ON OUR DEVICE ---
-   uint8_t registerAddress = 0x22;  the hexadecimal address of the FIRST register on the device
+   uint8_t registerAddress = 0x22;  the hexadecimal address of the FIRST register of interest on the device
+                                      for example, some particular data may be stored across 3 consecutive
+                                      registers 0x22, 0x23, 0x24
                                       typically, there will be a setting in one of the device control
                                       registers that auto-increments the address when reading multiple
                                       bytes, and so this value is just the first byte to read
