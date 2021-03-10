@@ -42,7 +42,8 @@ deployment.
 Apogee detection will be via 3 separate sensors:
 - A barometric altimeter will detect when the measured pressure stops decreasing, and begins increasing. 
 - Light sensors will detect an increase in ambient light levels once the payload is exposed to the atomosphere (expected at apogee). 
-- An accelerometer will be integrated to estimate velocity, and fed through a Kalman Filter to mitigate uncertainties in the estimates
+- An accelerometer will be used to measure the accelerations on the vehicle
+- The altimeter and accelerometer will together estimate velocity via a Kalman Filter to mitigate uncertainties in the estimates
     
 #### 1.2.2. Attitude Determination 
 Attitude Determination and Control Systems (ADCS) are important in any 
@@ -55,10 +56,8 @@ the whole platform later.
 After apogee detection, the PDC is free to perform other functions, and so it can support ADCS activites. This reduces system complexity.
 
 Attitude determination will use:
-- Gyrospcope to measure angles (kalman filter to account for noise and drift 
-etc)
-- Light sensor as a coarse sun-sensor. This may be tricky in suborbital 
-conditions due to albedo and cloud cover
+- Gyrospcope to measure rotation rates and infer orientation. The readings will
+be filtered to reduce the impact of noise and drift
 
 ### 1.3. Definitions and Acronyms
 <b>Nova</b> | The satellite platform
@@ -96,41 +95,44 @@ that will help it perform its apogee detection and attitude determination
 tasks.
 
 The sensors that contribute to the subsystem are:
-- A <b>digital barometric altimeter</b>, that measures the pressure of the 
-surrounding air. This can be used to estimate the point of apogee by
-recognising the point at which the air pressure stops decreasing, and
-begins to increase.
-- A <b>MEMS accelerometer</b>, that will be incorporated into a digital Kalman
-Filter. The acceleration output measurements can be integrated to estimate
-velocity, and the point at which the velocity is equal to zero will be the
-estimated point of apogee.
-- A <b>set of linear photodiode arrays</b> that will serve a dual purpose. During
-the apogee detection stage, they will measure the amount of incident
+- A <b>digital barometric altimeter</b>, that measures the pressure 
+and temperature of the surrounding air. These values can be compensated and
+used to calculate the current altitude. The altitude measurements will be
+fed into the apogee detection kalman filter to contribute to the upward velocity
+estimates.
+- A <b>MEMS accelerometer</b>. The acceleration output measurements can also be 
+fed through the kalman filter to help estimate velocity, and the point at 
+which the velocity is equal to zero will be the estimated point of apogee.
+- A <b>set of light sensors</b>. During the apogee detection stage, they will measure the amount of incident
 light - this will allow them to recognise when the Nova satellite has been
 exposed to the atmosphere by the VESNA rocket (this would occur at apogee,
-ideally). Secondly, the light sensors can be used as a coarse sun sensor, 
-able to estimate the direction of the sun relative to the Nova satellite.
+ideally). 
 - A <b>3-axis MEMS gyroscope</b>, contained within the same package as the 
-above mentioned accelerometer, for simplicity. The gyroscope can be used to 
-determine the attitude of the vehicle relative to some fixed reference frame.
-The gyroscope readings will also be incorporated into a digital Kalman Filter
-to account for drift and bias that lead to uncertainty in the raw measurements.
+above mentioned accelerometer, for simplicity. Ideally, the gyroscope output
+could be part of a set of measurements in an extended kalman filter with
+another sensor, but this would be too complex computationally for the given
+resources at this stage, and so the gyroscope readings are used to estimate
+the current orientation of the vehicle by means of some data filtering to
+account for noise, bias, and drift in the reading.
 
 The PDC will need to be able to appropriately configure and communicate with 
 each of these sensors, as well as the main OBC. It would also be beneficial to 
 store all of the collected data (e.g. acceleration values, light levels, etc.)
 to an external storage device that can be easily read at the end of the mission
-for analysis. An <b>SD Card</b> is therefore also a part of this system with a
-<b>real-time clock</b> unit to provide extra info to the data-log. A '.csv' file
-will be the most appropriate type for storage of data.
+for analysis. An <b>SD Card</b> is therefore also a part of this system which 
+can accept data from the PDC at specified points in time. This will allow for
+post-flight analysis to check the performance of the subsystem. At the same time,
+real-time telemetry can be made available by communicating with the main OBC
+at a lower rate than used to write to the SD card. The OBC will route this data
+to the comms subsystem and relay it to the ground station.
 
 ### 3.2. Subsystem Functions
-When operating correctly, this subsystem will be able to alert the main OBC
-when apogee has been detected. In the case of an active parachute deployment,
-this would then signify the start of the deployment process and tell the PDC
-to prepare to deploy the parachute. The PDC will interrupt the main OBC process
-when apogee is detected, and force it into an appropriate interrupt handling
-routine for this event.
+This subsystem should be able to accurately detect the point of apogee and 
+use this information to move into an appropriate subroutine. In the case of
+an active deployment this would involve the release of a parachute at a 
+pre-determined time or event after apogee. In the case of a passive deployment
+the goal is simply to make this detection and record the time at which it
+occurs.
 
 Once the parachute has unfurled, the vehicle will register some decleration
 from free-fall velocity, and this will confirm successful deployment of the
@@ -151,11 +153,9 @@ determined in order to select an adequate amount of storage on the SD card.
 
 It is assumed that the dynamics during launch and during parachute can
 be simplified sufficiently in order to implement the digital Kalman Filters.
-
-On flight day, conditions may deny the accurate operation of the sun sensing
-method (e.g. cloud cover, excessive albedo). During development it is to
-be assumed that the conditions will be clear and the sun can be easily
-located by the system.
+This includes the assumption that the flight will be 'straight up' and that
+the thrust on the vehicle isn't important (as we care much more about accuracy
+during the coast phase than the propelled phase).
 
 ---
 
@@ -174,33 +174,22 @@ of this series of connections is provided below.
 	<img src="images/SPI_Connections.png" alt="SPI bus connection diagram" width="70%"/>
 </p>
 
-The Arduino Nano board also has an I2C interface which can be used by the 
-real-time clock unit. The connection is shown in the below diagram.
+The Arduino Nano board also has an I2C interface which can be used to communicate
+with the main OBC with the OBC and PDC as a master and slave respectively.
+When the OBC needs a new packet of data, it will request it from the PDC and the
+PDC will then send the most recently collected set of measurements.
 
+TODO: fix this image
 <p align="center">
 	<img src="images/I2C_Connections.png" alt="I2C bus connection diagram" width="70%"/>
 </p>
 
-The linear photodiode array circuits are identical and don't have slave select pins. They simply need
-a serial input to go high which causes them to make a new measurement, and a clock signal for synchronisation.
-These can be provided by GPIO pins on the PDC, and the four arrays can be cascaded to provide their output
-to a single pin on the PDC, as shown below (figure from TSL1401-CCS datasheet)
-
-<p align="center">
-	<img src="images/multi-die_LPA.png" alt="Connecting the linear photodiode arrays in cascade" width="70%"/>
-</p>
-
-An interrupt will be sent from the PDC to the main OBC to inform it that 
-apogee has been detected, and to send the OBC into an appropriate interrupt
-handling routine for this event. This can simply be done by connecting one
-of the PDC GPIO pins to an interrupt pin on the main OBC.
-
-<b>NOTE: connection to the OBC is still TBD - it is likely that additionally to an interrupt,
-there will be some serial channel between the two for status updates etc.</b>
+TODO: light sensor connections
 
 These three connection types can then be summarised in the overall connection
 diagram as below.
 
+TODO: fix this image
 <p align="center">
 	<img src="images/fullConnectionDiagram.jpg" alt="The full connectivity to the PDC" width="70%"/>
 </p>
@@ -240,13 +229,10 @@ pins that it will use to communicate with external devices\
 
 #### Functional Requirement 1.4
 <b>ID:</b> FR4\
-<b>TITLE:</b> Verify the Real-time Clock\
-<b>DESC:</b> The date of launch is known, and so this can be pre-programmed in
-to the code. Then a value can be taken from the RTC over I2C and check that the dates
-match. Ideally the time would be checked too, but without connection to a PC this could 
-be hard...\
-<b>RAT:</b> To verify that the RTC is able to give us a good reading\
-<b>DEP:</b> FR2
+<b>TITLE:</b> Kalman filter setup\
+<b>DESC:</b> Define the appropriate matrices and measure the sensor noise\
+<b>RAT:</b> To prepare for state estimation during apogee detection\
+<b>DEP:</b> None
 
 #### Functional Requirement 1.5
 <b>ID:</b> FR5\
@@ -279,37 +265,24 @@ altimeter via SPI (as per FR5), the unit should be configured appropriately\
 
 #### Functional Requirement 1.8
 <b>ID:</b> FR8\
-<b>TITLE:</b> Write Column Headings to Micro-SD Card\
-<b>DESC:</b> Having verified that the micro-SD card is connected and can be
-reached via SPI, the columns of the .csv file that data will be stored in
-should be writted to the card in preparation for data input. Should also include
-a 'note' (or similar) heading for notes (e.g. startup, apogee, etc.).\
-<b>RAT:</b> To provide column headers for the .csv data-log for readability
-purposes\
+<b>TITLE:</b> Write 'Startup' Message to Micro-SD Card\
+<b>DESC:</b> Now that the micro-SD is configured, a 'startup' message should
+be written in the 'notes' column in the form of a pre-defined status code.\
+<b>RAT:</b> To provide some temporal reference when reviewing the data after
+the flight.\
 <b>DEP:</b> FR1, FR5
 
 #### Functional Requirement 1.9
 <b>ID:</b> FR9\
-<b>TITLE:</b> Write 'Startup' Message to Micro-SD Card\
-<b>DESC:</b> Now that the micro-SD is configured, a 'startup' message should
-be written in the 'notes' column.\
-<b>RAT:</b> To provide some temporal reference when reviewing the data after
-the flight.\
-<b>DEP:</b> FR8
+<b>TITLE:</b> Confirm Light Sensor Output is as Reasonably Expected\
+<b>DESC:</b> The confirmation of connection to the light sensors is less
+well defined, and so we should take measurements to ensure that they match
+expectations.\
+<b>RAT:</b> To verify that the light sensing network is operational\
+<b>DEP:</b> 
 
 #### Functional Requirement 1.10
 <b>ID:</b> FR10\
-<b>TITLE:</b> Trigger Output From Linear Photodiode Array Network\
-<b>DESC:</b> The LPA network is connected to GPIO pins for their serial and clock
-inputs. To verify that this is all working, the PDC pin connected to the LPA
-SI bus should be set high for half a clock cycle (high on rising edge, low on
-falling edge). This triggers a new measurement from the network, which is read
-on the PDC pin connected to the LPA AO bus.\
-<b>RAT:</b> To verify that the LPA network is operational\
-<b>DEP:</b> FR3
-
-#### Functional Requirement 1.11
-<b>ID:</b> FR11\
 <b>TITLE:</b> Appropriate Sensor Configurations\
 <b>DESC:</b> Once the sensor communications have been established and verified,
 there will be some necessary configurations. For example, the accelerometer measurement
@@ -317,21 +290,24 @@ range, the altimeter power mode, etc.\
 <b>RAT:</b> To prepare the sensors for operation\
 <b>DEP:</b> FR6, FR7
 
-#### Functional Requirement 1.12
-<b>ID:</b> FR12\
-<b>TITLE:</b> Take Ground Measurements\
-<b>DESC:</b> With setup complete, it would be useful to know the conditions on the ground.
-The temperature as measured by the altimeter, the ambient pressure, the light levels in the
+#### Functional Requirement 1.11
+<b>ID:</b> FR11\
+<b>TITLE:</b> Write Initial Measurements to Micro-SD Card\
+<b>DESC:</b> Having verified that the micro-SD card is connected and can be
+reached via SPI, the current on-ground conditions should be measured and
+written to a new .csv file on the micro-SD card with an appropriate note. 
+Example data: the temperature as measured by the altimeter, the ambient pressure, the light levels in the
 fairing, etc. These values should be written to the SD card with a note 'ground conditions' or
 similar, and they should be stored locally to help with future requirements, like protecting
-against sound barrier effects\
-<b>RAT:</b> To record conditions pre-flight\
-<b>DEP:</b> All Class 1 Requirements
+against sound barrier effects.\
+<b>RAT:</b> To provide a reference starting point\
+<b>DEP:</b> All Class 1 requirements
 
-#### Functional Requirement 1.13
-<b>ID:</b> FR13\
+#### Functional Requirement 1.12
+<b>ID:</b> FR12\
 <b>TITLE:</b> Indicate Setup Complete\
-<b>DESC:</b> <b>TBD</b>: need to know comms method b/w PDC and OBC\
+<b>DESC:</b> Send the error status code to the main OBC to be relayed to the
+ground station so we can be sure that all components are connected an reachable.\
 <b>RAT:</b> To provide indication that the PDC subsystem is ready for flight\
 <b>DEP:</b> All Class 1 Requirements
 
