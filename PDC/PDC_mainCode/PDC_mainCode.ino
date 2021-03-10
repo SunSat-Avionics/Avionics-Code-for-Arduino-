@@ -19,6 +19,7 @@
 #include "PDC_LSM6DSO32.h"      /* include our IMU class */
 #include "PDC_BMP388.h"         /* include our altimeter class */
 #include "PDC_254.h"            /* include our micro-SD class */
+#include "PDC_logFile.h"        /* include our log file storage struct */
 //#include "PDC_TSL1401CCS.h"     /* include our LPA class */
 #include <BasicLinearAlgebra.h> /* for Matrix operations
                                      if this line throws an error, you probably don't have the Matrix Library locally.
@@ -57,25 +58,7 @@ const uint8_t RTCaddress = 0x50;  /* to communicate with an I2C device, we have 
 //PDC_TSL1401CCS_GROUP LPA_group(LPA_SI, LPA_CLK, LPA_AO); /* create a class object for the group of LPAs. definitions in PDC_TSL1401CCS.h & .cpp */
 
 /* ---------- LOG FILE CONFIG ---------- */    
-//Time, phase of flight, acc_x (measured), acc_y (measured), acc_z (measured), temp, pressure, altitude (altimeter), light sensor 1, 2, 3, 4, acc_z (estimate), vel_z (estimate), altitude (estimate), Note"
-const uint8_t logFileFields = 16;   /* the total number of fields in our log file */
-char logFileLine[logFileFields] = "";  /* an empty string which we will use to store the data to write to a new log file line */
-const uint8_t time_logFileIdx  = 0; /* the column indices of each data point in the file */
-const uint8_t phase_logFileIdx = 1;
-const uint8_t acc_x_logFileIdx = 2;
-const uint8_t acc_y_logFileIdx = 3;
-const uint8_t acc_z_logFileIdx = 4;
-const uint8_t temp_logFileIdx  = 5;
-const uint8_t press_logFileIdx = 6;
-const uint8_t alt_logFileIdx   = 7;
-const uint8_t lig1_logFileIdx  = 8;
-const uint8_t lig2_logFileIdx  = 9;
-const uint8_t lig3_logFileIdx  = 10;
-const uint8_t lig4_logFileIdx  = 11;
-const uint8_t acc_z_est_logFileIdx = 12;
-const uint8_t vel_z_est_logFileIdx = 13;
-const uint8_t pos_z_est_logFileIdx = 14;
-const uint8_t note_logFileIdx  = 15;
+PDC_logFileFields logFileLine = {}; /* create a new instance of the storage for our log file fields and initialise all fields to 0 */
 
 /* ---------- KALMAN FILTER CONFIG ---------- */
 /*
@@ -206,9 +189,9 @@ void setup() {
     errCode |= logErr;  /* if there was some problem creating the file, flag the log file error bit in our code */
   }
 
-  microSD.newLogFileLine(); /* create a new log file line */
-  Serial.println(logFileLine);
-
+  //microSD.newLogFileLine(); /* create a new log file line */
+  //Serial.println(logFileLine);
+  
   /**********************************************************************
                             IMU CONFIG VALUES
       (aliases for each value are defined in PDC_LSM6DSO32.h)
@@ -291,6 +274,8 @@ void loop() {
   else if(subRoutine==LANDING){
     landing();
   }
+
+  logFileLine = {}; /* clear the log file line at the end of each loop ready for the next set of measurements */
 }
 
 // TODO: if we can detect a component failure in flight, write a note to SD card
