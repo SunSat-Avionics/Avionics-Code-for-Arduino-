@@ -28,6 +28,9 @@ using namespace BLA;            /* use the basic linear algebra namespace */
 
 /* ---------- GENERAL PARAMETERS ---------- */
 const uint8_t ACC_LIFTOFF_THRESHOLD = 1;  /* [m/s^2] the threshold value that tells us we have liftoff. this triggers the move from 'wait' mode to 'flight' mode */
+// TODO: refine kalmanTime based on tests. how long does measurement take? calculation time?
+// TODO: then *consider* using this to set update frequency of sensors by rounding up (e.g. if kalman update freq is 10Hz, set accelerometer to 12.5Hz in setup)
+const float kalmanTime = 0.5;             /* time step (s) between Kalman iterations */
 
 /* ---------- SPI CONFIG ---------- */
 const uint8_t PDC_SS = 10;      /* the arduino nano has an 'SS' pin (10) which helps us choose if we want to be master or slave. pin 10 as output = PDC as master */
@@ -53,6 +56,27 @@ const uint8_t RTCaddress = 0x50;  /* to communicate with an I2C device, we have 
 //const uint8_t LPA_AO = 19;        /* the analog output pin that the LPAs will send their values to */
 //PDC_TSL1401CCS_GROUP LPA_group(LPA_SI, LPA_CLK, LPA_AO); /* create a class object for the group of LPAs. definitions in PDC_TSL1401CCS.h & .cpp */
 
+/* ---------- LOG FILE CONFIG ---------- */    
+//Time, phase of flight, acc_x (measured), acc_y (measured), acc_z (measured), temp, pressure, altitude (altimeter), light sensor 1, 2, 3, 4, acc_z (estimate), vel_z (estimate), altitude (estimate), Note"
+const uint8_t logFileFields = 16;   /* the total number of fields in our log file */
+char logFileLine[logFileFields] = "";  /* an empty string which we will use to store the data to write to a new log file line */
+const uint8_t time_logFileIdx  = 0; /* the column indices of each data point in the file */
+const uint8_t phase_logFileIdx = 1;
+const uint8_t acc_x_logFileIdx = 2;
+const uint8_t acc_y_logFileIdx = 3;
+const uint8_t acc_z_logFileIdx = 4;
+const uint8_t temp_logFileIdx  = 5;
+const uint8_t press_logFileIdx = 6;
+const uint8_t alt_logFileIdx   = 7;
+const uint8_t lig1_logFileIdx  = 8;
+const uint8_t lig2_logFileIdx  = 9;
+const uint8_t lig3_logFileIdx  = 10;
+const uint8_t lig4_logFileIdx  = 11;
+const uint8_t acc_z_est_logFileIdx = 12;
+const uint8_t vel_z_est_logFileIdx = 13;
+const uint8_t pos_z_est_logFileIdx = 14;
+const uint8_t note_logFileIdx  = 15;
+
 /* ---------- KALMAN FILTER CONFIG ---------- */
 /*
     we use a Kalman filter to estimate the point of apogee in flight
@@ -64,9 +88,6 @@ const uint8_t RTCaddress = 0x50;  /* to communicate with an I2C device, we have 
     | displacement (z) |
 */
 
-// TODO: refine kalmanTime based on tests. how long does measurement take? calculation time?
-// TODO: then *consider* using this to set update frequency of sensors by rounding up (e.g. if kalman update freq is 10Hz, set accelerometer to 12.5Hz in setup)
-const float kalmanTime = 0.5;       /* time step (s) between Kalman iterations */
 const uint8_t numStates = 3;        /* number of states that we're interested in */
 const uint8_t numMeasurements = 2;  /* number of measurements that we're taking */
 
@@ -162,11 +183,6 @@ void setup() {
     errCode |= msdErr;  /* if not alive, flag the micro-SD error bit in our code */
   }
 
-  /* attempt to open a .csv file which we want to log data to */
-  if (microSD.openFile() != 0) {
-    errCode |= logErr;  /* if there was some problem creating the file, flag the log file error bit in our code */
-  }
-
   // TODO write a note (status code) to the microSD to signify SD begin - maybe need a .writeNote() method which blanks everything but date, time and note
 
   /* ---------- PERIPHERAL CONFIGURATION ---------- */
@@ -175,14 +191,23 @@ void setup() {
   
   // TODO reboot other peripherals
 
+  // TODO: decide if self test is actually sensible... what if vehicle isn't perfectly still?
   errFlag = IMU.selfTest(); /* run self-test routine on IMU to check accel & gyro are working */
   if (errFlag) {
     errCode |= imuErr;  /* if self test failed, IMU error */
     errFlag = 0;        /* clear error flag */
   }
   
-  // TODO: decide if self test is actually sensible... what if vehicle isn't perfectly still?
   // TODO: some sort of altimeter testing - if we know where we're launching we can estimate expected pressure (or we measure at alt=0 and work from there)
+
+  // TODO: pass the datetime string into this function to name the file in a useful way
+  /* attempt to open a .csv file which we want to log data to */
+  if (microSD.openFile() != 0) {
+    errCode |= logErr;  /* if there was some problem creating the file, flag the log file error bit in our code */
+  }
+
+  microSD.newLogFileLine(); /* create a new log file line */
+  Serial.println(logFileLine);
 
   /**********************************************************************
                             IMU CONFIG VALUES

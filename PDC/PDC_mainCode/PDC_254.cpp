@@ -1,3 +1,10 @@
+// TODO: in the .h file create a struct with the different fields for the log file 
+//  e.g. struct{
+//         float acc_x
+//         uint8_t note 
+//         etc...
+// and instantiate globally in setup, then include methods to fill these elements individually and write them as csv to file
+
 #include "PDC_254.h"  /* grab the class definition */
 
 /**********************************************
@@ -55,6 +62,10 @@ bool PDC_254::openFile() {
   }
 }
 
+void PDC_254::newLogFileLine(){
+  // clear all elements of the log file struct
+}
+
 /*****************************************************
    @brief  Write data to the file on the microSD card
    @retval 0 in case of success, 1 otherwise
@@ -78,7 +89,9 @@ bool PDC_254::writeData(char *data) {
   // note: it's *probably* a better idea to do individual writes via SPI in a for loop (e.g. for each entry, write SPI)
   // instead of trying to pass all entries into write SPI instead - would require some weird trickery of the input to the
   // function, and might end up wiriting to consecutive registers? needs more research
-
+  
+  //sprintf(buffer,"%d,%d,%d", ax,ay,az);  //assuming ax, etc are ints
+  
   if (cardInserted()) {
     dataLogFile.print(data);
   }

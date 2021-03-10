@@ -45,6 +45,7 @@ class PDC_254 {
     /* ---------- METHODS ---------- */
     bool isAlive();             /* check if connected and responsive */
     bool cardInserted();        /* check if card is inserted */
+    void newLogFileLine();      /* create a new line to store log data in */
     bool writeData(char *data); /* write some data to the microSD card. returns 0 if successful */
     bool openFile();            /* open a new file to log data to */
 };
