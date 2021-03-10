@@ -42,7 +42,8 @@ deployment.
 Apogee detection will be via 3 separate sensors:
 - A barometric altimeter will detect when the measured pressure stops decreasing, and begins increasing. 
 - Light sensors will detect an increase in ambient light levels once the payload is exposed to the atomosphere (expected at apogee). 
-- An accelerometer will be integrated to estimate velocity, and fed through a Kalman Filter to mitigate uncertainties in the estimates
+- An accelerometer will be used to measure the accelerations on the vehicle
+- The altimeter and accelerometer will together estimate velocity via a Kalman Filter to mitigate uncertainties in the estimates
     
 #### 1.2.2. Attitude Determination 
 Attitude Determination and Control Systems (ADCS) are important in any 
@@ -55,10 +56,8 @@ the whole platform later.
 After apogee detection, the PDC is free to perform other functions, and so it can support ADCS activites. This reduces system complexity.
 
 Attitude determination will use:
-- Gyrospcope to measure angles (kalman filter to account for noise and drift 
-etc)
-- Light sensor as a coarse sun-sensor. This may be tricky in suborbital 
-conditions due to albedo and cloud cover
+- Gyrospcope to measure rotation rates and infer orientation. The readings will
+be filtered to reduce the impact of noise and drift
 
 ### 1.3. Definitions and Acronyms
 <b>Nova</b> | The satellite platform
@@ -96,41 +95,44 @@ that will help it perform its apogee detection and attitude determination
 tasks.
 
 The sensors that contribute to the subsystem are:
-- A <b>digital barometric altimeter</b>, that measures the pressure of the 
-surrounding air. This can be used to estimate the point of apogee by
-recognising the point at which the air pressure stops decreasing, and
-begins to increase.
-- A <b>MEMS accelerometer</b>, that will be incorporated into a digital Kalman
-Filter. The acceleration output measurements can be integrated to estimate
-velocity, and the point at which the velocity is equal to zero will be the
-estimated point of apogee.
-- A <b>set of linear photodiode arrays</b> that will serve a dual purpose. During
-the apogee detection stage, they will measure the amount of incident
+- A <b>digital barometric altimeter</b>, that measures the pressure 
+and temperature of the surrounding air. These values can be compensated and
+used to calculate the current altitude. The altitude measurements will be
+fed into the apogee detection kalman filter to contribute to the upward velocity
+estimates.
+- A <b>MEMS accelerometer</b>. The acceleration output measurements can also be 
+fed through the kalman filter to help estimate velocity, and the point at 
+which the velocity is equal to zero will be the estimated point of apogee.
+- A <b>set of light sensors</b>. During the apogee detection stage, they will measure the amount of incident
 light - this will allow them to recognise when the Nova satellite has been
 exposed to the atmosphere by the VESNA rocket (this would occur at apogee,
-ideally). Secondly, the light sensors can be used as a coarse sun sensor, 
-able to estimate the direction of the sun relative to the Nova satellite.
+ideally). 
 - A <b>3-axis MEMS gyroscope</b>, contained within the same package as the 
-above mentioned accelerometer, for simplicity. The gyroscope can be used to 
-determine the attitude of the vehicle relative to some fixed reference frame.
-The gyroscope readings will also be incorporated into a digital Kalman Filter
-to account for drift and bias that lead to uncertainty in the raw measurements.
+above mentioned accelerometer, for simplicity. Ideally, the gyroscope output
+could be part of a set of measurements in an extended kalman filter with
+another sensor, but this would be too complex computationally for the given
+resources at this stage, and so the gyroscope readings are used to estimate
+the current orientation of the vehicle by means of some data filtering to
+account for noise, bias, and drift in the reading.
 
 The PDC will need to be able to appropriately configure and communicate with 
 each of these sensors, as well as the main OBC. It would also be beneficial to 
 store all of the collected data (e.g. acceleration values, light levels, etc.)
 to an external storage device that can be easily read at the end of the mission
-for analysis. An <b>SD Card</b> is therefore also a part of this system with a
-<b>real-time clock</b> unit to provide extra info to the data-log. A '.csv' file
-will be the most appropriate type for storage of data.
+for analysis. An <b>SD Card</b> is therefore also a part of this system which 
+can accept data from the PDC at specified points in time. This will allow for
+post-flight analysis to check the performance of the subsystem. At the same time,
+real-time telemetry can be made available by communicating with the main OBC
+at a lower rate than used to write to the SD card. The OBC will route this data
+to the comms subsystem and relay it to the ground station.
 
 ### 3.2. Subsystem Functions
-When operating correctly, this subsystem will be able to alert the main OBC
-when apogee has been detected. In the case of an active parachute deployment,
-this would then signify the start of the deployment process and tell the PDC
-to prepare to deploy the parachute. The PDC will interrupt the main OBC process
-when apogee is detected, and force it into an appropriate interrupt handling
-routine for this event.
+This subsystem should be able to accurately detect the point of apogee and 
+use this information to move into an appropriate subroutine. In the case of
+an active deployment this would involve the release of a parachute at a 
+pre-determined time or event after apogee. In the case of a passive deployment
+the goal is simply to make this detection and record the time at which it
+occurs.
 
 Once the parachute has unfurled, the vehicle will register some decleration
 from free-fall velocity, and this will confirm successful deployment of the
@@ -151,11 +153,9 @@ determined in order to select an adequate amount of storage on the SD card.
 
 It is assumed that the dynamics during launch and during parachute can
 be simplified sufficiently in order to implement the digital Kalman Filters.
-
-On flight day, conditions may deny the accurate operation of the sun sensing
-method (e.g. cloud cover, excessive albedo). During development it is to
-be assumed that the conditions will be clear and the sun can be easily
-located by the system.
+This includes the assumption that the flight will be 'straight up' and that
+the thrust on the vehicle isn't important (as we care much more about accuracy
+during the coast phase than the propelled phase).
 
 ---
 
