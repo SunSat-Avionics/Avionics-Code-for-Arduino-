@@ -1,3 +1,6 @@
+#ifndef _LOGFILE /* include guard */
+#define _LOGFILE
+
 /* a structure containing the latest measurements to be written to the SD card or main OBC */
 struct PDC_logFileFields{
   uint8_t logTime;
@@ -17,3 +20,7 @@ struct PDC_logFileFields{
   float estimatePositionZ;
   uint8_t note;
 };
+
+extern struct PDC_logFileFields logFileLine;
+
+#endif

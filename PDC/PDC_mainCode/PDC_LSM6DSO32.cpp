@@ -229,7 +229,11 @@ float IMUChild::readValue(uint8_t LSB_address) {
    @retval the measured X axis value in g [ac] or dps [gy]
  *********************************************************/
 float IMUChild::readX() {
-  return (readValue(x_address));
+  float xValue = readValue(x_address);
+
+  logFileLine.accelerometerX = xValue;
+  
+  return (xValue);
 }
 
 /*********************************************************
@@ -237,7 +241,11 @@ float IMUChild::readX() {
    @retval the measured Y axis value in g [ac] or dps [gy]
  *********************************************************/
 float IMUChild::readY() {
-  return (readValue(y_address));
+  float yValue = readValue(y_address);
+
+  logFileLine.accelerometerY = yValue;
+  
+  return (yValue);
 }
 
 /*********************************************************
@@ -245,7 +253,11 @@ float IMUChild::readY() {
    @retval the measured Y axis value in g [ac] or dps [gy]
  *********************************************************/
 float IMUChild::readZ() {
-  return (readValue(z_address));
+  float zValue = readValue(z_address);
+
+  logFileLine.accelerometerZ = zValue;
+  
+  return (zValue);
 }
 
 /*********************************************************

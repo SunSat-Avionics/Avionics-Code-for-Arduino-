@@ -281,6 +281,8 @@ float PDC_BMP388::readPress(){
 
   compensatedPressure = interim1 + interim2 + interim3; /* calculate the compensated pressure [Pa] */
 
+  logFileLine.altimeterPressure = compensatedPressure;  /* store the measured pressure in the log file structure */
+
   return(compensatedPressure);
 }
 
@@ -306,6 +308,8 @@ float PDC_BMP388::readTemp(){
   /* [(uncomp - PAR_T1) * PAR_T2] + (uncomp - PAR_T1)^2 * PAR_T3 */
   compensatedTemperature = interim2 + (interim1 * interim1) * temperatureCompensationArray[2];
 
+  logFileLine.altimeterTemperature = compensatedTemperature;  /* store the measured temperature in the log file structure */
+  
   return(compensatedTemperature);
 }
 
@@ -321,6 +325,8 @@ float PDC_BMP388::readAltitude(){
   
   atmosphericPressure = readPress() / 100.0;  /* read the compensated atmospheric pressure and convert from Pa to hPa */
   altitude = 44330 * (1 - pow(atmosphericPressure/SEA_LEVEL_PRESSURE, 0.190295)); /* use the equation from link above to claculate absolute altitude [m] */
-
+  
+  logFileLine.altimeterAltitude = altitude; /* store the calculated altitude in the log file structure */
+  
   return(altitude);
 }

@@ -56,6 +56,7 @@
 #include "PDC_SPI.h"  /* grab our SPI functions */
 #include <stdio.h>    /* std stuff for cpp */
 #include "headers.h"
+#include "PDC_logFile.h"  /* include our log file line structure so we can access the global one defined in main */
 
 const float SEA_LEVEL_PRESSURE = 1013.25; /* the pressure at sea level in hPa, for calculations of altitude */
 

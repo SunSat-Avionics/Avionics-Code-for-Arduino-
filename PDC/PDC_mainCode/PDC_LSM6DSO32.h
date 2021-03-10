@@ -57,6 +57,7 @@
 #include "PDC_SPI.h"  /* grab our SPI functions */
 #include <stdio.h>    /* std stuff for cpp */
 #include "headers.h"
+#include "PDC_logFile.h"  /* include our log file line structure so we can access the global one defined in main */
 
 const float GRAVITY_MAGNITUDE = 9.80665;    /* set the magnitude of the gravity vector */
 

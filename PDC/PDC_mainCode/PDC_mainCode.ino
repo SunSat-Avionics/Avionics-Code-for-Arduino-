@@ -275,6 +275,7 @@ void loop() {
     landing();
   }
 
+  // TODO: log file write
   logFileLine = {}; /* clear the log file line at the end of each loop ready for the next set of measurements */
 }
 
