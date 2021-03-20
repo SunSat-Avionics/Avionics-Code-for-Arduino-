@@ -254,7 +254,7 @@ void loop() {
     // before servicing the I2C request
 
   // TODO: get current time and store in SD card structure
-  logFileLine.flightPhase; = subRoutine;  /* store the current phase of flight so we can see how accurately the transition points are determined */
+  logFileLine.flightPhase = subRoutine;  /* store the current phase of flight so we can see how accurately the transition points are determined */
   
   if(subRoutine==WAIT_FOR_LAUNCH){
     waitForLaunch();
