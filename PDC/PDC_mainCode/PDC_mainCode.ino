@@ -29,6 +29,7 @@ using namespace BLA;            /* use the basic linear algebra namespace */
 /* ---------- GENERAL PARAMETERS ---------- */
 const uint8_t LAUNCH_SITE_ALTITUDE = 142; /* [m] how high above sea level is the launch site? used for measuring noise in altimeter */
 const uint8_t ACC_LIFTOFF_THRESHOLD = 1;  /* [m/s^2] the threshold value that tells us we have liftoff. this triggers the move from 'wait' mode to 'flight' mode */
+
 // TODO: refine kalmanTime based on tests. how long does measurement take? calculation time?
 // TODO: then *consider* using this to set update frequency of sensors by rounding up (e.g. if kalman update freq is 10Hz, set accelerometer to 12.5Hz in setup)
 const float kalmanTime = 0.5;             /* time step (s) between Kalman iterations */
@@ -90,7 +91,7 @@ const uint8_t msdErr = (1 << 2);  /* micro-SD issue, set bit 2 */
 const uint8_t logErr = (1 << 3);  /* log file issue, set bit 3 */
 const uint8_t rtcErr = (1 << 4);  /* real-time clock issue, set bit 4 */
 const uint8_t obcErr = (1 << 5);  /* main obc issue, set bit 5 */
-//const uint8_t TODO = (1 << 6);
+const uint8_t alsErr = (1 << 6);  /* analog light sensor issue, set bit 6 */
 //const uint8_t TODO = (1 << 7);
 
 /* ---------- SUBROUTINE CONTROL ---------- */
@@ -119,8 +120,8 @@ void setup() {
   Serial.println("\n-\nSETUP\n-\n");  /* inform start of setup */
 
   /* ---------- SPI Setup ---------- */
-  pinMode(PDC_SS, OUTPUT);          /* we want to be the master of this bus! so set the 'SS' pin on the PDC as an output */
-  digitalWrite(PDC_SS, HIGH);       /* now take it high */
+  pinMode(PDC_SS, OUTPUT);          /* we want to be the master of this bus! so set the 'SS' pin on the PDC as a HIGH output (https://www.arduino.cc/en/reference/SPI) */
+  digitalWrite(PDC_SS, HIGH);
   pinMode(altimeter_SS, OUTPUT);    /* set altimeter SS pin as output & disable communication by taking it high */
   digitalWrite(altimeter_SS, HIGH);
   pinMode(IMU_SS, OUTPUT);          /* set IMU SS pin as output & disable communication by taking it high */
@@ -132,7 +133,6 @@ void setup() {
 
   /* ---------- Peripheral Setup ---------- */
   pinMode(microSD_CD, INPUT);       /* set the card detect pin to be an input that we can measure to check for a card */
-
   // TODO: configure light sensor pins
 
   /* ---------- I2C Setup ---------- */
@@ -150,12 +150,12 @@ void setup() {
     errCode |= altErr;
   }
 
-  /* check the card detect pin for a card, and try to initialise it */
+  /* our 254 class has an 'isAlive()' method, which checks the card detect pin for a card, and tries to initialise it */
   if (!microSD.isAlive()) {
-    errCode |= msdErr;  /* if not alive, flag the micro-SD error bit in our code */
+    errCode |= msdErr;
   }
 
-  // TODO write a note (status code) to the microSD to signify SD begin - maybe need a .writeNote() method which blanks everything but date, time and note
+  // TODO write a note (status code) to the microSD to signify SD begin - maybe need a .writeNote() method which blanks everything but time and note
 
   // TODO light sensor checks: do they agree, is it dark?
 
@@ -163,7 +163,7 @@ void setup() {
   IMU.restart();        /* reboot & clear the IMU, giving it a bit of time to start back up */
   altimeter.restart();  /* soft reset the altimeter and enable the pressure and temperature measurements */
   
-  // TODO reboot other peripherals
+  // TODO: can we reboot microsd? 
 
   // TODO: decide if self test is actually sensible... what if vehicle isn't perfectly still?
   errFlag = IMU.selfTest(); /* run self-test routine on IMU to check accel & gyro are working */
@@ -245,6 +245,7 @@ void loop() {
     // before servicing the I2C request
 
   // TODO: get current time and store in SD card structure
+  //logFileLine.logTime = (TODO);
   logFileLine.flightPhase = subRoutine;  /* store the current phase of flight so we can see how accurately the transition points are determined */
   
   if(subRoutine==WAIT_FOR_LAUNCH){

@@ -352,12 +352,11 @@ float PDC_BMP388::measureAltitudeNoise() {
   
   /* for the specified number of readings, measure the altitude */
   for (uint8_t i = 1; i < numReadings; i++) {
-    // TODO: consider replacing with a non-blocking function?
+    
     delay(100); /* force rate of measurements to allow for proper processing */
 
     altitude = readAltitude(); /* get altitude */
 
-    // TODO: what value should we expect? should we define a constant for the altitude of the launch site
     if (abs(LAUNCH_SITE_ALTITUDE - altitude) > threshold) {
       i -= 1; /* for an erroneous reading, we should take the reading again to avoid skew */
     }

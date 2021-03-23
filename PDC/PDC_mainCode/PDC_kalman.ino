@@ -41,6 +41,7 @@ void initKalman() {
   Matrix<numStates, numStates> Q_matrix = stateIdentity;                    /* process noise covariance matrix */
   Matrix<numMeasurements, numMeasurements> R_matrix = measurementIdentity;  /* measurement noise covariance matrix */
 
+  /* ---------- initialise measurement noise covariance matrix, R --------- */
   // TODO: either measure noise and create R matrix from this, or ask sensors which mode they are in and use
   // an enum to get the noise stats as per datasheet. current values are temporary!
   // this is useful for altimeter too, as we know altitude is fixed and can find variance of altitude as a single number
@@ -49,13 +50,14 @@ void initKalman() {
   // and the loop would still allow us to change R based on the setups of the sensors
 
   R_matrix(0, 0) = pow(IMU.accel.measureNoiseZ(), 2);       /* measure accelerometer noise standard deviation in z-axis, square for variance */
-  Serial.print("varA: ");
-  Serial.println(R_matrix(0, 0), 8);
   R_matrix(1,1) = pow(altimeter.measureAltitudeNoise(), 2); /* measure altitude noise standard deviation, square for variance */
-  Serial.print("varB: ");
-  Serial.println(R_matrix(1, 1), 8);  
 
-  //TODO repeat for the altimeter
+  /* ---------- initialise process noise covariance matrix ---------- */
+  // TODO: really think about how this is going to be determined. Is a 'throw in the air' test going to allow us to get some understanding?
+    // what about re-creating this kalman filter in simulation land, applying the measurement noise to some flight profile?
+  Q_matrix(0,0) = 1;
+  Q_matrix(1,1) = 1;
+  Q_matrix(2,2) = 1;
 
   /* ---------- initialise Kalman Gain matrix, K ---------- */
   Matrix<numMeasurements, numMeasurements> sum_HPHT_R;  /* declare matrix for an interim storage */
@@ -87,7 +89,8 @@ void initKalman() {
    @brief  Kalman predict the current state of the system
  **************************************************************************/
 void kalmanPredict() {
-  predictedStateMatrix = F_matrix * previousStateMatrix;  /* x_k+1 = F*x_k */
+  /* x_k+1 = F*x_k */
+  predictedStateMatrix = F_matrix * previousStateMatrix;
 }
 
 /**************************************************************************
@@ -100,5 +103,11 @@ void kalmanUpdate() {
 
   /* x_k = x_k-1 + K*[z_k - H*x_k-1] */
   stateMatrix = predictedStateMatrix + K_matrix * (measurementMatrix - H_matrix * predictedStateMatrix);
+
+  /* write the estimates to the log file line structure */
+  logFileLine.estimateAccelerationZ = stateMatrix(0,0);
+  logFileLine.estimateVelocityZ = stateMatrix(1,0);
+  logFileLine.estimatePositionZ = stateMatrix(2,0);
+  
   previousStateMatrix = stateMatrix;
 }

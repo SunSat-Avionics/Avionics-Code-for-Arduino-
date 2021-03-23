@@ -62,10 +62,6 @@ bool PDC_254::openFile() {
   }
 }
 
-void PDC_254::newLogFileLine(){
-  // clear all elements of the log file struct
-}
-
 /*****************************************************
    @brief  Write data to the file on the microSD card
    @retval 0 in case of success, 1 otherwise
