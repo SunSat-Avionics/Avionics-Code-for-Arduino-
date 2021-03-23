@@ -34,6 +34,7 @@ class PDC_254 {
     /* ---------- ATTRIBUTES ---------- */
     uint8_t slaveSelect;  /* the pin on the PDC that the 254 CS pin connects to. is set on contruction */
     uint8_t cardDetect;   /* the pin on the PDC that the 254 CD pin connects to. shorts to GND when card not inserted */
+    String logFileName;   /* the name of the log file that we want to write our data to */
     File dataLogFile;     /* the log file that we will store data on */
 
   public:

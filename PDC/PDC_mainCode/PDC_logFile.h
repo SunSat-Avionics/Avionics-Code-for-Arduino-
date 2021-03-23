@@ -3,7 +3,7 @@
 
 /* a structure containing the latest measurements to be written to the SD card or main OBC */
 struct PDC_logFileFields{
-  uint8_t logTime;
+  uint8_t logTime;    // TODO: ensure data types are correct (logTime definitely isnt!)
   uint8_t flightPhase;
   float accelerometerX;
   float accelerometerY;
