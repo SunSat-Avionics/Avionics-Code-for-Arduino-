@@ -95,6 +95,7 @@ bool PDC_254::writeData(char *data) {
     // TODO: print the data in logFileLine to the file using sprintf to format it as .csv
     // something to check here is if this uses lots of memory due to being a long string. does the arduino ever actually store the string? or does the .csv interpret it?
     //dataLogFile.print(sprintf(buffer, "%f,%d", logFileLine.logTime, logFileLine.flightPhase));
+    // would it be possible to instead loop through the members of the logFileLine and write them in raw form followed each by a comma??
   }
   else {
     err = 1;

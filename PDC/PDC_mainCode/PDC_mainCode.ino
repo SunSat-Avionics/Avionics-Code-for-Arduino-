@@ -179,9 +179,6 @@ void setup() {
   if (microSD.openFile() != 0) {
     errCode |= logErr;  /* if there was some problem creating the file, flag the log file error bit in our code */
   }
-
-  //microSD.newLogFileLine(); /* create a new log file line */
-  //Serial.println(logFileLine);
   
   /**********************************************************************
                             IMU CONFIG VALUES
