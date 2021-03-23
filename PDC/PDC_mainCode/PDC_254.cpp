@@ -94,7 +94,7 @@ bool PDC_254::writeData(char *data) {
   if (cardInserted() && SD.exists(logFileName)) {
     // TODO: print the data in logFileLine to the file using sprintf to format it as .csv
     // something to check here is if this uses lots of memory due to being a long string. does the arduino ever actually store the string? or does the .csv interpret it?
-    //dataLogFile.print(sprintf("%f,%d), logFileLine.logTime, logFileLine.flightPhase);
+    //dataLogFile.print(sprintf(buffer, "%f,%d", logFileLine.logTime, logFileLine.flightPhase));
   }
   else {
     err = 1;
