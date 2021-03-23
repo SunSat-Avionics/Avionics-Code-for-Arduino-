@@ -346,7 +346,7 @@ float PDC_BMP388::measureAltitudeNoise() {
 
   float altitude = 0; /* the altitude output from the altimeter */
 
-  float threshold = 50;  /* reject rubbish values that exceed a threshold of reasonable expectation */
+  float threshold = 5;  /* reject rubbish values that exceed a threshold of reasonable expectation */
 
   uint32_t startTime = millis();
   
@@ -358,7 +358,7 @@ float PDC_BMP388::measureAltitudeNoise() {
     altitude = readAltitude(); /* get altitude */
 
     // TODO: what value should we expect? should we define a constant for the altitude of the launch site
-    if (abs(1 - altitude) > threshold) {
+    if (abs(LAUNCH_SITE_ALTITUDE - altitude) > threshold) {
       i -= 1; /* for an erroneous reading, we should take the reading again to avoid skew */
     }
     else {

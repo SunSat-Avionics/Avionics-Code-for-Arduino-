@@ -43,16 +43,17 @@ void initKalman() {
 
   // TODO: either measure noise and create R matrix from this, or ask sensors which mode they are in and use
   // an enum to get the noise stats as per datasheet. current values are temporary!
-  // e.g. for loop, read accelerometer_z over SPI for 10 seconds, we know it should be zero, so the output is just noise
-  // then use this to calculate variance.
   // this is useful for altimeter too, as we know altitude is fixed and can find variance of altitude as a single number
   // rather than taking it separately for pressure and temperature!
   // the looping would be slower but would save memory that would be used for storing an enum which we'd probably only use once
   // and the loop would still allow us to change R based on the setups of the sensors
 
-  R_matrix(0, 0) = pow(IMU.accel.measureNoiseZ(), 2); /* measure accelerometer noise standard deviation in z-axis, square for variance */
+  R_matrix(0, 0) = pow(IMU.accel.measureNoiseZ(), 2);       /* measure accelerometer noise standard deviation in z-axis, square for variance */
   Serial.print("varA: ");
   Serial.println(R_matrix(0, 0), 8);
+  R_matrix(1,1) = pow(altimeter.measureAltitudeNoise(), 2); /* measure altitude noise standard deviation, square for variance */
+  Serial.print("varB: ");
+  Serial.println(R_matrix(1, 1), 8);  
 
   //TODO repeat for the altimeter
 
