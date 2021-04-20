@@ -20,7 +20,6 @@
 #include "PDC_BMP388.h"         /* include our altimeter class */
 #include "PDC_254.h"            /* include our micro-SD class */
 #include "PDC_logFile.h"        /* include our log file storage struct */
-//#include "PDC_TSL1401CCS.h"     /* include our LPA class */
 #include <BasicLinearAlgebra.h> /* for Matrix operations
                                      if this line throws an error, you probably don't have the Matrix Library locally.
                                      see: https://github.com/tomstewart89/BasicLinearAlgebra or search 'basic linear algebra' in the IDE library manager 
@@ -28,7 +27,9 @@
 using namespace BLA;            /* use the basic linear algebra namespace */
 
 /* ---------- GENERAL PARAMETERS ---------- */
+const uint8_t LAUNCH_SITE_ALTITUDE = 142; /* [m] how high above sea level is the launch site? used for measuring noise in altimeter */
 const uint8_t ACC_LIFTOFF_THRESHOLD = 1;  /* [m/s^2] the threshold value that tells us we have liftoff. this triggers the move from 'wait' mode to 'flight' mode */
+
 // TODO: refine kalmanTime based on tests. how long does measurement take? calculation time?
 // TODO: then *consider* using this to set update frequency of sensors by rounding up (e.g. if kalman update freq is 10Hz, set accelerometer to 12.5Hz in setup)
 const float kalmanTime = 0.5;             /* time step (s) between Kalman iterations */
@@ -50,12 +51,8 @@ const uint8_t RTC = 23;           /* the real-time clock (RTC) module is connect
 const uint8_t RTCaddress = 0x50;  /* to communicate with an I2C device, we have to know the device address, and for the RTC it is 0x50 */
 // TODO: config for comms with main OBC
 
-/* ---------- LINEAR PHOTODIODE ARRAY CONFIG ---------- */
-// TODO: replace all this with the new light sensor stuff
-//const uint8_t LPA_SI = 5;         /* the serial input pin that is used to trigger a new output from the LPAs */
-//const uint8_t LPA_CLK = OC1A_PIN; /* DO NOT CHANGE!! the pin that will provide clock signal to the LPAs */
-//const uint8_t LPA_AO = 19;        /* the analog output pin that the LPAs will send their values to */
-//PDC_TSL1401CCS_GROUP LPA_group(LPA_SI, LPA_CLK, LPA_AO); /* create a class object for the group of LPAs. definitions in PDC_TSL1401CCS.h & .cpp */
+/* ---------- LIGHT SENSOR CONFIG ---------- */
+// TODO: populate with light sensor stuff
 
 /* ---------- LOG FILE CONFIG ---------- */    
 PDC_logFileFields logFileLine = {}; /* create a new instance of the storage for our log file fields and initialise all fields to 0 */
@@ -94,7 +91,7 @@ const uint8_t msdErr = (1 << 2);  /* micro-SD issue, set bit 2 */
 const uint8_t logErr = (1 << 3);  /* log file issue, set bit 3 */
 const uint8_t rtcErr = (1 << 4);  /* real-time clock issue, set bit 4 */
 const uint8_t obcErr = (1 << 5);  /* main obc issue, set bit 5 */
-const uint8_t lpaErr = (1 << 6);  /* linear photodiode array issue, set bit 5 */
+const uint8_t alsErr = (1 << 6);  /* analog light sensor issue, set bit 6 */
 //const uint8_t TODO = (1 << 7);
 
 /* ---------- SUBROUTINE CONTROL ---------- */
@@ -123,8 +120,8 @@ void setup() {
   Serial.println("\n-\nSETUP\n-\n");  /* inform start of setup */
 
   /* ---------- SPI Setup ---------- */
-  pinMode(PDC_SS, OUTPUT);          /* we want to be the master of this bus! so set the 'SS' pin on the PDC as an output */
-  digitalWrite(PDC_SS, HIGH);       /* now take it high */
+  pinMode(PDC_SS, OUTPUT);          /* we want to be the master of this bus! so set the 'SS' pin on the PDC as a HIGH output (https://www.arduino.cc/en/reference/SPI) */
+  digitalWrite(PDC_SS, HIGH);
   pinMode(altimeter_SS, OUTPUT);    /* set altimeter SS pin as output & disable communication by taking it high */
   digitalWrite(altimeter_SS, HIGH);
   pinMode(IMU_SS, OUTPUT);          /* set IMU SS pin as output & disable communication by taking it high */
@@ -136,15 +133,7 @@ void setup() {
 
   /* ---------- Peripheral Setup ---------- */
   pinMode(microSD_CD, INPUT);       /* set the card detect pin to be an input that we can measure to check for a card */
-
-  // TODO: consider replacing the LPA with a simpler single sensor w/ intensity. LPA too small & complex really.
-  //pinMode(LPA_AO, INPUT);                         /* set the pin connected to LPA AO as an input - this is where we read the LPA values */
-  //pinMode(LPA_SI, OUTPUT);                        /* set the pin connected to the LPA SI as an output - this is how we trigger a new LPA reading */
-  //errFlag = LPA_group.startClockOC1A(OC1A_500KHZ);  /* get the PDC to start a clock signal on its OC1A pin for the LPA group */
-  //if (errFlag) {
-  //  errCode |= lpaErr;  /* if the clock signal wasn't started, LPA error */
-  //  errFlag = 0;        /* clear flag */
-  //}
+  // TODO: configure light sensor pins
 
   /* ---------- I2C Setup ---------- */
   Wire.begin(); /* initialise CPU to use I2C */
@@ -161,18 +150,20 @@ void setup() {
     errCode |= altErr;
   }
 
-  /* check the card detect pin for a card, and try to initialise it */
+  /* our 254 class has an 'isAlive()' method, which checks the card detect pin for a card, and tries to initialise it */
   if (!microSD.isAlive()) {
-    errCode |= msdErr;  /* if not alive, flag the micro-SD error bit in our code */
+    errCode |= msdErr;
   }
 
-  // TODO write a note (status code) to the microSD to signify SD begin - maybe need a .writeNote() method which blanks everything but date, time and note
+  // TODO write a note (status code) to the microSD to signify SD begin - maybe need a .writeNote() method which blanks everything but time and note
+
+  // TODO light sensor checks: do they agree, is it dark?
 
   /* ---------- PERIPHERAL CONFIGURATION ---------- */
   IMU.restart();        /* reboot & clear the IMU, giving it a bit of time to start back up */
   altimeter.restart();  /* soft reset the altimeter and enable the pressure and temperature measurements */
   
-  // TODO reboot other peripherals
+  // TODO: can we reboot microsd? 
 
   // TODO: decide if self test is actually sensible... what if vehicle isn't perfectly still?
   errFlag = IMU.selfTest(); /* run self-test routine on IMU to check accel & gyro are working */
@@ -188,9 +179,6 @@ void setup() {
   if (microSD.openFile() != 0) {
     errCode |= logErr;  /* if there was some problem creating the file, flag the log file error bit in our code */
   }
-
-  //microSD.newLogFileLine(); /* create a new log file line */
-  //Serial.println(logFileLine);
   
   /**********************************************************************
                             IMU CONFIG VALUES
@@ -254,7 +242,8 @@ void loop() {
     // before servicing the I2C request
 
   // TODO: get current time and store in SD card structure
-  logFileLine.flightPhase; = subRoutine;  /* store the current phase of flight so we can see how accurately the transition points are determined */
+  //logFileLine.logTime = (TODO);
+  logFileLine.flightPhase = subRoutine;  /* store the current phase of flight so we can see how accurately the transition points are determined */
   
   if(subRoutine==WAIT_FOR_LAUNCH){
     waitForLaunch();

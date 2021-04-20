@@ -48,7 +48,9 @@ bool PDC_254::cardInserted() {
 bool PDC_254::openFile() {
   /* new instance of the 'File' class (part of the SD library) that we will use to control the .csv file on the microSD card */
   // TODO: once RTC is up & running, name the file with timestamp as per ISO 8601 format (kind of..)(yyyy-mm-ddThh-mm-ss.csv)
-  dataLogFile = SD.open("temp.csv", FILE_WRITE);
+  logFileName = "temp.csv";
+  
+  dataLogFile = SD.open(logFileName, FILE_WRITE);
 
   /* if the file fails to open, return an error */
   if (!dataLogFile) {
@@ -60,10 +62,6 @@ bool PDC_254::openFile() {
     uint32_t timeSinceStartup = millis();
     return (0);
   }
-}
-
-void PDC_254::newLogFileLine(){
-  // clear all elements of the log file struct
 }
 
 /*****************************************************
@@ -90,10 +88,14 @@ bool PDC_254::writeData(char *data) {
   // instead of trying to pass all entries into write SPI instead - would require some weird trickery of the input to the
   // function, and might end up wiriting to consecutive registers? needs more research
   
-  //sprintf(buffer,"%d,%d,%d", ax,ay,az);  //assuming ax, etc are ints
-  
-  if (cardInserted()) {
-    dataLogFile.print(data);
+  //sprintf(buffer,"%d,%d,%d", ax,ay,az);  //assuming ax, etc are ints 
+
+  /* if the card is present and the file is found, print the log file line full of data to the file */
+  if (cardInserted() && SD.exists(logFileName)) {
+    // TODO: print the data in logFileLine to the file using sprintf to format it as .csv
+    // something to check here is if this uses lots of memory due to being a long string. does the arduino ever actually store the string? or does the .csv interpret it?
+    //dataLogFile.print(sprintf(buffer, "%f,%d", logFileLine.logTime, logFileLine.flightPhase));
+    // would it be possible to instead loop through the members of the logFileLine and write them in raw form followed each by a comma??
   }
   else {
     err = 1;

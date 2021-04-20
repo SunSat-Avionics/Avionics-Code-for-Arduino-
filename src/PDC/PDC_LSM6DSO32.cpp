@@ -286,6 +286,7 @@ float IMUChild::measureNoiseZ() {
 
     accZ = readZ(); /* get z-axis acceleration */
 
+    /* |1 g - measured g| should be approx zero */
     if (abs(1 - accZ) > threshold) {
       i -= 1; /* for an erroneous reading, we should take the reading again to avoid skew */
     }
@@ -297,6 +298,8 @@ float IMUChild::measureNoiseZ() {
       sum = sum + (accZ - mean) * (accZ - prev_mean);
       prev_mean = mean;
     }
+
+    /* timeout control */
     if((millis() - startTime) > 10000){
       break; 
     }

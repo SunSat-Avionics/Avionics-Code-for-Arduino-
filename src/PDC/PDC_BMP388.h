@@ -197,10 +197,11 @@ class PDC_BMP388 {
     };
 
     /* ---------- METHODS --------- */
-    bool isAlive();             /* check if connected and responsive */
-    void restart();             /* soft reset the device and enable temp/press measurement */
-    void init(uint32_t input);  /* configure the device over SPI - set the output frequency and resolution */
-    float readPress();          /* read the raw pressure measurement and convert to 'actual' value [degC] */
-    float readTemp();           /* read the raw temperature measurement and convert to 'actual' value [Pa] */
-    float readAltitude();       /* use the compensated pressure to calculate absolute altitude [m] */
+    bool isAlive();               /* check if connected and responsive */
+    void restart();               /* soft reset the device and enable temp/press measurement */
+    void init(uint32_t input);    /* configure the device over SPI - set the output frequency and resolution */
+    float readPress();            /* read the raw pressure measurement and convert to 'actual' value [degC] */
+    float readTemp();             /* read the raw temperature measurement and convert to 'actual' value [Pa] */
+    float readAltitude();         /* use the compensated pressure to calculate absolute altitude [m] */
+    float measureAltitudeNoise(); /* measure the noise in the altitude reading */
 };

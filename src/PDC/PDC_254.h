@@ -17,10 +17,11 @@
 
  *******************************************************************/
 
-#include <Arduino.h>  /* for some arduino syntax in these cpp files */
-#include "PDC_SPI.h"  /* get the SPI functions we've defined */
-#include <stdio.h>    /* std stuff for printing */
-#include <SD.h>       /* we want the SD card library too (https://www.arduino.cc/en/reference/SD) */
+#include <Arduino.h>      /* for some arduino syntax in these cpp files */
+#include "PDC_SPI.h"      /* get the SPI functions we've defined */
+#include <stdio.h>        /* std stuff for printing */
+#include <SD.h>           /* we want the SD card library too (https://www.arduino.cc/en/reference/SD) */
+#include "PDC_logFile.h"  /* include our log file line structure so we can access the global one defined in main */
 
 /**************************************************************************************************************
     254 MICRO-SD BREAKOUT CLASS
@@ -33,6 +34,7 @@ class PDC_254 {
     /* ---------- ATTRIBUTES ---------- */
     uint8_t slaveSelect;  /* the pin on the PDC that the 254 CS pin connects to. is set on contruction */
     uint8_t cardDetect;   /* the pin on the PDC that the 254 CD pin connects to. shorts to GND when card not inserted */
+    String logFileName;   /* the name of the log file that we want to write our data to */
     File dataLogFile;     /* the log file that we will store data on */
 
   public:
@@ -45,7 +47,6 @@ class PDC_254 {
     /* ---------- METHODS ---------- */
     bool isAlive();             /* check if connected and responsive */
     bool cardInserted();        /* check if card is inserted */
-    void newLogFileLine();      /* create a new line to store log data in */
     bool writeData(char *data); /* write some data to the microSD card. returns 0 if successful */
     bool openFile();            /* open a new file to log data to */
 };

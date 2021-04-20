@@ -330,3 +330,56 @@ float PDC_BMP388::readAltitude(){
   
   return(altitude);
 }
+
+/*********************************************************
+   @brief  measure standard deviation of noise in altitude reading
+   @retval the measurement noise standard devation in
+           metres
+ *********************************************************/
+float PDC_BMP388::measureAltitudeNoise() {
+  uint8_t numReadings = 50; /* how many readings to calculate standard deviation over */
+  /* stat variables */
+  float stdDev = 0;
+  float mean = 0;
+  float sum = 0;
+  float prev_mean = 0;
+
+  float altitude = 0; /* the altitude output from the altimeter */
+
+  float threshold = 5;  /* reject rubbish values that exceed a threshold of reasonable expectation */
+
+  uint32_t startTime = millis();
+  
+  /* for the specified number of readings, measure the altitude */
+  for (uint8_t i = 1; i < numReadings; i++) {
+    
+    delay(100); /* force rate of measurements to allow for proper processing */
+
+    altitude = readAltitude(); /* get altitude */
+
+    if (abs(LAUNCH_SITE_ALTITUDE - altitude) > threshold) {
+      i -= 1; /* for an erroneous reading, we should take the reading again to avoid skew */
+    }
+    else {
+      /* Welford's algorithm for calculating standard deviation in real time
+          allows us to sidestep a large array of floats which would very quickly eat up memory & limit the samples we can test!
+      */
+      mean = mean + (altitude - mean) / i;
+      sum = sum + (altitude - mean) * (altitude - prev_mean);
+      prev_mean = mean;
+    }
+
+    /* timeout control */
+    if((millis() - startTime) > 10000){
+      break; 
+    }
+  }
+
+  // TODO: determine if we should be dividing by n or by n-1
+  stdDev = pow(sum / float(numReadings), 0.5);
+
+  // TODO: consider putting a cap on stdDev incase of disturbance during setup
+  // TODO: maybe we should go between the measurement modes on the ground and measure stddev in each of them and store results internally??
+
+  return (stdDev);
+}

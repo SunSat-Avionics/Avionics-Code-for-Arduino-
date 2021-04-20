@@ -4,6 +4,11 @@
 #include <Arduino.h>  /* bring some arduino syntax into the cpp files */
 #include <stdio.h> 
 
+/* ---------- GENERAL PARAMETERS ---------- */
+extern const uint8_t LAUNCH_SITE_ALTITUDE;  /* [m] how high above sea level is the launch site? used for measuring noise in altimeter */
+extern const uint8_t ACC_LIFTOFF_THRESHOLD; /* [m/s^2] the threshold value that tells us we have liftoff. this triggers the move from 'wait' mode to 'flight' mode */
+extern const float kalmanTime;              /* time step (s) between Kalman iterations */
+
 /* ---------- HARDWARE PIN VARIABLE DECLARATIONS ---------- */
 extern const uint8_t PDC_SS;        /* the SS pin on the arduino PDC (=10 for nano) */
 extern const uint8_t altimeter_SS;  /* the arduino PDC pin connected to the altimiter slave select pin */
