@@ -238,37 +238,65 @@ void setup() {
 
 /* -------------------- LOOP -------------------- */
 void loop() {
+  /* store the most recently collected packet of data in it's own instance */
+  PDC_logFileFields previousLogFileLine = logFileLine;
+  /* clear the active log file line ready for the next set of measurements */
+  logFileLine = {}; 
+  
+  // TODO: timing and OBC comms
+  /* PDCLogRate = 100
+   * OBCWriteRate = 10
+   * prevTime = getPrevTime()
+   * 
+   * while(1){
+   *  currentTime = getCurrentTime()
+   *  if (currentTime - prevTime > 1/PDCLogRate){
+   *    break into logging
+   *  }
+   *  
+   *  if (currenTime - prevTime > 1/OBCWriteRate){
+   *    write latest data packet to OBC
+   *  }
+   *  
+   * }
+   */
+  
   // TODO: maybe disable interrupts (i2c requests) until the bottom of this loop so that we can collect all data at this timestep
     // before servicing the I2C request
 
   // TODO: get current time and store in SD card structure
   //logFileLine.logTime = (TODO);
   logFileLine.flightPhase = subRoutine;  /* store the current phase of flight so we can see how accurately the transition points are determined */
-  
-  if(subRoutine==WAIT_FOR_LAUNCH){
-    waitForLaunch();
 
-    // filler code to keep us entertained during testing
-    float altitude = altimeter.readAltitude();
-    Serial.print("alt: ");
-    Serial.println(altitude, 5);
+  /* switch case to check the current phase of the flight and execute appropriate subroutine */
+  switch(subRoutine){
+    case WAIT_FOR_LAUNCH:
+      waitForLaunch();
+  
+      // filler code to keep us entertained during testing
+      float altitude = altimeter.readAltitude();
+      Serial.print("alt: ");
+      Serial.println(altitude, 5);
+      break;
+
+    case LAUNCH:
+      launch();
+      break;
     
-  }
-  else if(subRoutine==LAUNCH){
-    launch();
-  }
-  else if(subRoutine==APOGEE){
-    apogee();
-  }
-  else if(subRoutine==DESCENT){
-    descent();
-  }
-  else if(subRoutine==LANDING){
-    landing();
+    case APOGEE:
+      apogee();
+      break;
+
+    case DESCENT:
+      descent();
+      break;
+
+    case LANDING:
+      landing();
+      break;
   }
 
   // TODO: log file write
-  logFileLine = {}; /* clear the log file line at the end of each loop ready for the next set of measurements */
 }
 
 // TODO: if we can detect a component failure in flight, write a note to SD card
