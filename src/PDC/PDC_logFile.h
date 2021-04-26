@@ -8,7 +8,9 @@ struct PDC_logFileFields{
   float accelerometerX;
   float accelerometerY;
   float accelerometerZ;
-  // TODO: gyroscope
+  float gyroscopeX;
+  float gyroscopeY;
+  float gyroscopeZ;
   float altimeterTemperature;
   float altimeterPressure;
   float altimeterAltitude;
