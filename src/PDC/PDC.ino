@@ -28,7 +28,7 @@ using namespace BLA;            /* use the basic linear algebra namespace */
 
 /* ---------- GENERAL PARAMETERS ---------- */
 const uint8_t LAUNCH_SITE_ALTITUDE = 142; /* [m] how high above sea level is the launch site? used for measuring noise in altimeter */
-const uint8_t ACC_LIFTOFF_THRESHOLD = 100;  /* [m/s^2] the threshold value that tells us we have liftoff. this triggers the move from 'wait' mode to 'flight' mode */
+const uint8_t ACC_LIFTOFF_THRESHOLD = 5;  /* [g] the threshold value that tells us we have liftoff. this triggers the move from 'wait' mode to 'flight' mode */
 
 // TODO: refine kalmanTime based on tests. how long does measurement take? calculation time?
 // TODO: then *consider* using this to set update frequency of sensors by rounding up (e.g. if kalman update freq is 10Hz, set accelerometer to 12.5Hz in setup)
@@ -274,9 +274,9 @@ void loop() {
       waitForLaunch();
   
       // filler code to keep us entertained during testing
-      float accZ = IMU.accel.readZ();
-      Serial.print("aZ: ");
-      Serial.println(accZ, 5);
+      float alt = altimeter.readAltitude();
+      Serial.print("alt: ");
+      Serial.println(alt, 5);
       break;
 
     case LAUNCH:
